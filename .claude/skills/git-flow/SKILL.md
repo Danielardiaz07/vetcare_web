@@ -37,8 +37,30 @@ git commit -m "tipo(alcance): descripcion"
 git push -u origin HEAD
 
 # pr
-gh pr create --base develop --title "tipo(alcance): descripcion" --body "<1-2 lineas>"
+gh pr create --base develop --title "tipo(alcance): descripcion" --body "## Resumen
+<2-3 lineas: que se hizo y por que>
+
+## Cambios
+- <cambio concreto, agrupado por area: back, front, context, ...>
+- <...>
+
+## Referencias
+<IDs de context/ (RF-xx, RN-xx, CU-xx, D-xx) o 'Sin cambios de negocio'>
+
+## Como verificar
+- <pasos o comandos para comprobar el cambio>
+
+## Notas
+<decisiones, impacto en context/, pendientes o riesgos; omitir si no hay>"
 ```
+
+**Cuerpo del PR** (se redacta a partir de `git diff develop...HEAD` y `git log develop..HEAD`, no de memoria):
+
+- Profesional e informativo, pero conciso: entre 10 y 25 líneas en total, sin relleno ni repetir el título.
+- Resumen en prosa; Cambios como viñetas de una línea con el *qué* y, si no es obvio, el *por qué*; menciona los archivos o carpetas clave, no una lista exhaustiva.
+- Referencias: cita los IDs de `context/` afectados y di si `context/` y `context/CHANGELOG.md` se actualizaron en el mismo cambio.
+- Como verificar: pasos reales y ejecutables (sin pruebas automatizadas en este proyecto: comprobación manual, build, lint o typecheck). Si es solo documentación o estructura, indica qué revisar.
+- Omite las secciones que no apliquen (p. ej. Notas); el cuerpo va en español, sin emojis.
 
 ```
 # despues de aprobar el PR (borrar local + GitHub y volver a develop)
