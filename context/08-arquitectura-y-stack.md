@@ -94,7 +94,7 @@ VetCare-Web/
 └── package.json                  # Workspaces (npm; pnpm no está instalado)
 ```
 
-> **Nota**: el repositorio se inició con Vite + React Router. Al adoptar Next.js, el frontend se crea en `front/` y el scaffold de Vite se retira. Hoy el repositorio solo contiene `README.md`, `context/` y la configuración del agente.
+> **Nota**: el repositorio se inició con Vite + React Router. Al adoptar Next.js, el frontend se crea en `front/` y el scaffold de Vite se retira. Existe el esqueleto de carpetas (con `.gitkeep`), los `package.json` mínimos con workspaces y los `.env.example`; aún sin dependencias ni código (se agregan siguiendo el orden de la sección 11).
 
 Módulos de dominio previstos en `back/src/modules/` (uno por área de [02](02-requerimientos-funcionales.md)): `auth`, `users`, `owners`, `patients`, `staff` (veterinarios, estilistas, horarios), `appointments`, `clinical` (consultas, vacunaciones, cirugías, internaciones, exámenes), `grooming`, `inventory`, `invoices`, `notifications`, `reports`, `uploads`. Cada módulo replica la estructura `dto/ + controller + service + repository + routes`.
 
