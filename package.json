@@ -1,0 +1,5 @@
+{
+  "name": "vetcare-web",
+  "private": true,
+  "workspaces": ["back", "front", "packages/*"]
+}
