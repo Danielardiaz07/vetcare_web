@@ -1,0 +1,29 @@
+export const HttpStatus = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;
+
+export const ErrorCode = {
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  INVALID_JSON: "INVALID_JSON",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  NOT_FOUND: "NOT_FOUND",
+  CONFLICT: "CONFLICT",
+  TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+export const API_PREFIX = "/api/v1";
+export const JSON_BODY_LIMIT = "100kb";
+export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+export const RATE_LIMIT_MAX_REQUESTS = 100;
