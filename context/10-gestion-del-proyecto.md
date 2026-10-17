@@ -67,7 +67,7 @@ Responsables: **D** = Daniela (backend, `back/`), **K** = Kenys (frontend, `fron
 
 | Sprint | Fechas (2026) | Objetivo | Historias | Pts |
 |--------|---------------|----------|-----------|-----|
-| 0 (cerrado) | 18 ago – 16 oct | Preparar proyecto y arquitectura: repositorio y ramas (D); base del backend con config, errores y rate limit (D); modelo de datos base de autenticación en Prisma (D); base del frontend con Next.js, Tailwind y cliente HTTP (K); requerimientos y backlog (D, K). **Pendiente de entorno**: crear el proyecto Supabase y ejecutar la primera migración (D) | — | — |
+| 0 (cerrado) | 18 ago – 16 oct | Preparar proyecto y arquitectura: repositorio y ramas (D); base del backend con config, errores y rate limit (D); modelo de datos base de autenticación en Prisma (D); base del frontend con Next.js, Tailwind y cliente HTTP (K); requerimientos y backlog (D, K). Proyecto Supabase creado y primera migración `init` aplicada el 17 oct (D) | — | — |
 | 1 | 19 oct – 1 nov | Acceso y datos maestros del portal: registro con OTP, login, usuarios y roles (D); CRUD de propietarios y pacientes (D); pantallas de registro, login, gestión de usuarios, propietarios y mascotas, “Mis mascotas” y ficha (K) | HU-01, 02, 03, 04, 05, 07 | 26 |
 | 2 | 2 nov – 15 nov | Personal y agenda: veterinarios, estilistas y horarios (D); disponibilidad, bloqueo transaccional de franja y endpoints de citas (D); asistente de agendamiento, “Mis citas” y calendario de recepción (K) | HU-06, 08, 09, 10, 11 | 29 |
 | 3 | 16 nov – 23 nov | Atención clínica, facturación y cierre: consulta, vacunación con catálogo mínimo de vacunas, historial y carné (D, K); facturación con IVA en pantalla, sin PDF hasta resolver P-02 (D, K); pruebas de aceptación, manual, despliegue y sustentación (D, K) | HU-12, 13, 14, 15, 16 | 29 |
@@ -88,7 +88,7 @@ Del 18 de agosto al 24 de noviembre de 2026.
 
 | Hito | Fecha | Entregable |
 |------|-------|-----------|
-| Cierre del Sprint 0 | 16 oct 2026 | Base de back y front y modelo de autenticación; migración pendiente de Supabase |
+| Cierre del Sprint 0 | 16 oct 2026 | Base de back y front y modelo de autenticación; migración inicial aplicada en Supabase el 17 oct |
 | Segundo corte (venció) | ref. 16 oct 2026 | No se entregó el Incremento 3 original; la nueva fecha está pendiente de acordar con la docente |
 | Fin del Sprint 1 | 1 nov 2026 | Incremento 1 |
 | Fin del Sprint 2 | 15 nov 2026 | Incremento 2 |

@@ -94,7 +94,7 @@ VetCare-Web/
 └── package.json                  # Workspaces (npm; pnpm no está instalado)
 ```
 
-> **Nota**: el repositorio se inició con Vite + React Router. Al adoptar Next.js, el frontend se crea en `front/` y el scaffold de Vite se retira. Existe el esqueleto de carpetas (con `.gitkeep`), los `package.json` mínimos con workspaces y los `.env.example`; Desde el cierre del Sprint 0 hay base de `back/` (Express, config, errores, Prisma con el modelo de autenticación) y de `front/` (Next.js, Tailwind, cliente HTTP, `proxy.ts`); falta la migración contra Supabase (se agregan los módulos siguiendo el orden de la sección 11).
+> **Nota**: el repositorio se inició con Vite + React Router. Al adoptar Next.js, el frontend se crea en `front/` y el scaffold de Vite se retira. Existe el esqueleto de carpetas (con `.gitkeep`), los `package.json` mínimos con workspaces y los `.env.example`; Desde el cierre del Sprint 0 hay base de `back/` (Express, config, errores, Prisma con el modelo de autenticación) y de `front/` (Next.js, Tailwind, cliente HTTP, `proxy.ts`); la migración inicial `init` ya está aplicada en Supabase y el módulo `auth` está implementado (se agregan los módulos siguiendo el orden de la sección 11).
 
 Módulos de dominio previstos en `back/src/modules/` (uno por área de [02](02-requerimientos-funcionales.md)): `auth`, `users`, `owners`, `patients`, `staff` (veterinarios, estilistas, horarios), `appointments`, `clinical` (consultas, vacunaciones, cirugías, internaciones, exámenes), `grooming`, `inventory`, `invoices`, `notifications`, `reports`, `uploads`. Cada módulo replica la estructura `dto/ + controller + service + repository + routes`.
 
