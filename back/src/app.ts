@@ -9,6 +9,14 @@ import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
+import { OwnersController } from "@/modules/owners/owners.controller";
+import { OwnersRepository } from "@/modules/owners/owners.repository";
+import { createOwnersRouter } from "@/modules/owners/owners.routes";
+import { OwnersService } from "@/modules/owners/owners.service";
+import { PatientsController } from "@/modules/patients/patients.controller";
+import { PatientsRepository } from "@/modules/patients/patients.repository";
+import { createMyPatientsRouter, createPatientsRouter } from "@/modules/patients/patients.routes";
+import { PatientsService } from "@/modules/patients/patients.service";
 import { UsersController } from "@/modules/users/users.controller";
 import { UsersRepository } from "@/modules/users/users.repository";
 import { createUsersRouter } from "@/modules/users/users.routes";
@@ -45,9 +53,16 @@ export function createApp() {
   );
   const usersService = new UsersService(new UsersRepository());
 
+  const ownersService = new OwnersService(new OwnersRepository());
+  const patientsController = new PatientsController(new PatientsService(new PatientsRepository()));
+  const requireAuth = authenticate(tokens);
+
   const v1Router = createV1Router({
     auth: createAuthRouter(new AuthController(authService)),
-    users: createUsersRouter(new UsersController(usersService), authenticate(tokens)),
+    users: createUsersRouter(new UsersController(usersService), requireAuth),
+    owners: createOwnersRouter(new OwnersController(ownersService), requireAuth),
+    patients: createPatientsRouter(patientsController, requireAuth),
+    myPatients: createMyPatientsRouter(patientsController, requireAuth),
   });
 
   const app = express();

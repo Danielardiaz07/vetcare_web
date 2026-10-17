@@ -29,7 +29,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | ID | Regla | RF |
 |----|-------|----|
 | RN-14 | Propietarios y pacientes se **desactivan**, no se eliminan (se conserva el historial) | RF-05, RF-06 |
-| RN-15 | Un paciente tiene: especie (`DOG`, `CAT`, `OTHER`), raza (texto, máx. 60), sexo (`MALE`, `FEMALE`), peso en kg (decimal, 2 decimales), fecha de nacimiento y foto (opcional); la **edad se calcula** a partir de la fecha de nacimiento (D-19) | RF-06, RF-08 |
+| RN-15 | Un paciente tiene: nombre (máx. 60), especie (`DOG`, `CAT`, `OTHER`), raza (texto, máx. 60), sexo (`MALE`, `FEMALE`), peso en kg (decimal, 2 decimales), fecha de nacimiento y foto (opcional); la **edad se calcula** a partir de la fecha de nacimiento (D-19) | RF-06, RF-08 |
 | RN-16 | Todo paciente pertenece a un propietario. El propietario solo ve y gestiona las mascotas asociadas a su cédula | RF-06, RF-08 |
 | RN-17 | La cédula identifica de forma única a un propietario dentro de la clínica | RF-05 |
 | RN-18 | Un propietario puede registrar una nueva mascota desde su perfil | RF-15 |

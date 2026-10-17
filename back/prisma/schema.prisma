@@ -32,6 +32,17 @@ enum DocumentType {
   PPT
 }
 
+enum Species {
+  DOG
+  CAT
+  OTHER
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
 model User {
   id                  String     @id @default(uuid()) @db.Uuid
   email               String     @unique @db.VarChar(254) // RFC 5321: 256 - "<>"
@@ -64,7 +75,27 @@ model Owner {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  user User?
+  user     User?
+  patients Patient[]
+}
+
+model Patient {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String   @db.Uuid // RN-16: todo paciente pertenece a un propietario
+  name      String   @db.VarChar(60) // un nombre de mascota; mismo tope que los nombres de persona
+  species   Species
+  breed     String   @db.VarChar(60) // D-19: texto libre
+  sex       Sex
+  birthDate DateTime @db.Date // RN-15: la edad se calcula, no se guarda
+  weightKg  Decimal  @db.Decimal(5, 2) // D-19: hasta 999,99 kg
+  photoPath String?  @db.VarChar(100) // ruta del objeto en Storage: "patients/<uuid>/<uuid>.<ext>"
+  active    Boolean  @default(true) // RN-14: eliminación lógica
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
 }
 
 model OtpCode {

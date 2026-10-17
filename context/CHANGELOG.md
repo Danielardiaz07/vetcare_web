@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-10-17 · 04, 07 · Módulos `owners` y `patients` del backend (HU-04, HU-05, HU-07): modelo `Patient` y migración `add_patient`; se agregan el nombre y la ruta de la foto del paciente (RN-15, D-19); listados con paginación `?page=&limit=` y `meta`; el cambio de correo hecho en recepción actualiza también el correo de la cuenta (D-18).
 - 2026-10-16 · 02, 04, 07, 09, 12 · Recuperación de acceso por cédula con enlace al correo registrado y cambio de correo solo en la clínica (D-18; RN-04, RN-11, RF-01, RF-03, 09 §5); tipos del paciente: especie, sexo, raza y peso (D-19; RN-15, RF-06, 07); P-05 acotado al resto de entidades.
 - 2026-10-17 · 08, 10 · Se aplica la migración inicial `init` en Supabase (tablas de autenticación) y se retira la nota de migración pendiente del Sprint 0.
 - 2026-10-16 · 04, 08, 09, 12 · Módulo `auth` del backend (registro, OTP, login con bloqueo, refresh rotativo, logout) y `GET /users/me`; R-01 resuelto: vinculación por cédula solo con correo coincidente (D-17, RN-04); se documentan la cookie `refresh_token`, la reutilización de refresh tokens y `BCRYPT_COST`.
