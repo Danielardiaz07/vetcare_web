@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().min(1).default("15m"),
   JWT_REFRESH_TTL: z.string().min(1).default("7d"),
   OTP_TTL_MINUTES: z.coerce.number().int().min(5).max(10).default(10),
+  BCRYPT_COST: z.coerce.number().int().min(12).max(15).default(12),
   SUPABASE_URL: z.url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   BREVO_API_KEY: z.string().min(1),

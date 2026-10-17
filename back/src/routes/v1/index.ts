@@ -1,7 +1,18 @@
 import { Router } from "express";
 
-export const v1Router = Router();
+interface V1Modules {
+  auth: Router;
+  users: Router;
+}
 
-v1Router.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+export function createV1Router({ auth, users }: V1Modules): Router {
+  const router = Router();
+
+  router.get("/health", (_req, res) => {
+    res.json({ status: "ok" });
+  });
+  router.use("/auth", auth);
+  router.use("/users", users);
+
+  return router;
+}

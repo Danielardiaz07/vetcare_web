@@ -8,9 +8,14 @@ export interface RefreshTokenPayload {
   jti: string;
 }
 
+export interface SignedRefreshToken {
+  token: string;
+  expiresAt: Date;
+}
+
 export interface ITokenService {
   signAccess(payload: AccessTokenPayload): string;
   verifyAccess(token: string): AccessTokenPayload;
-  signRefresh(payload: RefreshTokenPayload): string;
+  signRefresh(payload: RefreshTokenPayload): SignedRefreshToken;
   verifyRefresh(token: string): RefreshTokenPayload;
 }

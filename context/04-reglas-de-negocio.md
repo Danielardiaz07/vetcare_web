@@ -13,7 +13,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-01 | Datos de registro del propietario: cédula (solo dígitos, 6–10, obligatoria), nombres y apellidos (obligatorios), correo (formato válido), teléfono (10 dígitos), dirección (opcional), contraseña y confirmación (deben coincidir) | RF-01 |
 | RN-02 | Contraseña: mínimo 8 caracteres, al menos una mayúscula y un número; máximo 72 (límite de entrada de bcrypt); se guarda solo como hash bcrypt | RF-01, RF-15 |
 | RN-03 | El correo es único. Si ya existe: “El correo ya está registrado” y no se crea la cuenta | RF-01 |
-| RN-04 | Vinculación por cédula: si la cédula ya existe como propietario **sin cuenta**, se crea el usuario y se vincula (sus mascotas aparecen en el portal); si ya tiene cuenta, se rechaza | RF-01 |
+| RN-04 | Vinculación por cédula: si la cédula ya existe como propietario **sin cuenta** y el **correo del registro coincide** con el que la clínica guardó para ese propietario, se crea el usuario y se vincula (sus mascotas aparecen en el portal). Si la cédula ya tiene cuenta, se rechaza; si existe con otro correo (o sin correo), se rechaza con el aviso de acercarse a recepción para actualizarlo (D-17) | RF-01 |
 | RN-05 | *(alineación)* La cuenta nace `PENDING` con rol PROPIETARIO y pasa a `ACTIVE` al verificar el OTP de correo. Solo usuarios `ACTIVE` pueden iniciar sesión | RF-01 |
 | RN-06 | Tras activarse la cuenta se envía un correo de bienvenida | RF-01 |
 | RN-07 | Inicio de sesión con correo y contraseña; el sistema redirige al portal del propietario o al panel interno según el rol | RF-02 |

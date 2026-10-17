@@ -14,7 +14,7 @@ Implementa RN-01 a RN-13, RNF-01 a RNF-04. Stack: JWT + bcrypt + OTP por correo 
 ```
 1. POST /api/v1/auth/register    → crea usuario (PENDING), hashea contraseña, genera OTP,
                                    guarda su hash + expiración, envía correo.
-2. POST /api/v1/auth/otp/verify  → valida OTP → ACTIVE (+ vinculación por cédula, + correo de bienvenida).
+2. POST /api/v1/auth/otp/verify  → valida OTP → ACTIVE (+ correo de bienvenida).
 3. POST /api/v1/auth/otp/resend  → reenvía OTP (rate limit y cooldown).
 4. POST /api/v1/auth/login       → solo usuarios ACTIVE.
 ```
@@ -26,7 +26,7 @@ Reglas del OTP:
 - Expira en 5–10 min (`OTP_TTL_MINUTES`); **un solo uso**.
 - Máximo 5 intentos de verificación; luego se invalida.
 
-El registro del propietario recoge además los campos de negocio (RN-01) y la aceptación del tratamiento de datos (RN-60). La vinculación con un propietario existente por cédula (RN-04) ver [12](12-decisiones-y-pendientes.md) (riesgo R-01).
+El registro del propietario recoge además los campos de negocio (RN-01) y la aceptación del tratamiento de datos (RN-60). La vinculación con un propietario existente por cédula (RN-04) se hace **al registrar** y solo si el correo coincide con el guardado por la clínica (D-17, resuelve R-01); el OTP posterior prueba que el solicitante controla ese correo. Un registro `PENDING` ya existente para el mismo correo se rechaza como duplicado: se continúa con `otp/resend`. `otp/resend` y `otp/verify` responden de forma genérica (sin revelar si el correo existe) y el reenvío tiene un *cooldown* de 60 s. Un fallo de Brevo no revierte el registro (RN-38): el usuario puede pedir otro código.
 
 ## 3. Sesión con JWT
 
@@ -34,6 +34,8 @@ El registro del propietario recoge además los campos de negocio (RN-01) y la ac
 - **Refresh token**: vida larga (~7 días), cookie `HttpOnly; Secure; SameSite`, con `jti` (UUID) persistido para **rotarlo y revocarlo**.
 - Secretos en variables de entorno; algoritmo explícito (`HS256` o `RS256`).
 - Middlewares `authenticate` (verifica token) y `authorize(roles)` (RBAC).
+- Cookie `refresh_token` con `path=/` (el `proxy.ts` del front debe poder verla), `SameSite=Lax` y `Secure` en producción.
+- `POST /auth/refresh` **rota** el token: revoca el anterior y emite uno nuevo; presentar un token ya revocado (reutilización) revoca todas las sesiones del usuario.
 - Cerrar sesión revoca el refresh token y limpia la cookie.
 - *(alineación)* `specs.pdf` pedía un JWT de 8 h; se sustituye por access corto + refresh (D-01).
 
