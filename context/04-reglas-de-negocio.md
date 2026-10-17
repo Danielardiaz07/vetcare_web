@@ -13,14 +13,14 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-01 | Datos de registro del propietario: cédula (solo dígitos, 6–10, obligatoria), nombres y apellidos (obligatorios), correo (formato válido), teléfono (10 dígitos), dirección (opcional), contraseña y confirmación (deben coincidir) | RF-01 |
 | RN-02 | Contraseña: mínimo 8 caracteres, al menos una mayúscula y un número; máximo 72 (límite de entrada de bcrypt); se guarda solo como hash bcrypt | RF-01, RF-15 |
 | RN-03 | El correo es único. Si ya existe: “El correo ya está registrado” y no se crea la cuenta | RF-01 |
-| RN-04 | Vinculación por cédula: si la cédula ya existe como propietario **sin cuenta** y el **correo del registro coincide** con el que la clínica guardó para ese propietario, se crea el usuario y se vincula (sus mascotas aparecen en el portal). Si la cédula ya tiene cuenta, se rechaza; si existe con otro correo (o sin correo), se rechaza con el aviso de acercarse a recepción para actualizarlo (D-17) | RF-01 |
+| RN-04 | Vinculación por cédula: si la cédula ya existe como propietario **sin cuenta** y el **correo del registro coincide** con el que la clínica guardó para ese propietario, se crea el usuario y se vincula (sus mascotas aparecen en el portal). Si la cédula ya tiene cuenta, se rechaza (409) y se indica iniciar sesión o recuperar el acceso con la cédula (RN-11, D-18); si existe con otro correo (o sin correo), se rechaza con el aviso de acercarse a recepción para actualizarlo (D-17). El correo de una cuenta solo se cambia en la clínica, tras verificar la identidad en persona (D-18) | RF-01, RF-03 |
 | RN-05 | *(alineación)* La cuenta nace `PENDING` con rol PROPIETARIO y pasa a `ACTIVE` al verificar el OTP de correo. Solo usuarios `ACTIVE` pueden iniciar sesión | RF-01 |
 | RN-06 | Tras activarse la cuenta se envía un correo de bienvenida | RF-01 |
 | RN-07 | Inicio de sesión con correo y contraseña; el sistema redirige al portal del propietario o al panel interno según el rol | RF-02 |
 | RN-08 | Tras 5 intentos fallidos consecutivos, la cuenta se bloquea 15 minutos | RF-02 |
 | RN-09 | Credenciales inválidas → mensaje genérico (“Correo o contraseña incorrectos”) sin revelar cuál falló. Usuario inactivo → no ingresa e informa que contacte a la clínica | RF-02 |
 | RN-10 | *(alineación)* Sesión con access token de vida corta + refresh token rotativo y revocable (ver [09](09-seguridad-y-autenticacion.md)). Al expirar: “Tu sesión expiró”. Cerrar sesión revoca el refresh token y vuelve al inicio | RF-02 |
-| RN-11 | Recuperar contraseña: enlace de restablecimiento enviado al correo registrado, válido 30 minutos | RF-03 |
+| RN-11 | Recuperar contraseña: enlace de restablecimiento enviado al correo registrado, válido 30 minutos. La cuenta se identifica por **correo o por cédula**; con la cédula el enlace va siempre al correo ya registrado (nunca a uno indicado por quien lo pide) y la respuesta es genérica, sin revelar si la cédula existe ni el correo completo (D-18) | RF-03 |
 | RN-12 | Las cuentas del personal las crea el Administrador, que asigna rol (ADMINISTRADOR, RECEPCIONISTA, VETERINARIO, ESTILISTA) y puede activarlas/desactivarlas | RF-04 |
 | RN-13 | Todos los endpoints exigen JWT válido y verifican el rol, excepto los públicos: registro, OTP, inicio de sesión, refresh y recuperación | RNF-02 |
 
@@ -29,7 +29,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | ID | Regla | RF |
 |----|-------|----|
 | RN-14 | Propietarios y pacientes se **desactivan**, no se eliminan (se conserva el historial) | RF-05, RF-06 |
-| RN-15 | Un paciente tiene: especie, raza, sexo, peso, fecha de nacimiento y foto; la **edad se calcula** a partir de la fecha de nacimiento | RF-06, RF-08 |
+| RN-15 | Un paciente tiene: especie (`DOG`, `CAT`, `OTHER`), raza (texto, máx. 60), sexo (`MALE`, `FEMALE`), peso en kg (decimal, 2 decimales), fecha de nacimiento y foto (opcional); la **edad se calcula** a partir de la fecha de nacimiento (D-19) | RF-06, RF-08 |
 | RN-16 | Todo paciente pertenece a un propietario. El propietario solo ve y gestiona las mascotas asociadas a su cédula | RF-06, RF-08 |
 | RN-17 | La cédula identifica de forma única a un propietario dentro de la clínica | RF-05 |
 | RN-18 | Un propietario puede registrar una nueva mascota desde su perfil | RF-15 |

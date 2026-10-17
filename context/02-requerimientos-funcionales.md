@@ -8,10 +8,10 @@
 |----|--------|--------|-------------|-----------|------|
 | RF-01 ★ | Seguridad | Registrar cuenta de propietario | Crea su cuenta con cédula, nombres, correo, teléfono y contraseña; si la cédula ya existe en la clínica, la cuenta se vincula a ese registro | Propietario | M |
 | RF-02 | Seguridad | Iniciar y cerrar sesión | Autenticación con correo y contraseña; redirige al portal o al panel según el rol | Todos | M |
-| RF-03 ★ | Seguridad | Recuperar contraseña | Enlace de restablecimiento al correo registrado, válido 30 min | Todos | S |
+| RF-03 ★ | Seguridad | Recuperar contraseña | Enlace de restablecimiento al correo registrado, válido 30 min; la cuenta se identifica por correo o por cédula (RN-11, D-18) | Todos | S |
 | RF-04 | Seguridad | Gestionar usuarios del personal | Crear, editar, activar/desactivar usuarios y asignar rol (Administrador, Recepcionista, Veterinario, Estilista) | Administrador | M |
 | RF-05 | Gestión | Gestionar propietarios | Registrar, consultar, actualizar y desactivar propietarios | Recepcionista, Administrador | M |
-| RF-06 | Gestión | Gestionar pacientes | Registrar, consultar, actualizar y desactivar mascotas (especie, raza, sexo, peso, fecha de nacimiento, foto) asociadas a un propietario | Recepcionista, Veterinario | M |
+| RF-06 | Gestión | Gestionar pacientes | Registrar, consultar, actualizar y desactivar mascotas (especie, raza, sexo, peso, fecha de nacimiento, foto; tipos en RN-15) asociadas a un propietario | Recepcionista, Veterinario | M |
 | RF-07 | Gestión | Gestionar personal y horarios | Registrar veterinarios (especialidad) y estilistas; definir horarios de atención y duración de cada tipo de cita | Administrador | M |
 | RF-08 ★ | Portal | Consultar mis mascotas | Lista y ficha de cada mascota (edad calculada, peso, especie, raza, próxima cita) | Propietario | M |
 | RF-09 ★ | Portal | Consultar historial clínico | Línea de tiempo de consultas, cirugías, internaciones y exámenes, con diagnóstico y tratamiento | Propietario | M |
@@ -40,7 +40,7 @@ Flujo central: **cuenta → cita → atención → factura**.
 - **Entradas**: cédula (6–10 dígitos, obligatoria), nombres y apellidos (obligatorios), correo (formato válido, único), teléfono (10 dígitos), dirección (opcional), contraseña y confirmación, aceptación del tratamiento de datos.
 - **Reglas**: RN-01 a RN-06, RN-60.
 - **Salida**: cuenta con rol PROPIETARIO y correo de bienvenida. La activación pasa por verificación OTP (ver [09](09-seguridad-y-autenticacion.md)).
-- **Aceptación**: (1) con datos válidos la cuenta queda activa y puede iniciar sesión; (2) con correo duplicado: “El correo ya está registrado” y no se crea; (3) las mascotas de una cédula existente aparecen en el portal tras el registro.
+- **Aceptación**: (1) con datos válidos la cuenta queda activa y puede iniciar sesión; (2) con correo duplicado: “El correo ya está registrado” y no se crea; (3) las mascotas de una cédula existente aparecen en el portal tras el registro, solo si el correo coincide con el guardado por la clínica (RN-04); (4) con una cédula que ya tiene cuenta: 409 con la indicación de iniciar sesión o recuperar el acceso con la cédula.
 
 ### RF-02 Iniciar y cerrar sesión
 

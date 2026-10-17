@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-10-16 · 02, 04, 07, 09, 12 · Recuperación de acceso por cédula con enlace al correo registrado y cambio de correo solo en la clínica (D-18; RN-04, RN-11, RF-01, RF-03, 09 §5); tipos del paciente: especie, sexo, raza y peso (D-19; RN-15, RF-06, 07); P-05 acotado al resto de entidades.
 - 2026-10-17 · 08, 10 · Se aplica la migración inicial `init` en Supabase (tablas de autenticación) y se retira la nota de migración pendiente del Sprint 0.
 - 2026-10-16 · 04, 08, 09, 12 · Módulo `auth` del backend (registro, OTP, login con bloqueo, refresh rotativo, logout) y `GET /users/me`; R-01 resuelto: vinculación por cédula solo con correo coincidente (D-17, RN-04); se documentan la cookie `refresh_token`, la reutilización de refresh tokens y `BCRYPT_COST`.
 - 2026-10-16 · 10, 02, 08, 12 · Cierre del Sprint 0 y replanificación: 3 sprints (19 oct – 23 nov) con las historias Must HU-01 a HU-16 (84 pts); HU-17 a HU-24 pasan a Reserva; se actualizan la trazabilidad de 02 §3, la nota de 08 §3, el riesgo R-03 y la decisión D-16; P-09 y P-10 retirados.

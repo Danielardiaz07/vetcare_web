@@ -23,6 +23,8 @@ Registro de cómo se alinearon los dos documentos de origen (`specs.pdf` y `ARCH
 | D-15 | Rutas protegidas con **`proxy.ts`** (Next 16), no `middleware.ts`; se añade `@hookform/resolvers` para unir React Hook Form con Zod | `middleware` está deprecado en Next 16; el resolver es la pieza oficial del par RHF + Zod ya incluido en el stack | 08 §2, §7 |
 | D-16 | **Replanificación del 2026-10-16**: Sprint 0 cerrado; 3 sprints (19 oct – 23 nov) con solo las historias Must (HU-01 a HU-16, 84 pts); HU-17 a HU-24 pasan a Reserva | Al 16 oct solo existía el esqueleto del Sprint 0 y la sustentación es el 24 nov | 10, 02 §3 |
 | D-17 | **R-01 resuelto (2026-10-16)**: la cédula de un propietario existente solo se vincula si el correo del registro coincide con el que la clínica guardó. Si la cédula existe con otro correo o sin correo, el registro se rechaza (409) y se indica acudir a recepción; no se crea una cuenta huérfana sin propietario | Decisión del Product Owner; evita ver mascotas e historial de otra persona | 04 (RN-04), 09 §2 |
+| D-18 | **Recuperación de acceso por cédula (2026-10-16)**: quien olvidó su correo y su clave puede identificar la cuenta con la cédula; el enlace de restablecimiento (RN-11) va siempre al correo ya registrado, con respuesta genérica y rate limit. Registrar una cédula que ya tiene cuenta devuelve 409 e indica iniciar sesión o recuperar el acceso. El correo solo se cambia en la clínica, con la identidad verificada en persona. Un código de vinculación entregado en recepción queda como mejora opcional (Reserva) | Acuerdo con el equipo de frontend y la dueña del backend; completa D-17 sin certificar la identidad por el correo | 04 (RN-04, RN-11), 02 (RF-01, RF-03), 09 §5 |
+| D-19 | **Tipos de paciente (2026-10-16)**: especie `DOG`/`CAT`/`OTHER` (enum), sexo `MALE`/`FEMALE` (enum), raza `VARCHAR(60)`, peso `DECIMAL(5,2)` en kg, fecha de nacimiento `DATE`, foto opcional (ruta en Storage). Resuelve P-05 para el paciente | Acuerdo con el frontend (coincide con sus datos de prueba); tamaños según 07 | 04 (RN-15), 02 (RF-06), 07 |
 
 ## 2. Riesgos a decidir
 
@@ -40,7 +42,7 @@ Registro de cómo se alinearon los dos documentos de origen (`specs.pdf` y `ARCH
 | P-02 | **Generación de PDF de facturas** (RN-76) | HU-16/17 (HU-16 en Sprint 3 sin PDF; HU-17 en Reserva) | No hay librería de PDF en el stack |
 | P-03 | Umbral de **stock crítico** y ventana de **por vencer** (RN-56) | HU-18 | No definidos en `specs.pdf` |
 | P-04 | Qué conceptos están **gravados con IVA** (RN-71) | HU-16 | Solo se dice “productos gravados” |
-| P-05 | Tipos y tamaños de los atributos propios del dominio (raza, especie, síntomas, diagnóstico, lote, resultados, etc.) | Modelado (07) | Se justifican entidad por entidad |
+| P-05 | Tipos y tamaños de los atributos propios del dominio (síntomas, diagnóstico, lote, resultados, etc.); los del paciente (especie, raza, sexo, peso) quedaron en D-19 | Modelado (07) | Se justifican entidad por entidad |
 | P-06 | Duración por defecto de cada tipo de cita y esquema de franjas (RN-19) | HU-06, HU-08 | Configurable por el administrador |
 | P-07 | Formato del **número de factura** | HU-16 | — |
 | P-08 | **VetBot** (asistente de preguntas frecuentes heredado) | — | Aparece en el modelo de negocio y componentes, pero no en los RF. ¿Se migra? |
