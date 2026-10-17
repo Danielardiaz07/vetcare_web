@@ -22,12 +22,13 @@ Registro de cómo se alinearon los dos documentos de origen (`specs.pdf` y `ARCH
 | D-14 | **Prisma 6.x** (6.19.3), no Prisma 7 | Prisma 7 exige un adaptador de driver (`pg`) y `prisma.config.ts`, librerías fuera del stack de 08; se reevalúa al migrar | 08 §2 |
 | D-15 | Rutas protegidas con **`proxy.ts`** (Next 16), no `middleware.ts`; se añade `@hookform/resolvers` para unir React Hook Form con Zod | `middleware` está deprecado en Next 16; el resolver es la pieza oficial del par RHF + Zod ya incluido en el stack | 08 §2, §7 |
 | D-16 | **Replanificación del 2026-10-16**: Sprint 0 cerrado; 3 sprints (19 oct – 23 nov) con solo las historias Must (HU-01 a HU-16, 84 pts); HU-17 a HU-24 pasan a Reserva | Al 16 oct solo existía el esqueleto del Sprint 0 y la sustentación es el 24 nov | 10, 02 §3 |
+| D-17 | **R-01 resuelto (2026-10-16)**: la cédula de un propietario existente solo se vincula si el correo del registro coincide con el que la clínica guardó. Si la cédula existe con otro correo o sin correo, el registro se rechaza (409) y se indica acudir a recepción; no se crea una cuenta huérfana sin propietario | Decisión del Product Owner; evita ver mascotas e historial de otra persona | 04 (RN-04), 09 §2 |
 
 ## 2. Riesgos a decidir
 
 | ID | Tema | Detalle | Recomendación |
 |----|------|---------|---------------|
-| R-01 | **Vinculación por cédula (RN-04)** | Cualquiera con un correo válido podría registrarse con la cédula de otro propietario existente y ver sus mascotas e historial. El OTP solo verifica el correo, no la identidad | Vincular solo si el correo coincide con el registrado por la clínica, o dejar la vinculación pendiente de confirmación por recepción. **Pendiente de decisión del equipo (Product Owner)** |
+| R-01 | (resuelto por D-17) **Vinculación por cédula (RN-04)** | Cualquiera con un correo válido podría registrarse con la cédula de otro propietario existente y ver sus mascotas e historial. El OTP solo verifica el correo, no la identidad | Se vincula solo si el correo coincide con el registrado por la clínica |
 | R-02 | Mensaje “El correo ya está registrado” (RN-03) | Permite enumerar correos (contradice la práctica de mensajes genéricos de login) | Se mantiene porque es criterio de aceptación explícito de RF-01; el rate limit de registro mitiga |
 | R-03 | **Capacidad del plan replanificado** | Se comprometen 84 pts en ~5½ semanas (≈ 26–29 pts por sprint) frente a una velocidad de referencia de 19 pts por sprint de 2 semanas; el Sprint 3 dura 8 días e incluye cierre y despliegue. Además HU-13 y HU-16 dependen de un catálogo mínimo de vacunas y medicamentos (el inventario completo es HU-18, en Reserva) | Confirmar el alcance con el Product Owner. Si el Sprint 1 no llega a ≈ 26 pts, recortar HU-11 o HU-15 del alcance comprometido y registrarlo aquí |
 

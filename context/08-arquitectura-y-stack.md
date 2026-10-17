@@ -262,6 +262,7 @@ JWT_REFRESH_SECRET=
 JWT_ACCESS_TTL=15m
 JWT_REFRESH_TTL=7d
 OTP_TTL_MINUTES=10
+BCRYPT_COST=12                  # mínimo 12 (09 §1)
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=      # solo backend, jamás exponer al frontend
 BREVO_API_KEY=
