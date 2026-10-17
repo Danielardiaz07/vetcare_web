@@ -47,6 +47,8 @@ Tras **5 intentos fallidos consecutivos** de inicio de sesión de una cuenta, es
 
 Enlace de restablecimiento al correo registrado, **válido 30 minutos**. Token opaco de un solo uso, guardado hasheado con su expiración; la respuesta no revela si el correo existe.
 
+La cuenta se puede identificar por **correo o por cédula** (D-18). Con la cédula, el enlace va siempre al correo ya registrado y nunca a uno indicado por quien lo pide; así quien olvidó su correo y su clave recupera el acceso, y quien solo conoce la cédula de otra persona no obtiene nada. La respuesta es genérica (sin revelar si la cédula existe ni el correo completo) y el endpoint tiene rate limit. El correo de la cuenta solo se cambia en la clínica, tras verificar la identidad en persona.
+
 ## 6. Roles y permisos (RBAC)
 
 Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`. Cada petición verifica JWT y rol (RN-13); además, para recursos del propietario se verifica la **propiedad** del dato (RN-16, RN-40 → 403).

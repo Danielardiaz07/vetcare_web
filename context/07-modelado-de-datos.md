@@ -56,6 +56,10 @@ Detalles verificados:
 | Nombres (ambos) | `VARCHAR` | 60 | 🔧 | Uno o dos nombres; 2 × ~25 + espacio |
 | Apellidos (ambos) | `VARCHAR` | 60 | 🔧 | Dos apellidos, a veces compuestos |
 | Dirección | `VARCHAR` | 100 | 🔧 | Nomenclatura tipo `Calle 123 # 45-67 Sur, Torre 2 Apto 301` |
+| Especie del paciente | `ENUM` | — | 🔧 | `DOG`, `CAT`, `OTHER`; catálogo cerrado (D-19) |
+| Sexo del paciente | `ENUM` | — | 🔧 | `MALE`, `FEMALE` (D-19) |
+| Raza del paciente | `VARCHAR` | 60 | 🔧 | Texto libre; razas compuestas o cruces descritos (D-19) |
+| Peso del paciente (kg) | `DECIMAL(5,2)` | — | 🔧 | Hasta 999,99 kg; 2 decimales (D-19) |
 | Valor monetario (COP) | `DECIMAL(12,2)` | — | 🔧 | Hasta ~10 mil millones; 2 decimales por contabilidad |
 | Fecha de nacimiento | `DATE` | — | 🔧 | Sin hora ni zona |
 | Fecha y hora de eventos | `TIMESTAMPTZ` | — | 🔧 | UTC; `America/Bogota` es UTC−5 y la presentación se resuelve en el frontend |
@@ -65,7 +69,7 @@ Notas:
 - **Todo identificador numérico colombiano se guarda como texto** (`VARCHAR`): se pierden ceros a la izquierda (`05`, `011001`) y no se opera aritméticamente con ellos.
 - **Cédula**: las antiguas (hasta 8 dígitos) conservan su número; desde la Resolución 3571 de 2003 el NUIP es de 10 dígitos [8][9].
 - Pendiente de verificar con fuente oficial: formato de cédula de extranjería y PPT, plan de numeración vigente de la CRC y longitud exacta del NIT (DIAN).
-- Los tamaños de campos específicos de VetCare (raza, especie, diagnóstico, lote, etc.) **aún no están definidos**: se justifican al modelar cada entidad (ver [12](12-decisiones-y-pendientes.md)).
+- Los tamaños de campos específicos de VetCare (diagnóstico, lote, etc.; los del paciente ya están en la tabla, D-19) **aún no están definidos**: se justifican al modelar cada entidad (ver [12](12-decisiones-y-pendientes.md)).
 
 ## Fuentes
 
