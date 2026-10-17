@@ -19,6 +19,7 @@ Registro de cómo se alinearon los dos documentos de origen (`specs.pdf` y `ARCH
 | D-11 | Política de contraseña = unión de ambas fuentes: mín. 8, mayúscula y número (specs) y máx. 72 (límite bcrypt) | Alineación | RN-02 |
 | D-12 | Despliegue de **una clínica por instalación** (sin entidad “clínica/tenant”); el modelo SaaS multi-clínica queda como evolución. *Supuesto a confirmar* | `specs.pdf` no modela clínica; “varias sedes” es trabajo futuro | 06 |
 | D-13 | `ARCHITECTURE.md` y `specs.pdf` se **eliminan del repositorio**; `context/` es la única fuente de verdad (2026-10-16) | Instrucción del equipo, tras verificar que todo su contenido está en `context/` | README, CLAUDE.md, reglas |
+| D-14 | **Prisma 6.x** (6.19.3), no Prisma 7 | Prisma 7 exige un adaptador de driver (`pg`) y `prisma.config.ts`, librerías fuera del stack de 08; se reevalúa al migrar | 08 §2 |
 
 ## 2. Riesgos a decidir
 

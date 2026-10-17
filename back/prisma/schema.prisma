@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum Role {
+  OWNER
+  RECEPTIONIST
+  VETERINARIAN
+  GROOMER
+  ADMIN
+}
+
+enum DocumentType {
+  CC
+  TI
+  RC
+  CE
+  PA
+  NIT
+  PPT
+}
+
+model User {
+  id                  String     @id @default(uuid()) @db.Uuid
+  email               String     @unique @db.VarChar(254) // RFC 5321: 256 - "<>"
+  passwordHash        String     @db.VarChar(60) // salida fija de bcrypt
+  status              UserStatus @default(PENDING)
+  role                Role       @default(OWNER)
+  failedLoginAttempts Int        @default(0) @db.SmallInt // RN-08: bloqueo a los 5
+  lockedUntil         DateTime?  @db.Timestamptz(3)
+  ownerId             String?    @unique @db.Uuid // RN-04: vínculo 1-1 con el propietario
+  createdAt           DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime   @updatedAt @db.Timestamptz(3)
+
+  owner               Owner?               @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  otpCodes            OtpCode[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model Owner {
+  id             String       @id @default(uuid()) @db.Uuid
+  documentType   DocumentType @default(CC)
+  documentNumber String       @unique @db.VarChar(15) // texto: conserva ceros; el DTO valida 6-10 dígitos (RN-01)
+  firstNames     String       @db.VarChar(60)
+  lastNames      String       @db.VarChar(60)
+  email          String?      @db.VarChar(254)
+  phone          String       @db.VarChar(15) // E.164 sin "+"; el DTO recibe 10 dígitos (RN-01)
+  address        String?      @db.VarChar(100)
+  dataConsentAt  DateTime?    @db.Timestamptz(3) // RN-60: aceptación del tratamiento de datos
+  active         Boolean      @default(true) // RN-14: eliminación lógica
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  user User?
+}
+
+model OtpCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String    @db.VarChar(60) // OTP hasheado con bcrypt
+  attempts  Int       @default(0) @db.SmallInt // máx. 5
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid // jti
+  userId    String    @db.Uuid
+  expiresAt DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique @db.VarChar(64) // SHA-256 en hex del token opaco (RN-11)
+  expiresAt DateTime  @db.Timestamptz(3) // 30 minutos
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

@@ -82,7 +82,7 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 
 ## 8. Modelo de referencia de autenticación (Prisma)
 
-Punto de partida de `ARCHITECTURE.md`, con el enum de roles ampliado a los cinco roles del negocio. Los campos de bloqueo (§4) y de recuperación (§5) y el vínculo con la persona (06 §4) se agregan al implementar.
+Implementado en `back/prisma/schema.prisma` (fuente de los tipos y tamaños). Extiende el punto de partida con los cinco roles del negocio, el bloqueo por intentos (§4), el token de recuperación (§5) y el vínculo 1–1 `User.ownerId` → `Owner` (06 §4, RN-04). `Owner` lleva `documentType` (enum `DocumentType`), `documentNumber` `VARCHAR(15)` único, `firstNames`/`lastNames` `VARCHAR(60)`, `email` `VARCHAR(254)` opcional, `phone` `VARCHAR(15)`, `address` `VARCHAR(100)` opcional, `dataConsentAt` (RN-60) y `active` (RN-14). Las demás entidades entran con el sprint de su módulo.
 
 ```prisma
 enum UserStatus { PENDING ACTIVE SUSPENDED }
@@ -94,11 +94,15 @@ model User {
   passwordHash String     @db.VarChar(60)            // salida fija de bcrypt
   status       UserStatus @default(PENDING)
   role         Role       @default(OWNER)
+  failedLoginAttempts Int @default(0) @db.SmallInt   // RN-08
+  lockedUntil  DateTime?  @db.Timestamptz(3)
+  ownerId      String?    @unique @db.Uuid          // RN-04
   createdAt    DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
 
   otps          OtpCode[]
   refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]   // RN-11: tokenHash VARCHAR(64) SHA-256, expira a los 30 min
 }
 
 model OtpCode {
