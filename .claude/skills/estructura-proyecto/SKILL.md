@@ -18,7 +18,7 @@ Fuente: `context/08-arquitectura-y-stack.md` y `.claude/rules/estructura-proyect
 
 ## Nueva funcionalidad de frontend (`front/src/`)
 
-1. Rutas en `app/` (Server Component por defecto; `'use client'` solo con interactividad). Portal del propietario y panel interno por rol; protegidas con `middleware.ts`.
+1. Rutas en `app/` (Server Component por defecto; `'use client'` solo con interactividad). Portal del propietario y panel interno por rol; protegidas con `proxy.ts` (antes `middleware.ts`, renombrado en Next 16).
 2. Lógica en `features/<dominio>/{components,hooks,schemas}`; schemas Zod con los mismos límites que el DTO del backend.
 3. Llamadas HTTP solo vía `services/` (cliente tipado, maneja 401 → refresh). Componentes compartidos en `components/`.
 4. Estilos con Tailwind CSS v4, mobile-first (≥ 360 px), textos en español (`context/13`).

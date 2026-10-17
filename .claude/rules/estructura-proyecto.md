@@ -33,7 +33,7 @@ front/src/
 ```
 
 - Server Components por defecto; Client Components solo con interactividad.
-- Formularios: React Hook Form + Zod. Estilos: Tailwind CSS v4. Rutas protegidas con `middleware.ts`.
+- Formularios: React Hook Form + Zod. Estilos: Tailwind CSS v4. Rutas protegidas con `proxy.ts` (Next 16 renombró `middleware.ts`).
 - Variables públicas solo con prefijo `NEXT_PUBLIC_`.
 
 ## Convenciones

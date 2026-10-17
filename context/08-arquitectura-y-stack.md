@@ -28,7 +28,7 @@
 | API | Express | Framework HTTP |
 | Frontend | Next.js (App Router) + React | UI, routing, SSR/CSR |
 | Estilos | Tailwind CSS v4 *(decisión del equipo, 2026-10-16)* | UI responsiva (RNF-07) |
-| Formularios | React Hook Form + Zod | Formularios con los mismos esquemas de validación |
+| Formularios | React Hook Form + Zod (+ `@hookform/resolvers`) | Formularios con los mismos esquemas de validación |
 | ORM | Prisma | Acceso a datos, migraciones, tipos |
 | Base de datos | Supabase (PostgreSQL) | Persistencia |
 | Autenticación | JWT (`jsonwebtoken`) | Sesión stateless |
@@ -205,7 +205,8 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 - Capa `services/` única para hablar con la API (cliente HTTP tipado; maneja 401 → refresh).
 - Organización por **features** (`features/auth`, `features/appointments`, ...) con componentes, hooks y esquemas.
 - Formularios con React Hook Form + Zod (mismos esquemas que los DTOs, vía `packages/shared` si se desea).
-- Rutas protegidas con `middleware.ts` de Next y navegación por rol.
+- Rutas protegidas con `proxy.ts` de Next (en Next 16 `middleware.ts` está deprecado y se llama `proxy`): solo comprueba que exista la cookie de sesión (`refresh_token`) y redirige a `/login?next=<ruta>`; la verificación real y el rol los hace la API. La navegación por rol se resuelve en la UI.
+- `services/http-client.ts` guarda el access token en memoria, envía cookies (`credentials: include`) y, ante un 401, hace un único `POST /auth/refresh` compartido entre peticiones concurrentes y reintenta.
 - Variables públicas solo con prefijo `NEXT_PUBLIC_`.
 - Responsivo desde 360 px (RNF-07), en español (RNF-08).
 
