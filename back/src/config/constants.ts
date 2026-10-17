@@ -55,7 +55,15 @@ export const FieldLimit = {
   NAME_MAX: 60,
   PHONE_DIGITS: 10,
   ADDRESS_MAX: 100,
+  PATIENT_NAME_MAX: 60,
+  BREED_MAX: 60,
+  WEIGHT_KG_MAX: 999.99,
+  SEARCH_MAX: 60,
 } as const;
+
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_PAGE_SIZE = 20;
+export const MAX_PAGE_SIZE = 100;
 
 // Se antepone al teléfono de 10 dígitos para guardarlo en E.164 sin "+".
 export const COLOMBIA_PHONE_PREFIX = "57";

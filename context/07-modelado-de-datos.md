@@ -56,6 +56,8 @@ Detalles verificados:
 | Nombres (ambos) | `VARCHAR` | 60 | 🔧 | Uno o dos nombres; 2 × ~25 + espacio |
 | Apellidos (ambos) | `VARCHAR` | 60 | 🔧 | Dos apellidos, a veces compuestos |
 | Dirección | `VARCHAR` | 100 | 🔧 | Nomenclatura tipo `Calle 123 # 45-67 Sur, Torre 2 Apto 301` |
+| Nombre del paciente | `VARCHAR` | 60 | 🔧 | Un nombre de mascota; mismo tope que los nombres de persona (D-19) |
+| Ruta de la foto del paciente | `VARCHAR` | 100 | 🔧 | Ruta del objeto en Storage `patients/<uuid>/<uuid>.<ext>` (~90 caracteres) (D-19) |
 | Especie del paciente | `ENUM` | — | 🔧 | `DOG`, `CAT`, `OTHER`; catálogo cerrado (D-19) |
 | Sexo del paciente | `ENUM` | — | 🔧 | `MALE`, `FEMALE` (D-19) |
 | Raza del paciente | `VARCHAR` | 60 | 🔧 | Texto libre; razas compuestas o cruces descritos (D-19) |
