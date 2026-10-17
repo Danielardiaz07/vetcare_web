@@ -32,6 +32,7 @@ Documentación en español; código, tablas, columnas y endpoints en inglés.
 | `Veterinarian` | Profesional; verifica su disponibilidad | Atiende `Appointment`; tiene 1..* `Schedule` (composición); aplica `Vaccination` |
 | `Groomer` | Estilista | Realiza `GroomingService`; tiene `Schedule` |
 | `Schedule` | Horario de atención por día | Pertenece a un veterinario/estilista (composición) |
+| `AppointmentTypeSetting` | Duración configurable de cada `AppointmentType` (RN-19, D-21) | Una fila por tipo; lo consultan la disponibilidad y el agendamiento |
 | `Appointment` | Reserva de atención con sus reglas de modificación | Genera 0..1 `Consultation`; origina `Notification` |
 | `Consultation` | Registro médico principal | Contiene `PrescriptionItem` (composición) |
 | `PrescriptionItem` | Medicamento formulado con cantidad | Referencia `Medication` |
@@ -61,7 +62,7 @@ Equivalencias de roles con el modelo inicial de `ARCHITECTURE.md` (`USER`/`ADMIN
 
 ## 4. Decisión de modelado: `Person`
 
-Prisma no soporta herencia. Se modela como **tablas separadas** `Owner`, `Veterinarian`, `Groomer`, cada una con sus columnas propias de identificación y contacto (mismos tipos y tamaños de [07](07-modelado-de-datos.md)), y `User` con una FK opcional única hacia la persona que corresponda. Evita una tabla “persona” con columnas nulas según el tipo (3FN) y mantiene la cédula única por tabla de propietarios.
+Prisma no soporta herencia. Se modela como **tablas separadas** `Owner`, `Veterinarian`, `Groomer`, cada una con sus columnas propias de identificación y contacto (mismos tipos y tamaños de [07](07-modelado-de-datos.md)), y `User` con una FK opcional única hacia la persona que corresponda (`ownerId`, `veterinarianId`, `groomerId`). El perfil de un veterinario o estilista se crea **después** de su cuenta: primero el administrador crea el `User` con el rol (RN-12) y luego registra el perfil enlazándolo (D-22). `Schedule` pertenece a un veterinario **o** a un estilista (nunca a ambos) y guarda día ISO (1 = lunes … 7 = domingo) y horas locales de la clínica. Evita una tabla “persona” con columnas nulas según el tipo (3FN) y mantiene la cédula única por tabla de propietarios.
 
 ## 5. Reglas de integridad del dominio
 

@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-10-17 · 04, 06, 07, 08, 12 · Personal y horarios (HU-06, RF-07): tablas `Veterinarian`, `Groomer`, `Schedule` y `AppointmentTypeSetting` con su migración; endpoints `/veterinarians`, `/groomers`, sus `/schedules` y `/appointment-types`; franjas de 30 min y duraciones iniciales 30/30/30/90 (D-21, D-22, RN-19); P-06 resuelto.
 - 2026-10-17 · 04, 08, 12 · Gestión de usuarios del personal (HU-03, RF-04): `POST/GET /users`, `GET/PATCH /users/{id}` solo ADMIN, con suspensión que cierra sesiones y protección contra auto-bloqueo del administrador; seed del primer administrador con `npm run db:seed` y variables `SEED_ADMIN_*` (D-20, RN-12).
 - 2026-10-17 · 04, 07 · Módulos `owners` y `patients` del backend (HU-04, HU-05, HU-07): modelo `Patient` y migración `add_patient`; se agregan el nombre y la ruta de la foto del paciente (RN-15, D-19); listados con paginación `?page=&limit=` y `meta`; el cambio de correo hecho en recepción actualiza también el correo de la cuenta (D-18).
 - 2026-10-16 · 02, 04, 07, 09, 12 · Recuperación de acceso por cédula con enlace al correo registrado y cambio de correo solo en la clínica (D-18; RN-04, RN-11, RF-01, RF-03, 09 §5); tipos del paciente: especie, sexo, raza y peso (D-19; RN-15, RF-06, 07); P-05 acotado al resto de entidades.

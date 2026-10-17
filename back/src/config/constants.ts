@@ -59,7 +59,14 @@ export const FieldLimit = {
   BREED_MAX: 60,
   WEIGHT_KG_MAX: 999.99,
   SEARCH_MAX: 60,
+  SPECIALTY_MAX: 60,
 } as const;
+
+// D-21: las citas se agendan en franjas de 30 minutos; toda duración y todo horario son múltiplos.
+export const SLOT_MINUTES = 30;
+export const MINUTES_PER_DAY = 24 * 60;
+export const WEEKDAY_MIN = 1;
+export const WEEKDAY_MAX = 7;
 
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PAGE_SIZE = 20;

@@ -33,7 +33,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-16 | Todo paciente pertenece a un propietario. El propietario solo ve y gestiona las mascotas asociadas a su cédula | RF-06, RF-08 |
 | RN-17 | La cédula identifica de forma única a un propietario dentro de la clínica | RF-05 |
 | RN-18 | Un propietario puede registrar una nueva mascota desde su perfil | RF-15 |
-| RN-19 | Veterinarios tienen especialidad; veterinarios y estilistas tienen horarios de atención; cada tipo de cita tiene una duración configurable | RF-07 |
+| RN-19 | Veterinarios tienen especialidad; veterinarios y estilistas tienen horarios de atención; cada tipo de cita tiene una duración configurable. Las citas usan franjas de **30 minutos**; los horarios y las duraciones son múltiplos de 30 min, y los bloques de un mismo día no se solapan. Duraciones iniciales: consulta general, vacunación y control, 30 min con veterinario; estética, 90 min con estilista (D-21) | RF-07 |
 
 ## Agenda y citas
 

@@ -43,6 +43,13 @@ enum Sex {
   FEMALE
 }
 
+enum AppointmentType {
+  GENERAL_CONSULTATION
+  VACCINATION
+  CHECKUP
+  GROOMING
+}
+
 model User {
   id                  String     @id @default(uuid()) @db.Uuid
   email               String     @unique @db.VarChar(254) // RFC 5321: 256 - "<>"
@@ -52,10 +59,14 @@ model User {
   failedLoginAttempts Int        @default(0) @db.SmallInt // RN-08: bloqueo a los 5
   lockedUntil         DateTime?  @db.Timestamptz(3)
   ownerId             String?    @unique @db.Uuid // RN-04: vínculo 1-1 con el propietario
+  veterinarianId      String?    @unique @db.Uuid // 06 §4: perfil profesional del veterinario
+  groomerId           String?    @unique @db.Uuid // 06 §4: perfil profesional del estilista
   createdAt           DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime   @updatedAt @db.Timestamptz(3)
 
   owner               Owner?               @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  veterinarian        Veterinarian?        @relation(fields: [veterinarianId], references: [id], onDelete: SetNull)
+  groomer             Groomer?             @relation(fields: [groomerId], references: [id], onDelete: SetNull)
   otpCodes            OtpCode[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
@@ -96,6 +107,60 @@ model Patient {
   owner Owner @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
   @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
+}
+
+model Veterinarian {
+  id             String       @id @default(uuid()) @db.Uuid
+  documentType   DocumentType @default(CC)
+  documentNumber String       @unique @db.VarChar(15)
+  firstNames     String       @db.VarChar(60)
+  lastNames      String       @db.VarChar(60)
+  phone          String       @db.VarChar(15) // E.164 sin "+"
+  specialty      String       @db.VarChar(60) // RN-19: texto libre, p. ej. "Medicina interna"
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  user      User?
+  schedules Schedule[]
+}
+
+model Groomer {
+  id             String       @id @default(uuid()) @db.Uuid
+  documentType   DocumentType @default(CC)
+  documentNumber String       @unique @db.VarChar(15)
+  firstNames     String       @db.VarChar(60)
+  lastNames      String       @db.VarChar(60)
+  phone          String       @db.VarChar(15) // E.164 sin "+"
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+
+  user      User?
+  schedules Schedule[]
+}
+
+// Bloque de atención semanal (RN-19). Exactamente uno de veterinarianId o groomerId (CHECK en la migración).
+model Schedule {
+  id             String   @id @default(uuid()) @db.Uuid
+  veterinarianId String?  @db.Uuid
+  groomerId      String?  @db.Uuid
+  weekday        Int      @db.SmallInt // ISO: 1 = lunes … 7 = domingo
+  startTime      DateTime @db.Time(0) // hora local de la clínica, sin zona
+  endTime        DateTime @db.Time(0)
+
+  veterinarian Veterinarian? @relation(fields: [veterinarianId], references: [id], onDelete: Cascade)
+  groomer      Groomer?      @relation(fields: [groomerId], references: [id], onDelete: Cascade)
+
+  @@index([veterinarianId, weekday])
+  @@index([groomerId, weekday])
+}
+
+// RN-19: duración configurable de cada tipo de cita; múltiplo de la franja de 30 min (D-21).
+model AppointmentTypeSetting {
+  type            AppointmentType @id
+  durationMinutes Int             @db.SmallInt
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
 }
 
 model OtpCode {
