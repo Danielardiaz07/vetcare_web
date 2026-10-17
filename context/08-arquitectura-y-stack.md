@@ -158,7 +158,8 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | auth | `POST /auth/register`, `/auth/otp/verify`, `/auth/otp/resend`, `/auth/login`, `/auth/refresh`, `/auth/logout`, recuperación de contraseña |
 | users | `GET /users/me`; personal, solo ADMIN: `POST /users`, `GET /users`, `GET /users/{id}`, `PATCH /users/{id}` (rol, estado y contraseña; no se elimina) |
 | owners / patients | `/owners`, `/patients`, `/me/patients` (portal) |
-| staff | `/veterinarians`, `/groomers`, `/schedules` |
+| staff | `/veterinarians`, `/groomers` (alta y edición solo ADMIN; lectura para cualquier sesión, con vista reducida para el propietario) y `/veterinarians/{id}/schedules`, `/groomers/{id}/schedules` (`GET` y `PUT` que reemplaza el horario semanal completo) |
+| appointment-types | `GET /appointment-types`, `PATCH /appointment-types/{type}` (duración, solo ADMIN) |
 | appointments | `GET /appointments/availability`, `/appointments`, `PUT /appointments/{id}/reschedule`, `PUT /appointments/{id}/cancel`, `/me/appointments` |
 | clinical | `/consultations`, `/vaccinations`, `/surgeries`, `/hospitalizations`, `/lab-exams`, `/patients/{id}/history` |
 | grooming | `/grooming-services` |

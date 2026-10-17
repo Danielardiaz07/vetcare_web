@@ -4,6 +4,10 @@ import { API_PREFIX, JSON_BODY_LIMIT } from "@/config/constants";
 import { corsMiddleware } from "@/config/cors";
 import { env } from "@/config/env";
 import { globalRateLimiter } from "@/config/rate-limit";
+import { AppointmentTypesController } from "@/modules/appointments/appointment-types.controller";
+import { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
+import { createAppointmentTypesRouter } from "@/modules/appointments/appointment-types.routes";
+import { AppointmentTypesService } from "@/modules/appointments/appointment-types.service";
 import { AuthController } from "@/modules/auth/auth.controller";
 import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
@@ -17,6 +21,18 @@ import { PatientsController } from "@/modules/patients/patients.controller";
 import { PatientsRepository } from "@/modules/patients/patients.repository";
 import { createMyPatientsRouter, createPatientsRouter } from "@/modules/patients/patients.routes";
 import { PatientsService } from "@/modules/patients/patients.service";
+import {
+  createGroomerRequestSchema,
+  createVeterinarianRequestSchema,
+  updateGroomerRequestSchema,
+  updateVeterinarianRequestSchema,
+} from "@/modules/staff/dto/staff.dto";
+import { GroomersRepository } from "@/modules/staff/groomers.repository";
+import { StaffController } from "@/modules/staff/staff.controller";
+import { createStaffRouter } from "@/modules/staff/staff.routes";
+import { GROOMER_KIND, StaffService, VETERINARIAN_KIND } from "@/modules/staff/staff.service";
+import { StaffUsersRepository } from "@/modules/staff/staff-users.repository";
+import { VeterinariansRepository } from "@/modules/staff/veterinarians.repository";
 import { UsersController } from "@/modules/users/users.controller";
 import { UsersRepository } from "@/modules/users/users.repository";
 import { createUsersRouter } from "@/modules/users/users.routes";
@@ -57,12 +73,37 @@ export function createApp() {
   const patientsController = new PatientsController(new PatientsService(new PatientsRepository()));
   const requireAuth = authenticate(tokens);
 
+  const staffUsers = new StaffUsersRepository();
+  const veterinarianService = new StaffService(
+    new VeterinariansRepository(),
+    staffUsers,
+    VETERINARIAN_KIND,
+  );
+  const groomerService = new StaffService(new GroomersRepository(), staffUsers, GROOMER_KIND);
+  const appointmentTypesService = new AppointmentTypesService(new AppointmentTypesRepository());
+
   const v1Router = createV1Router({
     auth: createAuthRouter(new AuthController(authService)),
     users: createUsersRouter(new UsersController(usersService), requireAuth),
     owners: createOwnersRouter(new OwnersController(ownersService), requireAuth),
     patients: createPatientsRouter(patientsController, requireAuth),
     myPatients: createMyPatientsRouter(patientsController, requireAuth),
+    veterinarians: createStaffRouter({
+      controller: new StaffController(veterinarianService),
+      authenticate: requireAuth,
+      createSchema: createVeterinarianRequestSchema,
+      updateSchema: updateVeterinarianRequestSchema,
+    }),
+    groomers: createStaffRouter({
+      controller: new StaffController(groomerService),
+      authenticate: requireAuth,
+      createSchema: createGroomerRequestSchema,
+      updateSchema: updateGroomerRequestSchema,
+    }),
+    appointmentTypes: createAppointmentTypesRouter(
+      new AppointmentTypesController(appointmentTypesService),
+      requireAuth,
+    ),
   });
 
   const app = express();

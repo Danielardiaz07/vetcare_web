@@ -56,6 +56,10 @@ Detalles verificados:
 | Nombres (ambos) | `VARCHAR` | 60 | 🔧 | Uno o dos nombres; 2 × ~25 + espacio |
 | Apellidos (ambos) | `VARCHAR` | 60 | 🔧 | Dos apellidos, a veces compuestos |
 | Dirección | `VARCHAR` | 100 | 🔧 | Nomenclatura tipo `Calle 123 # 45-67 Sur, Torre 2 Apto 301` |
+| Especialidad del veterinario | `VARCHAR` | 60 | 🔧 | Texto libre, p. ej. “Medicina interna” (D-22) |
+| Día de la semana (horario) | `SMALLINT` | 1–7 | 🔧 | ISO: 1 = lunes … 7 = domingo; `CHECK` en BD (D-22) |
+| Hora de inicio / fin (horario) | `TIME(0)` | — | 🔧 | Hora local de la clínica, sin zona; la API usa `HH:mm` en múltiplos de 30 min; `CHECK` inicio < fin (D-21, D-22) |
+| Duración de un tipo de cita (min) | `SMALLINT` | — | 🔧 | Múltiplo positivo de 30; `CHECK` en BD (D-21) |
 | Nombre del paciente | `VARCHAR` | 60 | 🔧 | Un nombre de mascota; mismo tope que los nombres de persona (D-19) |
 | Ruta de la foto del paciente | `VARCHAR` | 100 | 🔧 | Ruta del objeto en Storage `patients/<uuid>/<uuid>.<ext>` (~90 caracteres) (D-19) |
 | Especie del paciente | `ENUM` | — | 🔧 | `DOG`, `CAT`, `OTHER`; catálogo cerrado (D-19) |
