@@ -51,7 +51,7 @@ export function createApp() {
     mail,
     env.OTP_TTL_MINUTES,
   );
-  const usersService = new UsersService(new UsersRepository());
+  const usersService = new UsersService(new UsersRepository(), hasher);
 
   const ownersService = new OwnersService(new OwnersRepository());
   const patientsController = new PatientsController(new PatientsService(new PatientsRepository()));
