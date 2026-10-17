@@ -156,7 +156,7 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | Módulo | Recursos |
 |--------|----------|
 | auth | `POST /auth/register`, `/auth/otp/verify`, `/auth/otp/resend`, `/auth/login`, `/auth/refresh`, `/auth/logout`, recuperación de contraseña |
-| users | `/users` (personal, solo ADMIN), `/users/me` |
+| users | `GET /users/me`; personal, solo ADMIN: `POST /users`, `GET /users`, `GET /users/{id}`, `PATCH /users/{id}` (rol, estado y contraseña; no se elimina) |
 | owners / patients | `/owners`, `/patients`, `/me/patients` (portal) |
 | staff | `/veterinarians`, `/groomers`, `/schedules` |
 | appointments | `GET /appointments/availability`, `/appointments`, `PUT /appointments/{id}/reschedule`, `PUT /appointments/{id}/cancel`, `/me/appointments` |
@@ -269,6 +269,8 @@ BREVO_API_KEY=
 MAIL_FROM_EMAIL=
 MAIL_FROM_NAME=
 CORS_ORIGINS=
+SEED_ADMIN_EMAIL=               # solo para `npm run db:seed` (primer administrador)
+SEED_ADMIN_PASSWORD=
 
 # front/
 NEXT_PUBLIC_API_URL=

@@ -5,22 +5,10 @@ import {
   addressField,
   documentNumberField,
   emailField as email,
+  passwordField as password,
   phoneField,
   requiredNameField as requiredName,
 } from "@/shared/schemas/fields";
-
-const password = z
-  .string()
-  .min(
-    FieldLimit.PASSWORD_MIN,
-    `La contrasena debe tener minimo ${FieldLimit.PASSWORD_MIN} caracteres`,
-  )
-  .max(
-    FieldLimit.PASSWORD_MAX,
-    `La contrasena debe tener maximo ${FieldLimit.PASSWORD_MAX} caracteres`,
-  )
-  .regex(/[A-Z]/, "La contrasena debe tener al menos una mayuscula")
-  .regex(/\d/, "La contrasena debe tener al menos un numero");
 
 export const registerRequestSchema = z
   .object({

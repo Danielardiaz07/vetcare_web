@@ -8,6 +8,19 @@ export const emailField = z
   .max(FieldLimit.EMAIL_MAX, "El correo es demasiado largo")
   .pipe(z.email("Correo con formato invalido"));
 
+export const passwordField = z
+  .string()
+  .min(
+    FieldLimit.PASSWORD_MIN,
+    `La contrasena debe tener minimo ${FieldLimit.PASSWORD_MIN} caracteres`,
+  )
+  .max(
+    FieldLimit.PASSWORD_MAX,
+    `La contrasena debe tener maximo ${FieldLimit.PASSWORD_MAX} caracteres`,
+  )
+  .regex(/[A-Z]/, "La contrasena debe tener al menos una mayuscula")
+  .regex(/\d/, "La contrasena debe tener al menos un numero");
+
 export const requiredNameField = (label: string) =>
   z
     .string()

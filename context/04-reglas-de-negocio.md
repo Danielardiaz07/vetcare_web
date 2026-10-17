@@ -21,7 +21,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-09 | Credenciales inválidas → mensaje genérico (“Correo o contraseña incorrectos”) sin revelar cuál falló. Usuario inactivo → no ingresa e informa que contacte a la clínica | RF-02 |
 | RN-10 | *(alineación)* Sesión con access token de vida corta + refresh token rotativo y revocable (ver [09](09-seguridad-y-autenticacion.md)). Al expirar: “Tu sesión expiró”. Cerrar sesión revoca el refresh token y vuelve al inicio | RF-02 |
 | RN-11 | Recuperar contraseña: enlace de restablecimiento enviado al correo registrado, válido 30 minutos. La cuenta se identifica por **correo o por cédula**; con la cédula el enlace va siempre al correo ya registrado (nunca a uno indicado por quien lo pide) y la respuesta es genérica, sin revelar si la cédula existe ni el correo completo (D-18) | RF-03 |
-| RN-12 | Las cuentas del personal las crea el Administrador, que asigna rol (ADMINISTRADOR, RECEPCIONISTA, VETERINARIO, ESTILISTA) y puede activarlas/desactivarlas | RF-04 |
+| RN-12 | Las cuentas del personal las crea el Administrador, que asigna rol (ADMINISTRADOR, RECEPCIONISTA, VETERINARIO, ESTILISTA) y puede activarlas/desactivarlas (nacen activas y no se eliminan). Desactivar una cuenta cierra sus sesiones; el administrador no puede desactivarse ni cambiarse el rol a sí mismo, y el primer administrador se crea con `npm run db:seed` (D-20) | RF-04 |
 | RN-13 | Todos los endpoints exigen JWT válido y verifican el rol, excepto los públicos: registro, OTP, inicio de sesión, refresh y recuperación | RNF-02 |
 
 ## Gestión de datos maestros
