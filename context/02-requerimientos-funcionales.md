@@ -97,25 +97,25 @@ Flujo central: **cuenta → cita → atención → factura**.
 |----|----|----|--------|
 | RF-01 | HU-01 | CU-01 | 1 |
 | RF-02 | HU-02 | CU-02, CU-03 | 1 |
-| RF-03 | HU-21 | CU-04 | 6 |
+| RF-03 | HU-21 | CU-04 | Reserva |
 | RF-04 | HU-03 | CU-05 | 1 |
-| RF-05 | HU-04 | CU-16 | 2 |
-| RF-06 | HU-05 | CU-17 | 2 |
+| RF-05 | HU-04 | CU-16 | 1 |
+| RF-06 | HU-05 | CU-17 | 1 |
 | RF-07 | HU-06 | CU-18 | 2 |
-| RF-08 | HU-07 | CU-06 | 2 |
-| RF-09 | HU-14 | CU-07 | 4 |
-| RF-10 | HU-15 | CU-08 | 4 |
-| RF-11 | HU-08 | CU-09, CU-10 | 3 |
-| RF-12 | HU-09 | CU-11, CU-12 | 3 |
-| RF-13 | HU-10 | CU-13 | 3 |
-| RF-14 | HU-17 | CU-14 | 5 |
-| RF-15 | HU-22 | CU-15 | 6 |
-| RF-16 | HU-11 | CU-19, CU-10 | 3 |
-| RF-17 | HU-19 | CU-20 | 5 |
-| RF-18 | HU-12 | CU-21 | 4 |
-| RF-19 | HU-13 | CU-22 | 4 |
-| RF-20 | HU-20 | CU-23, CU-24, CU-25 | 6 |
-| RF-21 | HU-23 | CU-26 | 6 |
-| RF-22 | HU-18 | CU-27 | 5 |
-| RF-23 | HU-16 | CU-28 | 5 |
-| RF-24 | HU-24 | CU-29 | 6 |
+| RF-08 | HU-07 | CU-06 | 1 |
+| RF-09 | HU-14 | CU-07 | 3 |
+| RF-10 | HU-15 | CU-08 | 3 |
+| RF-11 | HU-08 | CU-09, CU-10 | 2 |
+| RF-12 | HU-09 | CU-11, CU-12 | 2 |
+| RF-13 | HU-10 | CU-13 | 2 |
+| RF-14 | HU-17 | CU-14 | Reserva |
+| RF-15 | HU-22 | CU-15 | Reserva |
+| RF-16 | HU-11 | CU-19, CU-10 | 2 |
+| RF-17 | HU-19 | CU-20 | Reserva |
+| RF-18 | HU-12 | CU-21 | 3 |
+| RF-19 | HU-13 | CU-22 | 3 |
+| RF-20 | HU-20 | CU-23, CU-24, CU-25 | Reserva |
+| RF-21 | HU-23 | CU-26 | Reserva |
+| RF-22 | HU-18 | CU-27 | Reserva |
+| RF-23 | HU-16 | CU-28 | 3 |
+| RF-24 | HU-24 | CU-29 | Reserva |

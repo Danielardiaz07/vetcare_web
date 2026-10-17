@@ -21,6 +21,7 @@ Registro de cómo se alinearon los dos documentos de origen (`specs.pdf` y `ARCH
 | D-13 | `ARCHITECTURE.md` y `specs.pdf` se **eliminan del repositorio**; `context/` es la única fuente de verdad (2026-10-16) | Instrucción del equipo, tras verificar que todo su contenido está en `context/` | README, CLAUDE.md, reglas |
 | D-14 | **Prisma 6.x** (6.19.3), no Prisma 7 | Prisma 7 exige un adaptador de driver (`pg`) y `prisma.config.ts`, librerías fuera del stack de 08; se reevalúa al migrar | 08 §2 |
 | D-15 | Rutas protegidas con **`proxy.ts`** (Next 16), no `middleware.ts`; se añade `@hookform/resolvers` para unir React Hook Form con Zod | `middleware` está deprecado en Next 16; el resolver es la pieza oficial del par RHF + Zod ya incluido en el stack | 08 §2, §7 |
+| D-16 | **Replanificación del 2026-10-16**: Sprint 0 cerrado; 3 sprints (19 oct – 23 nov) con solo las historias Must (HU-01 a HU-16, 84 pts); HU-17 a HU-24 pasan a Reserva | Al 16 oct solo existía el esqueleto del Sprint 0 y la sustentación es el 24 nov | 10, 02 §3 |
 
 ## 2. Riesgos a decidir
 
@@ -28,21 +29,22 @@ Registro de cómo se alinearon los dos documentos de origen (`specs.pdf` y `ARCH
 |----|------|---------|---------------|
 | R-01 | **Vinculación por cédula (RN-04)** | Cualquiera con un correo válido podría registrarse con la cédula de otro propietario existente y ver sus mascotas e historial. El OTP solo verifica el correo, no la identidad | Vincular solo si el correo coincide con el registrado por la clínica, o dejar la vinculación pendiente de confirmación por recepción. **Pendiente de decisión del equipo (Product Owner)** |
 | R-02 | Mensaje “El correo ya está registrado” (RN-03) | Permite enumerar correos (contradice la práctica de mensajes genéricos de login) | Se mantiene porque es criterio de aceptación explícito de RF-01; el rate limit de registro mitiga |
+| R-03 | **Capacidad del plan replanificado** | Se comprometen 84 pts en ~5½ semanas (≈ 26–29 pts por sprint) frente a una velocidad de referencia de 19 pts por sprint de 2 semanas; el Sprint 3 dura 8 días e incluye cierre y despliegue. Además HU-13 y HU-16 dependen de un catálogo mínimo de vacunas y medicamentos (el inventario completo es HU-18, en Reserva) | Confirmar el alcance con el Product Owner. Si el Sprint 1 no llega a ≈ 26 pts, recortar HU-11 o HU-15 del alcance comprometido y registrarlo aquí |
 
 ## 3. Pendientes (sin definir)
 
 | ID | Pendiente | Necesario para | Nota |
 |----|-----------|----------------|------|
-| P-01 | **Programador de tareas** para recordatorios de 24 h y aviso de vacunas (RN-36, RN-37) | HU-19 (Sprint 5) | No hay scheduler en el stack. Opciones: tarea en el proceso de la API, tarea programada del proveedor o un cron externo que llame a un endpoint. Decidir antes de agregar librerías |
-| P-02 | **Generación de PDF de facturas** (RN-76) | HU-16/17 (Sprint 5) | No hay librería de PDF en el stack |
+| P-01 | **Programador de tareas** para recordatorios de 24 h y aviso de vacunas (RN-36, RN-37) | HU-19 (Reserva) | No hay scheduler en el stack. Opciones: tarea en el proceso de la API, tarea programada del proveedor o un cron externo que llame a un endpoint. Decidir antes de agregar librerías |
+| P-02 | **Generación de PDF de facturas** (RN-76) | HU-16/17 (HU-16 en Sprint 3 sin PDF; HU-17 en Reserva) | No hay librería de PDF en el stack |
 | P-03 | Umbral de **stock crítico** y ventana de **por vencer** (RN-56) | HU-18 | No definidos en `specs.pdf` |
 | P-04 | Qué conceptos están **gravados con IVA** (RN-71) | HU-16 | Solo se dice “productos gravados” |
 | P-05 | Tipos y tamaños de los atributos propios del dominio (raza, especie, síntomas, diagnóstico, lote, resultados, etc.) | Modelado (07) | Se justifican entidad por entidad |
 | P-06 | Duración por defecto de cada tipo de cita y esquema de franjas (RN-19) | HU-06, HU-08 | Configurable por el administrador |
 | P-07 | Formato del **número de factura** | HU-16 | — |
 | P-08 | **VetBot** (asistente de preguntas frecuentes heredado) | — | Aparece en el modelo de negocio y componentes, pero no en los RF. ¿Se migra? |
-| P-09 | Campos de BD para bloqueo por intentos (RN-08) y tokens de recuperación (RN-11) | Sprint 1 / 6 | Ver 09 §4–5 |
-| P-10 | Reconfirmar el avance del plan de sprints con el stack nuevo | 10 | El plan y su estado se escribieron para el stack anterior |
+| P-09 | (retirado) Campos de BD para bloqueo por intentos (RN-08) y tokens de recuperación (RN-11) | — | Resuelto: están en `schema.prisma` y en 09 §8 |
+| P-10 | (retirado) Reconfirmar el avance del plan de sprints con el stack nuevo | — | Resuelto por D-16: se reconfirmó el avance y se replanificó |
 | P-11 | (retirado) `ARCHITECTURE.md` desactualizado respecto a `front/` y `back/` | — | Resuelto por D-13: el archivo se eliminó |
 | P-12 | Verificar formato de cédula de extranjería y PPT, plan de numeración de la CRC y longitud del NIT | 07 | Ver notas de 07 |
 | P-13 | Nombre y alcance finales de buckets de Storage | Cuando se enlace Supabase | 08 §5 |
