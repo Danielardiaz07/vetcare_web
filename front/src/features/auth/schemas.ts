@@ -20,7 +20,7 @@ const {
   ADDRESS_MAX,
 } = FIELD_LIMITS;
 
-const emailField = z
+export const emailField = z
   .string()
   .trim()
   .toLowerCase()
@@ -29,7 +29,7 @@ const emailField = z
   .pipe(z.email("Escribe un correo válido"));
 
 // RN-02
-const passwordField = z
+export const passwordField = z
   .string()
   .min(PASSWORD_MIN, `La contraseña debe tener mínimo ${PASSWORD_MIN} caracteres`)
   .max(PASSWORD_MAX, `La contraseña debe tener máximo ${PASSWORD_MAX} caracteres`)
