@@ -223,5 +223,6 @@ export const mockProfile: UserProfile = {
     firstNames: mockOwner.firstNames,
     lastNames: mockOwner.lastNames,
     phone: mockOwner.phone,
+    address: mockOwner.address,
   },
 };
