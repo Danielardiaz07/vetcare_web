@@ -75,8 +75,8 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-43 | Solo se registra una consulta sobre una cita `CONFIRMADA` | RF-18 |
 | RN-44 | Solo el veterinario asignado a la cita puede registrar la consulta | RF-18 |
 | RN-45 | Diagnóstico y tratamiento son obligatorios | RF-18 |
-| RN-46 | Al guardar la consulta, en **una sola transacción**: la cita pasa a `ATENDIDA`, se actualiza el peso del paciente, se descuenta el stock de los medicamentos entregados y la consulta queda como concepto pendiente de facturar | RF-18, RNF-11 |
-| RN-47 | Si un medicamento no tiene stock suficiente, el sistema advierte (“Stock insuficiente de [medicamento]”) y no permite entregarlo | RF-18 |
+| RN-46 | Al guardar la consulta, en **una sola transacción**: la cita pasa a `ATENDIDA`, se actualiza el peso del paciente, se descuenta el stock de los medicamentos entregados *(aplazado hasta HU-18, D-27)* y la consulta queda como concepto pendiente de facturar | RF-18, RNF-11 |
+| RN-47 | *(aplazada hasta HU-18, D-27)* Si un medicamento no tiene stock suficiente, el sistema advierte (“Stock insuficiente de [medicamento]”) y no permite entregarlo | RF-18 |
 | RN-48 | Vacunación: registra vacuna, lote, fecha de aplicación y fecha de próxima dosis; descuenta el stock de la vacuna | RF-19 |
 | RN-49 | Estado de vacuna en el carné: `AL_DIA`, `PROXIMA_A_VENCER` (vence en los próximos 7 días) o `VENCIDA` | RF-10 |
 | RN-50 | Cirugía, internación (con ingreso y egreso) y examen de laboratorio (con resultados) se asocian al paciente | RF-20 |

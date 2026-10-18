@@ -69,6 +69,13 @@ Detalles verificados:
 | Sexo del paciente | `ENUM` | — | 🔧 | `MALE`, `FEMALE` (D-19) |
 | Raza del paciente | `VARCHAR` | 60 | 🔧 | Texto libre; razas compuestas o cruces descritos (D-19) |
 | Peso del paciente (kg) | `DECIMAL(5,2)` | — | 🔧 | Hasta 999,99 kg; 2 decimales (D-19) |
+| Síntomas, diagnóstico y tratamiento de la consulta | `VARCHAR` | 500 | 🔧 | Frases clínicas cortas; diagnóstico y tratamiento obligatorios (RN-45, D-27) |
+| Fórmula y notas internas de la consulta | `VARCHAR` | 1000 | 🔧 | Texto libre; las notas internas no se muestran al propietario (RN-42, D-27) |
+| Temperatura de la consulta (°C) | `DECIMAL(3,1)` | — | 🔧 | 0,0 a 99,9 (D-27) |
+| Lote de la vacuna | `VARCHAR` | 30 | 🔧 | Código alfanumérico del fabricante (D-27) |
+| Fecha de aplicación / próxima dosis | `DATE` | — | 🔧 | Sin hora ni zona (RN-48) |
+| Número de factura | `INT` consecutivo | — | 🔧 | Se muestra como `FAC-000001` (D-27) |
+| Estado y método de pago de la factura | `ENUM` | — | 🔧 | `PAID`/`VOIDED`; `CASH`/`CARD`/`TRANSFER` (RN-72, RN-74) |
 | Valor monetario (COP) | `DECIMAL(12,2)` | — | 🔧 | Hasta ~10 mil millones; 2 decimales por contabilidad |
 | Fecha de nacimiento | `DATE` | — | 🔧 | Sin hora ni zona |
 | Fecha y hora de eventos | `TIMESTAMPTZ` | — | 🔧 | UTC; `America/Bogota` es UTC−5 y la presentación se resuelve en el frontend |

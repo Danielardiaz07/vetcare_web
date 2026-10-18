@@ -15,6 +15,14 @@ import {
   createMyAppointmentsRouter,
 } from "@/modules/appointments/appointments.routes";
 import { AppointmentsService } from "@/modules/appointments/appointments.service";
+import { ClinicalController } from "@/modules/clinical/clinical.controller";
+import { ClinicalRepository } from "@/modules/clinical/clinical.repository";
+import { createClinicalRouter, createMyClinicalRouter } from "@/modules/clinical/clinical.routes";
+import { ClinicalService } from "@/modules/clinical/clinical.service";
+import { InvoicesController } from "@/modules/invoices/invoices.controller";
+import { InvoicesRepository } from "@/modules/invoices/invoices.repository";
+import { createInvoicesRouter, createMyInvoicesRouter } from "@/modules/invoices/invoices.routes";
+import { InvoicesService } from "@/modules/invoices/invoices.service";
 import { AuthController } from "@/modules/auth/auth.controller";
 import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
@@ -92,6 +100,8 @@ export function createApp() {
   const appointmentsController = new AppointmentsController(
     new AppointmentsService(new AppointmentsRepository(), appointmentTypesRepository),
   );
+  const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
+  const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
 
   const v1Router = createV1Router({
     auth: createAuthRouter(new AuthController(authService)),
@@ -117,6 +127,10 @@ export function createApp() {
     ),
     appointments: createAppointmentsRouter(appointmentsController, requireAuth),
     myAppointments: createMyAppointmentsRouter(appointmentsController, requireAuth),
+    clinical: createClinicalRouter(clinicalController, requireAuth),
+    myClinical: createMyClinicalRouter(clinicalController, requireAuth),
+    invoices: createInvoicesRouter(invoicesController, requireAuth),
+    myInvoices: createMyInvoicesRouter(invoicesController, requireAuth),
   });
 
   const app = express();

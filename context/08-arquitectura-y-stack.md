@@ -161,10 +161,10 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | staff | `/veterinarians`, `/groomers` (alta y edición solo ADMIN; lectura para cualquier sesión, con vista reducida para el propietario) y `/veterinarians/{id}/schedules`, `/groomers/{id}/schedules` (`GET` y `PUT` que reemplaza el horario semanal completo) |
 | appointment-types | `GET /appointment-types`, `PATCH /appointment-types/{type}` (duración, solo ADMIN) |
 | appointments | `GET /appointments/availability?type=&date=&professionalId=` (franjas libres y, si no hay, tres fechas sugeridas; RN-33); `POST /appointments` (propietario o recepción; sin `professionalId` = cualquiera disponible); `GET /appointments?from=&to=` (agenda, máx. 7 días: recepción ve todo, veterinario y estilista solo lo suyo); `PUT /appointments/{id}/reschedule`, `/cancel` (propietario las suyas, recepción cualquiera); `PUT /appointments/{id}/arrival`, `/no-show`, `/reassign` (solo recepción); `GET /me/appointments?when=upcoming\|past` (portal). Detalle en D-26 |
-| clinical | `/consultations`, `/vaccinations`, `/surgeries`, `/hospitalizations`, `/lab-exams`, `/patients/{id}/history` |
+| clinical | Implementados (D-27): `POST /consultations` (solo el veterinario asignado), `GET /vaccines`, `POST /vaccines` (ADMIN), `POST /vaccinations`, `GET /patients/{id}/history?type=&from=&to=` y `GET /patients/{id}/vaccination-card` (recepción y veterinario), y sus equivalentes del portal `GET /me/patients/{id}/history` y `/vaccination-card` (sin notas internas). Previstos: `/surgeries`, `/hospitalizations`, `/lab-exams` |
 | grooming | `/grooming-services` |
 | inventory | `/medications`, `/vaccines` |
-| invoices | `/invoices`, `/invoices/{id}/pdf`, `/me/invoices` |
+| invoices | Implementados (D-27): `GET /invoices/pending?ownerId=` (conceptos sin facturar), `POST /invoices`, `GET /invoices` y `GET /invoices/{id}` (recepción y administrador; el propietario solo las suyas), `PUT /invoices/{id}/void` (solo ADMIN, con motivo), `GET /me/invoices` (portal). Pendiente: `/invoices/{id}/pdf` (P-02) |
 | reports | `/reports/...` |
 | uploads | `POST /uploads/...` (multipart) |
 
