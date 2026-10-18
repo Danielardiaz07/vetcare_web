@@ -1,13 +1,16 @@
+import type { SessionUser, UserProfile } from "@/types/auth";
 import type { Owner, Patient } from "@/types/domain";
 
 // Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
+const MOCK_EMAIL = "laura.gomez@example.com";
+
 export const mockOwner: Owner = {
   id: "5f0c2a8e-3b1d-4c6e-9a7f-1d2e3f4a5b6c",
   documentType: "CC",
   documentNumber: "1065123456",
   firstNames: "Laura Marcela",
   lastNames: "Gómez Pérez",
-  email: "laura.gomez@example.com",
+  email: MOCK_EMAIL,
   phone: "3001234567",
   address: "Calle 16 # 12-45, Valledupar",
   active: true,
@@ -39,3 +42,27 @@ export const mockPatients: Patient[] = [
     active: true,
   },
 ];
+
+export const MOCK_PASSWORD = "Vetcare123";
+
+export const mockSessionUser: SessionUser = {
+  id: "3e7a9c1b-5d2f-4b8a-9e6c-7f1a2b3c4d5e",
+  email: MOCK_EMAIL,
+  role: "OWNER",
+  ownerId: mockOwner.id,
+};
+
+export const mockProfile: UserProfile = {
+  id: mockSessionUser.id,
+  email: mockSessionUser.email,
+  role: mockSessionUser.role,
+  status: "ACTIVE",
+  owner: {
+    id: mockOwner.id,
+    documentType: mockOwner.documentType,
+    documentNumber: mockOwner.documentNumber,
+    firstNames: mockOwner.firstNames,
+    lastNames: mockOwner.lastNames,
+    phone: mockOwner.phone,
+  },
+};

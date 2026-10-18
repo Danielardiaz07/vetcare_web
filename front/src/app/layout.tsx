@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/features/auth/auth-provider";
+import { AuthDialogProvider } from "@/features/auth/components/auth-dialog";
 import "./globals.css";
 
 const ibmPlex = IBM_Plex_Sans({
@@ -29,9 +30,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="flex min-h-dvh flex-col">
         <ToastProvider>
           <AuthProvider>
-            <SiteHeader />
-            <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-            <SiteFooter />
+            <AuthDialogProvider>
+              <SiteHeader />
+              <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+              <SiteFooter />
+            </AuthDialogProvider>
           </AuthProvider>
         </ToastProvider>
       </body>
