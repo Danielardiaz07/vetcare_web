@@ -160,7 +160,7 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | owners / patients | `/owners`, `/patients`, `/me/patients` (portal) |
 | staff | `/veterinarians`, `/groomers` (alta y edición solo ADMIN; lectura para cualquier sesión, con vista reducida para el propietario) y `/veterinarians/{id}/schedules`, `/groomers/{id}/schedules` (`GET` y `PUT` que reemplaza el horario semanal completo) |
 | appointment-types | `GET /appointment-types`, `PATCH /appointment-types/{type}` (duración, solo ADMIN) |
-| appointments | `GET /appointments/availability`, `/appointments`, `PUT /appointments/{id}/reschedule`, `PUT /appointments/{id}/cancel`, `/me/appointments` |
+| appointments | `GET /appointments/availability?type=&date=&professionalId=` (franjas libres y, si no hay, tres fechas sugeridas; RN-33); `POST /appointments` (propietario o recepción; sin `professionalId` = cualquiera disponible); `GET /appointments?from=&to=` (agenda, máx. 7 días: recepción ve todo, veterinario y estilista solo lo suyo); `PUT /appointments/{id}/reschedule`, `/cancel` (propietario las suyas, recepción cualquiera); `PUT /appointments/{id}/arrival`, `/no-show`, `/reassign` (solo recepción); `GET /me/appointments?when=upcoming\|past` (portal). Detalle en D-26 |
 | clinical | `/consultations`, `/vaccinations`, `/surgeries`, `/hospitalizations`, `/lab-exams`, `/patients/{id}/history` |
 | grooming | `/grooming-services` |
 | inventory | `/medications`, `/vaccines` |

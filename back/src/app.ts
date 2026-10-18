@@ -8,6 +8,13 @@ import { AppointmentTypesController } from "@/modules/appointments/appointment-t
 import { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
 import { createAppointmentTypesRouter } from "@/modules/appointments/appointment-types.routes";
 import { AppointmentTypesService } from "@/modules/appointments/appointment-types.service";
+import { AppointmentsController } from "@/modules/appointments/appointments.controller";
+import { AppointmentsRepository } from "@/modules/appointments/appointments.repository";
+import {
+  createAppointmentsRouter,
+  createMyAppointmentsRouter,
+} from "@/modules/appointments/appointments.routes";
+import { AppointmentsService } from "@/modules/appointments/appointments.service";
 import { AuthController } from "@/modules/auth/auth.controller";
 import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
@@ -80,7 +87,11 @@ export function createApp() {
     VETERINARIAN_KIND,
   );
   const groomerService = new StaffService(new GroomersRepository(), staffUsers, GROOMER_KIND);
-  const appointmentTypesService = new AppointmentTypesService(new AppointmentTypesRepository());
+  const appointmentTypesRepository = new AppointmentTypesRepository();
+  const appointmentTypesService = new AppointmentTypesService(appointmentTypesRepository);
+  const appointmentsController = new AppointmentsController(
+    new AppointmentsService(new AppointmentsRepository(), appointmentTypesRepository),
+  );
 
   const v1Router = createV1Router({
     auth: createAuthRouter(new AuthController(authService)),
@@ -104,6 +115,8 @@ export function createApp() {
       new AppointmentTypesController(appointmentTypesService),
       requireAuth,
     ),
+    appointments: createAppointmentsRouter(appointmentsController, requireAuth),
+    myAppointments: createMyAppointmentsRouter(appointmentsController, requireAuth),
   });
 
   const app = express();
