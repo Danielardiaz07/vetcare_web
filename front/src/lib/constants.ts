@@ -3,6 +3,13 @@ export const ROUTES = {
   login: "/login",
   register: "/register",
   portal: "/portal",
+  portalAppointments: "/portal/appointments",
+  portalNewAppointment: "/portal/appointments/new",
+  portalHistory: "/portal/history",
+  portalPetHistory: (petId: string) => `/portal/history/${petId}`,
+  portalInvoices: "/portal/invoices",
+  portalProfile: "/portal/profile",
+  portalNewPet: "/portal/pets/new",
   panel: "/panel",
   // El texto de la Ley 1581 va en el pie de la portada.
   dataPolicy: "/#tratamiento-de-datos",
