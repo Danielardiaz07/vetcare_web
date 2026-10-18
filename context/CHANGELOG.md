@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-10-18 · 08 · Se agrega la ruta `/panel/owners/[id]`, la ficha del propietario con sus mascotas, desde donde recepción lo edita o lo desactiva (§7.2, RN-14).
 - 2026-10-18 · 08 · Se agrega la ruta `/panel/attention` para que el menú del veterinario tenga un destino fijo en “Atención”; desde ahí se elige la cita (§7.2).
 - 2026-10-18 · 08 · Se agrega la ruta `/portal/history` para que el menú del portal tenga un destino fijo en “Historial clínico”; desde ahí se elige la mascota (§7.2).
 - 2026-10-19 · 04, 07, 08, 12 · MVP clínico y de facturación (HU-12 a HU-16; RF-09, 10, 18, 19, 23): tablas `Consultation`, `Vaccine`, `Vaccination`, `Invoice` e `InvoiceItem` con migraciones; endpoints de consulta, vacunación, historial, carné y facturas con IVA 19 %; RN-47 aplazada; P-04 y P-07 resueltos (D-27).

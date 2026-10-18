@@ -13,6 +13,7 @@ export interface Owner {
   phone: string;
   address: string | null;
   active: boolean;
+  hasAccount: boolean;
 }
 
 export interface Patient {

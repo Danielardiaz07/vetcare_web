@@ -13,6 +13,7 @@ export const ROUTES = {
   panel: "/panel",
   panelAgenda: "/panel/agenda",
   panelOwners: "/panel/owners",
+  panelOwner: (ownerId: string) => `/panel/owners/${ownerId}`,
   panelPatients: "/panel/patients",
   panelAttention: "/panel/attention",
   panelAppointmentAttention: (appointmentId: string) => `/panel/attention/${appointmentId}`,
