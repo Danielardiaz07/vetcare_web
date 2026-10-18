@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/components/ui/cn";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { ROUTES } from "@/lib/constants";
-import { getMyAppointments } from "@/services/appointments";
+import { APPOINTMENTS_CHANGED_EVENT, getMyAppointments } from "@/services/appointments";
 
 type MenuItem = {
   href: string;
@@ -86,18 +86,22 @@ export function PortalSideMenu() {
   const isNewAppointment = current === ROUTES.portalNewAppointment;
   const [upcoming, setUpcoming] = useState(0);
 
-  // Se vuelve a contar al cambiar de página, para reflejar las citas que se agendan o cancelan.
+  // Se vuelve a contar al cambiar de página y cuando se agenda, reprograma o cancela una cita.
   useEffect(() => {
     let active = true;
-    getMyAppointments("upcoming", 1, 1)
-      .then((result) => {
-        if (active) setUpcoming(result.meta.total);
-      })
-      .catch(() => {
-        if (active) setUpcoming(0);
-      });
+    const count = () =>
+      getMyAppointments("upcoming", 1, 1)
+        .then((result) => {
+          if (active) setUpcoming(result.meta.total);
+        })
+        .catch(() => {
+          if (active) setUpcoming(0);
+        });
+    void count();
+    window.addEventListener(APPOINTMENTS_CHANGED_EVENT, count);
     return () => {
       active = false;
+      window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, count);
     };
   }, [pathname]);
 

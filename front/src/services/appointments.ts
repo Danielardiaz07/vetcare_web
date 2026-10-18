@@ -1,4 +1,11 @@
-import { addDays, bookableDates, clinicDateOf, clinicInstant, isSunday } from "@/lib/clinic-time";
+import {
+  addDays,
+  bookableDates,
+  clinicDateOf,
+  clinicInstant,
+  isChangeable,
+  isSunday,
+} from "@/lib/clinic-time";
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
 import { request } from "@/services/http-client";
 import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
@@ -151,34 +158,51 @@ type MockSeed = {
   petIndex: number;
   type: AppointmentType;
   status: Appointment["status"];
-  daysFromToday: number;
-  time: string;
+  // Día y hora de la clínica, o minutos desde ahora para la cita que ya no se puede cambiar.
+  when: { daysFromToday: number; time: string } | { minutesFromNow: number };
   reason?: string;
   cancelReason?: string;
 };
 
 // Citas de prueba de Laura: una por estado, para ver cada color en Mis citas.
 const MOCK_SEEDS: MockSeed[] = [
-  { petIndex: 0, type: "VACCINATION", status: "CONFIRMED", daysFromToday: 3, time: "10:00" },
-  { petIndex: 1, type: "GROOMING", status: "SCHEDULED", daysFromToday: 5, time: "09:00" },
+  {
+    petIndex: 0,
+    type: "VACCINATION",
+    status: "CONFIRMED",
+    when: { daysFromToday: 3, time: "10:00" },
+  },
+  { petIndex: 1, type: "GROOMING", status: "SCHEDULED", when: { daysFromToday: 5, time: "09:00" } },
+  // RN-28: a menos de 2 horas ya no se puede reprogramar ni cancelar.
+  { petIndex: 1, type: "CHECKUP", status: "SCHEDULED", when: { minutesFromNow: 60 } },
   {
     petIndex: 0,
     type: "GROOMING",
     status: "CANCELLED",
-    daysFromToday: 7,
-    time: "11:00",
+    when: { daysFromToday: 7, time: "11:00" },
     cancelReason: "Viaje familiar",
   },
   {
     petIndex: 0,
     type: "GENERAL_CONSULTATION",
     status: "ATTENDED",
-    daysFromToday: -20,
-    time: "08:30",
+    when: { daysFromToday: -20, time: "08:30" },
     reason: "Se rasca mucho las orejas",
   },
-  { petIndex: 1, type: "CHECKUP", status: "NO_SHOW", daysFromToday: -40, time: "15:00" },
+  {
+    petIndex: 1,
+    type: "CHECKUP",
+    status: "NO_SHOW",
+    when: { daysFromToday: -40, time: "15:00" },
+  },
 ];
+
+function seedStart(when: MockSeed["when"], today: string): string {
+  if ("minutesFromNow" in when) {
+    return new Date(Date.now() + when.minutesFromNow * MS_PER_MINUTE).toISOString();
+  }
+  return clinicInstant(workingDay(addDays(today, when.daysFromToday)), when.time);
+}
 
 // Corre al lunes siguiente si la fecha cae en domingo, cuando la clínica no atiende.
 const workingDay = (date: string) => (isSunday(date) ? addDays(date, 1) : date);
@@ -193,9 +217,7 @@ function seedAppointments(): Appointment[] {
     const durationMinutes =
       mockAppointmentTypes.find((setting) => setting.type === seed.type)?.durationMinutes ?? 0;
     if (!pet || !professional) return [];
-    const startsAt = new Date(
-      clinicInstant(workingDay(addDays(today, seed.daysFromToday)), seed.time),
-    ).toISOString();
+    const startsAt = seedStart(seed.when, today);
     return [
       {
         id: `5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d${String(index).padStart(2, "0")}`,
@@ -226,6 +248,53 @@ mockAppointmentStore
 
 const mockNotFound = () => mockError(NOT_FOUND, "NOT_FOUND", "Cita no encontrada");
 
+// La primera vez que alguien confirma las 16:00, otra persona "ya la tomó".
+function simulateRace(professionals: Professional[], startsAt: string) {
+  if (startsAt !== clinicInstant(clinicDateOf(new Date(startsAt)), MOCK_RACE_TIME)) return;
+  professionals.forEach((item) => mockTakenSlots.add(takenKey(item.id, startsAt)));
+}
+
+const CONTACT_CLINIC_MESSAGE = "Comunícate con la clínica";
+
+// RN-28: como la API, el propietario solo cambia citas activas con más de 2 horas de anticipación.
+async function mockModifiable(id: string): Promise<Appointment> {
+  const appointment = mockAppointmentStore.find((item) => item.id === id);
+  if (!appointment) return mockNotFound();
+  if (appointment.status !== "SCHEDULED" && appointment.status !== "CONFIRMED") {
+    return mockError(CONFLICT, "CONFLICT", "La cita ya no admite cambios");
+  }
+  if (!isChangeable(appointment.startsAt)) {
+    return mockError(CONFLICT, "CONFLICT", CONTACT_CLINIC_MESSAGE);
+  }
+  return appointment;
+}
+
+async function mockReschedule(id: string, input: RescheduleAppointmentInput): Promise<Appointment> {
+  const appointment = await mockModifiable(id);
+  const professionals = await listProfessionals(appointment.type);
+  simulateRace(professionals, input.startsAt);
+  const professionalId = input.professionalId ?? appointment.professional.id;
+  if (isTaken(professionalId, input.startsAt)) {
+    return mockError(CONFLICT, "CONFLICT", SLOT_TAKEN_MESSAGE);
+  }
+  const duration =
+    new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime();
+  mockTakenSlots.delete(takenKey(appointment.professional.id, appointment.startsAt));
+  mockTakenSlots.add(takenKey(professionalId, input.startsAt));
+  Object.assign(appointment, {
+    startsAt: input.startsAt,
+    endsAt: new Date(new Date(input.startsAt).getTime() + duration).toISOString(),
+  });
+  return mockResponse(appointment);
+}
+
+async function mockCancel(id: string, reason: string): Promise<Appointment> {
+  const appointment = await mockModifiable(id);
+  mockTakenSlots.delete(takenKey(appointment.professional.id, appointment.startsAt));
+  Object.assign(appointment, { status: "CANCELLED", cancelReason: reason });
+  return mockResponse(appointment);
+}
+
 const isActiveFuture = (appointment: Appointment, now: string) =>
   (appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED") &&
   appointment.startsAt > now;
@@ -245,10 +314,7 @@ async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
     );
   }
   const all = await listProfessionals(input.type);
-  const date = clinicDateOf(new Date(input.startsAt));
-  if (input.startsAt === clinicInstant(date, MOCK_RACE_TIME)) {
-    all.forEach((item) => mockTakenSlots.add(takenKey(item.id, input.startsAt)));
-  }
+  simulateRace(all, input.startsAt);
   const candidates = all.filter(
     (item) =>
       (!input.professionalId || item.id === input.professionalId) &&
@@ -276,16 +342,19 @@ async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
   return mockResponse(appointment);
 }
 
-function mockUpdate(id: string, changes: Partial<Appointment>): Promise<Appointment> {
-  const appointment = mockAppointmentStore.find((item) => item.id === id);
-  if (!appointment) return mockNotFound();
-  Object.assign(appointment, changes);
-  return mockResponse(appointment);
+// El menú del portal escucha este evento para actualizar el número de citas próximas.
+export const APPOINTMENTS_CHANGED_EVENT = "vetcare:appointments-changed";
+
+function notifyChange(appointment: Appointment): Appointment {
+  window.dispatchEvent(new Event(APPOINTMENTS_CHANGED_EVENT));
+  return appointment;
 }
 
 export function createAppointment(input: CreateAppointmentInput): Promise<Appointment> {
-  if (isMockEnabled) return mockCreate(input);
-  return request<Appointment>("/appointments", { method: "POST", body: input });
+  const created = isMockEnabled
+    ? mockCreate(input)
+    : request<Appointment>("/appointments", { method: "POST", body: input });
+  return created.then(notifyChange);
 }
 
 // RN-28: el propietario reprograma o cancela hasta 2 horas antes.
@@ -293,16 +362,17 @@ export function rescheduleAppointment(
   id: string,
   input: RescheduleAppointmentInput,
 ): Promise<Appointment> {
-  if (isMockEnabled) return mockUpdate(id, { startsAt: input.startsAt });
-  return request<Appointment>(`/appointments/${id}/reschedule`, { method: "PUT", body: input });
+  const updated = isMockEnabled
+    ? mockReschedule(id, input)
+    : request<Appointment>(`/appointments/${id}/reschedule`, { method: "PUT", body: input });
+  return updated.then(notifyChange);
 }
 
 export function cancelAppointment(id: string, reason: string): Promise<Appointment> {
-  if (isMockEnabled) return mockUpdate(id, { status: "CANCELLED", cancelReason: reason });
-  return request<Appointment>(`/appointments/${id}/cancel`, {
-    method: "PUT",
-    body: { reason },
-  });
+  const updated = isMockEnabled
+    ? mockCancel(id, reason)
+    : request<Appointment>(`/appointments/${id}/cancel`, { method: "PUT", body: { reason } });
+  return updated.then(notifyChange);
 }
 
 // Como la API: próximas son las programadas o confirmadas desde ahora; el resto son anteriores.

@@ -11,7 +11,12 @@ import { BookingReceipt } from "@/features/appointments/components/booking-recei
 import { BookingSummary } from "@/features/appointments/components/booking-summary";
 import { ChoiceButton } from "@/features/appointments/components/choice-button";
 import { ReviewStep } from "@/features/appointments/components/review-step";
-import { isNetworkError, NETWORK_ERROR_MESSAGE } from "@/features/auth/errors";
+import {
+  appointmentErrorMessage,
+  isActiveLimit,
+  isSlotTaken,
+  SLOT_TAKEN_MESSAGE,
+} from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { SPECIES_LABELS } from "@/features/patients/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
@@ -19,7 +24,6 @@ import { bookableDates, dayParts, formatClinicTime, formatLongDate } from "@/lib
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
 import { createAppointment, getAvailability, listProfessionals } from "@/services/appointments";
-import { ApiError } from "@/services/http-client";
 import { getMyPatients } from "@/services/patients";
 import { listAppointmentTypes } from "@/services/staff";
 import type {
@@ -86,11 +90,6 @@ function firstMissingStep(selection: Selection): Step {
   const steps: Step[] = [1, 2, 3, 4, 5];
   return steps.find((step) => !isChosen(step, selection)) ?? LAST_STEP;
 }
-
-// La API responde 409 tanto por la franja tomada (RN-27) como por el límite de citas (RN-24);
-// solo el mensaje los distingue.
-const isSlotTaken = (error: ApiError) => error.message.includes("franja ya no");
-const isActiveLimit = (error: ApiError) => error.message.includes("citas activas");
 
 type AppointmentWizardProps = {
   initialPetId?: string;
@@ -259,12 +258,10 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
       });
       setConfirmed(appointment);
     } catch (error) {
-      if (isNetworkError(error) || !(error instanceof ApiError)) {
-        setBookingError(NETWORK_ERROR_MESSAGE);
-      } else if (isSlotTaken(error)) {
+      if (isSlotTaken(error)) {
         goTo(LAST_STEP);
         choose({ slot: null });
-        setStepError("La franja ya no está disponible. Elige otra hora.");
+        setStepError(SLOT_TAKEN_MESSAGE);
         setAvailabilityKey((key) => key + 1);
       } else if (isActiveLimit(error)) {
         setBookingError(
@@ -277,7 +274,7 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
           </>,
         );
       } else {
-        setBookingError(error.message);
+        setBookingError(appointmentErrorMessage(error));
       }
     }
   }

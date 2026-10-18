@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import { AppointmentCard } from "@/features/appointments/components/appointment-card";
 import { ROUTES } from "@/lib/constants";
 import { getAllMyAppointments, type AppointmentsWhen } from "@/services/appointments";
@@ -39,6 +40,7 @@ async function loadAppointments(): Promise<AppointmentsData> {
 }
 
 export function MyAppointments() {
+  const { show } = useToast();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [when, setWhen] = useState<AppointmentsWhen>("upcoming");
@@ -61,6 +63,14 @@ export function MyAppointments() {
   }, [reloadKey]);
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
+
+  const handleChanged = useCallback(
+    (message: string) => {
+      show(message, "success");
+      reload();
+    },
+    [show, reload],
+  );
 
   function selectTab(next: AppointmentsWhen) {
     setWhen(next);
@@ -173,7 +183,11 @@ export function MyAppointments() {
           <ul className="flex flex-col gap-3">
             {visible.map((appointment) => (
               <li key={appointment.id}>
-                <AppointmentCard appointment={appointment} withPrep={when === "upcoming"} />
+                <AppointmentCard
+                  appointment={appointment}
+                  withPrep={when === "upcoming"}
+                  onChanged={handleChanged}
+                />
               </li>
             ))}
           </ul>

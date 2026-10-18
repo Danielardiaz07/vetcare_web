@@ -57,6 +57,10 @@ export function bookableDates(now: Date = new Date()): string[] {
   return dates;
 }
 
+// RN-28: el propietario reprograma o cancela solo con más de 2 horas de anticipación.
+export const isChangeable = (startsAt: string, now: Date = new Date()) =>
+  new Date(startsAt).getTime() - now.getTime() > MIN_APPOINTMENT_LEAD_HOURS * MS_PER_HOUR;
+
 export const formatClinicTime = (instant: string) => timeFormatter.format(new Date(instant));
 
 export const formatLongDate = (date: string) => longDateFormatter.format(dateAtNoon(date));
