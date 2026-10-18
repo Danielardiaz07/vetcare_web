@@ -1,22 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { BookingReceipt } from "@/features/appointments/components/booking-receipt";
 import { BookingSummary } from "@/features/appointments/components/booking-summary";
 import { ChoiceButton } from "@/features/appointments/components/choice-button";
+import { ReviewStep } from "@/features/appointments/components/review-step";
+import { isNetworkError, NETWORK_ERROR_MESSAGE } from "@/features/auth/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { SPECIES_LABELS } from "@/features/patients/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
 import { bookableDates, dayParts, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
+import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
-import { getAvailability, listProfessionals } from "@/services/appointments";
+import { createAppointment, getAvailability, listProfessionals } from "@/services/appointments";
+import { ApiError } from "@/services/http-client";
 import { getMyPatients } from "@/services/patients";
 import { listAppointmentTypes } from "@/services/staff";
 import type {
+  Appointment,
   AppointmentType,
   AppointmentTypeSetting,
   Availability,
@@ -28,8 +35,10 @@ import type {
 // D-26: "Cualquiera disponible" no manda profesional y la API asigna el primero libre.
 const ANY_PROFESSIONAL = "any";
 const LAST_STEP = 5;
+const REVIEW = "review";
 
 type Step = 1 | 2 | 3 | 4 | 5;
+type View = Step | typeof REVIEW;
 
 type Selection = {
   petId: string | null;
@@ -37,6 +46,14 @@ type Selection = {
   professionalId: string | null;
   date: string | null;
   slot: AvailableSlot | null;
+};
+
+const EMPTY_SELECTION: Selection = {
+  petId: null,
+  type: null,
+  professionalId: null,
+  date: null,
+  slot: null,
 };
 
 type BaseData = { pets: Patient[]; types: AppointmentTypeSetting[] };
@@ -70,6 +87,11 @@ function firstMissingStep(selection: Selection): Step {
   return steps.find((step) => !isChosen(step, selection)) ?? LAST_STEP;
 }
 
+// La API responde 409 tanto por la franja tomada (RN-27) como por el límite de citas (RN-24);
+// solo el mensaje los distingue.
+const isSlotTaken = (error: ApiError) => error.message.includes("franja ya no");
+const isActiveLimit = (error: ApiError) => error.message.includes("citas activas");
+
 type AppointmentWizardProps = {
   initialPetId?: string;
   initialType?: string;
@@ -78,15 +100,12 @@ type AppointmentWizardProps = {
 export function AppointmentWizard({ initialPetId, initialType }: AppointmentWizardProps) {
   const [base, setBase] = useState<Loadable<BaseData>>({ status: "loading" });
   const [baseKey, setBaseKey] = useState(0);
-  const [selection, setSelection] = useState<Selection>({
-    petId: null,
-    type: null,
-    professionalId: null,
-    date: null,
-    slot: null,
-  });
-  const [step, setStep] = useState<Step>(1);
+  const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
+  const [step, setStep] = useState<View>(1);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [bookingError, setBookingError] = useState<ReactNode>(null);
+  const [confirmed, setConfirmed] = useState<Appointment | null>(null);
   const [professionals, setProfessionals] = useState<Loadable<Professional[]>>({
     status: "loading",
   });
@@ -107,7 +126,7 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
         // ?petId= y ?type= dejan esos pasos ya elegidos si existen.
         const petId = pets.some((pet) => pet.id === initialPetId) ? (initialPetId ?? null) : null;
         const type = types.find((item) => item.type === initialType)?.type ?? null;
-        const preset: Selection = { petId, type, professionalId: null, date: null, slot: null };
+        const preset: Selection = { ...EMPTY_SELECTION, petId, type };
         setSelection(preset);
         setStep(firstMissingStep(preset));
       })
@@ -162,6 +181,17 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
     if (movedByUser.current) headingRef.current?.focus();
   }, [step]);
 
+  // "Agendar otra cita" vuelve al paso 1 sin nada elegido.
+  const restart = useCallback(() => {
+    movedByUser.current = true;
+    setConfirmed(null);
+    setSelection(EMPTY_SELECTION);
+    setReason("");
+    setBookingError(null);
+    setStepError(null);
+    setStep(1);
+  }, []);
+
   const choose = useCallback((changes: Partial<Selection>) => {
     setStepError(null);
     setSelection((current) => ({ ...current, ...changes }));
@@ -169,6 +199,8 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
 
   if (base.status === "loading") return <LoadingState />;
   if (base.status === "error") return <ErrorState onRetry={() => setBaseKey((key) => key + 1)} />;
+
+  if (confirmed) return <BookingReceipt appointment={confirmed} onBookAnother={restart} />;
 
   const { pets, types } = base.data;
   if (pets.length === 0) {
@@ -196,18 +228,58 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
     5: "Hora",
   };
 
-  function goTo(next: Step) {
+  function goTo(next: View) {
     movedByUser.current = true;
     setStepError(null);
+    setBookingError(null);
     setStep(next);
   }
 
   function handleNext() {
+    if (step === REVIEW) return;
     if (!isChosen(step, selection)) {
       setStepError(`Elige ${STEP_MISSING[step]} para continuar.`);
       return;
     }
-    if (step < LAST_STEP) goTo((step + 1) as Step);
+    goTo(step < LAST_STEP ? ((step + 1) as Step) : REVIEW);
+  }
+
+  async function handleConfirm(text: string) {
+    const { petId, slot } = selection;
+    if (!petId || !type || !professionalId || !slot) return;
+    setReason(text);
+    setBookingError(null);
+    try {
+      const appointment = await createAppointment({
+        patientId: petId,
+        type,
+        startsAt: slot.startsAt,
+        ...(professionalId !== ANY_PROFESSIONAL && { professionalId }),
+        ...(text && { reason: text }),
+      });
+      setConfirmed(appointment);
+    } catch (error) {
+      if (isNetworkError(error) || !(error instanceof ApiError)) {
+        setBookingError(NETWORK_ERROR_MESSAGE);
+      } else if (isSlotTaken(error)) {
+        goTo(LAST_STEP);
+        choose({ slot: null });
+        setStepError("La franja ya no está disponible. Elige otra hora.");
+        setAvailabilityKey((key) => key + 1);
+      } else if (isActiveLimit(error)) {
+        setBookingError(
+          <>
+            Esta mascota ya tiene {MAX_ACTIVE_APPOINTMENTS_PER_PATIENT} citas activas. Cancela o
+            espera una de ellas para agendar otra.{" "}
+            <Link href={ROUTES.portalAppointments} className="font-semibold underline">
+              Ir a Mis citas
+            </Link>
+          </>,
+        );
+      } else {
+        setBookingError(error.message);
+      }
+    }
   }
 
   const summaryRows = [
@@ -231,8 +303,29 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
     { label: "Hora", value: selection.slot ? formatClinicTime(selection.slot.startsAt) : null },
   ];
 
+  const reviewRows =
+    setting && selection.slot
+      ? [
+          { label: "Mascota", value: pet?.name ?? "" },
+          { label: "Tipo de cita", value: APPOINTMENT_TYPE_LABELS[setting.type] },
+          {
+            label: proTitle,
+            value:
+              professionalId === ANY_PROFESSIONAL
+                ? "Cualquiera disponible"
+                : professional
+                  ? ownerFullName(professional)
+                  : "",
+          },
+          { label: "Fecha", value: date ? formatLongDate(date) : "" },
+          { label: "Hora", value: formatClinicTime(selection.slot.startsAt) },
+          { label: "Duración", value: durationLabel(setting.durationMinutes) },
+        ]
+      : [];
+  const reviewing = step === REVIEW;
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <div className={cn("grid gap-6", !reviewing && "lg:grid-cols-[minmax(0,1fr)_18rem]")}>
       <div className="flex flex-col gap-5">
         <ol className="flex flex-wrap gap-2 text-sm" aria-label="Pasos para agendar">
           {([1, 2, 3, 4, 5] as Step[]).map((item) => (
@@ -263,8 +356,23 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
             tabIndex={-1}
             className="text-xl font-semibold text-ink outline-none"
           >
-            Paso {step} de {LAST_STEP} · {stepTitles[step]}
+            {reviewing
+              ? "Revisa y confirma tu cita"
+              : `Paso ${step} de ${LAST_STEP} · ${stepTitles[step]}`}
           </h2>
+
+          {reviewing && (
+            <ReviewStep
+              rows={reviewRows}
+              defaultReason={reason}
+              error={bookingError}
+              onBack={(text) => {
+                setReason(text);
+                goTo(LAST_STEP);
+              }}
+              onConfirm={handleConfirm}
+            />
+          )}
 
           {step === 1 && (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -390,20 +498,22 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
             </p>
           )}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-            {step > 1 ? (
-              <Button variant="secondary" onClick={() => goTo((step - 1) as Step)}>
-                Atrás
-              </Button>
-            ) : (
-              <span />
-            )}
-            {step < LAST_STEP && <Button onClick={handleNext}>Siguiente</Button>}
-          </div>
+          {!reviewing && (
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+              {step > 1 ? (
+                <Button variant="secondary" onClick={() => goTo((step - 1) as Step)}>
+                  Atrás
+                </Button>
+              ) : (
+                <span />
+              )}
+              <Button onClick={handleNext}>{step < LAST_STEP ? "Siguiente" : "Revisar"}</Button>
+            </div>
+          )}
         </section>
       </div>
 
-      <BookingSummary rows={summaryRows} />
+      {!reviewing && <BookingSummary rows={summaryRows} />}
     </div>
   );
 }

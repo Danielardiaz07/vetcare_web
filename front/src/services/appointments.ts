@@ -1,5 +1,5 @@
-import { bookableDates, clinicInstant, isSunday } from "@/lib/clinic-time";
-import { MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
+import { bookableDates, clinicDateOf, clinicInstant, isSunday } from "@/lib/clinic-time";
+import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
 import { request } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
 import {
@@ -19,6 +19,7 @@ import type {
 } from "@/types/domain";
 
 const NOT_FOUND = 404;
+const CONFLICT = 409;
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const SUGGESTED_DATES = 3;
@@ -75,6 +76,15 @@ const MOCK_OPEN_TIME = "08:00";
 const MOCK_CLOSE_TIME = "17:00";
 const MOCK_SLOT_MINUTES = 30;
 const MOCK_BUSY_TIMES = ["09:00", "10:30", "14:00", "15:30"];
+// Simula que otra persona toma las 16:00 mientras se confirma (RN-27): sale libre y al confirmar da 409.
+const MOCK_RACE_TIME = "16:00";
+const SLOT_TAKEN_MESSAGE = "La franja ya no está disponible";
+
+// Franjas ya reservadas en los datos de prueba, por profesional e inicio.
+const mockTakenSlots = new Set<string>();
+const takenKey = (professionalId: string, startsAt: string) => `${professionalId}|${startsAt}`;
+const isTaken = (professionalId: string, startsAt: string) =>
+  mockTakenSlots.has(takenKey(professionalId, startsAt));
 
 function mockSlotsOf(
   date: string,
@@ -93,11 +103,12 @@ function mockSlotsOf(
   ) {
     const startsAt = new Date(start).toISOString();
     const busy = MOCK_BUSY_TIMES.some((time) => clinicInstant(date, time) === startsAt);
-    if (start < earliest || busy) continue;
+    const free = professionals.filter((item) => !isTaken(item.id, startsAt));
+    if (start < earliest || busy || free.length === 0) continue;
     slots.push({
       startsAt,
       endsAt: new Date(start + durationMinutes * MS_PER_MINUTE).toISOString(),
-      professionals,
+      professionals: free,
     });
   }
   return slots;
@@ -138,14 +149,39 @@ const mockAppointmentStore: Appointment[] = [];
 
 const mockNotFound = () => mockError(NOT_FOUND, "NOT_FOUND", "Cita no encontrada");
 
+const isActiveFuture = (appointment: Appointment, now: string) =>
+  (appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED") &&
+  appointment.startsAt > now;
+
 async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
-  const professionals = await listProfessionals(input.type);
-  const professional =
-    professionals.find((item) => item.id === input.professionalId) ?? professionals[0];
   const pet = mockPatients.find((item) => item.id === input.patientId);
+  if (!pet) return mockNotFound();
+  const now = new Date().toISOString();
+  const activeCount = mockAppointmentStore.filter(
+    (item) => item.patient.id === pet.id && isActiveFuture(item, now),
+  ).length;
+  if (activeCount >= MAX_ACTIVE_APPOINTMENTS_PER_PATIENT) {
+    return mockError(
+      CONFLICT,
+      "CONFLICT",
+      `Esta mascota ya tiene ${MAX_ACTIVE_APPOINTMENTS_PER_PATIENT} citas activas`,
+    );
+  }
+  const all = await listProfessionals(input.type);
+  const date = clinicDateOf(new Date(input.startsAt));
+  if (input.startsAt === clinicInstant(date, MOCK_RACE_TIME)) {
+    all.forEach((item) => mockTakenSlots.add(takenKey(item.id, input.startsAt)));
+  }
+  const candidates = all.filter(
+    (item) =>
+      (!input.professionalId || item.id === input.professionalId) &&
+      !isTaken(item.id, input.startsAt),
+  );
+  const professional = candidates[0];
+  if (!professional) return mockError(CONFLICT, "CONFLICT", SLOT_TAKEN_MESSAGE);
+  mockTakenSlots.add(takenKey(professional.id, input.startsAt));
   const durationMinutes =
     mockAppointmentTypes.find((setting) => setting.type === input.type)?.durationMinutes ?? 0;
-  if (!professional || !pet) return mockNotFound();
   const appointment: Appointment = {
     id: crypto.randomUUID(),
     type: input.type,
