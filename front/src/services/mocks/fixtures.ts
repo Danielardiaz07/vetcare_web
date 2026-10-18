@@ -1,5 +1,11 @@
 import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
-import type { Owner, Patient } from "@/types/domain";
+import type {
+  AppointmentTypeSetting,
+  Owner,
+  Patient,
+  ScheduleBlock,
+  StaffProfile,
+} from "@/types/domain";
 
 // Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
 const MOCK_EMAIL = "laura.gomez@example.com";
@@ -226,3 +232,69 @@ export const mockProfile: UserProfile = {
     address: mockOwner.address,
   },
 };
+
+const [, mockVetUser, mockGroomerUser] = mockStaffUsers;
+
+// Perfiles de personal (D-22). Camila Rojas, Felipe Ortiz y Paola Daza tienen cuenta pero aún no perfil.
+export const mockVeterinarians: StaffProfile[] = [
+  {
+    id: "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a01",
+    userId: mockVetUser?.id ?? null,
+    documentType: "CC",
+    documentNumber: "1065432198",
+    firstNames: "Natalia",
+    lastNames: "Quintero Ramos",
+    phone: "3104567890",
+    specialty: "Medicina general",
+    active: true,
+    createdAt: MOCK_CREATED_AT,
+  },
+  {
+    id: "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a02",
+    userId: mockStaffAccounts.find((user) => user.email === "andres.mejia@example.com")?.id ?? null,
+    documentType: "CC",
+    documentNumber: "1065789012",
+    firstNames: "Andrés",
+    lastNames: "Mejía Torres",
+    phone: "3157894561",
+    specialty: "Cirugía",
+    active: true,
+    createdAt: MOCK_CREATED_AT,
+  },
+];
+
+export const mockGroomers: StaffProfile[] = [
+  {
+    id: "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b01",
+    userId: mockGroomerUser?.id ?? null,
+    documentType: "CC",
+    documentNumber: "1065345678",
+    firstNames: "Valentina",
+    lastNames: "Ospina Díaz",
+    phone: "3012345678",
+    active: true,
+    createdAt: MOCK_CREATED_AT,
+  },
+];
+
+const WEEKDAYS = [1, 2, 3, 4, 5] as const;
+
+export const mockSchedules: Record<string, ScheduleBlock[]> = {
+  "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a01": WEEKDAYS.flatMap((weekday) => [
+    { weekday, startTime: "08:00", endTime: "12:00" },
+    { weekday, startTime: "14:00", endTime: "18:00" },
+  ]),
+  "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b01": WEEKDAYS.map((weekday) => ({
+    weekday,
+    startTime: "09:00",
+    endTime: "17:00",
+  })),
+};
+
+// D-21: duraciones iniciales.
+export const mockAppointmentTypes: AppointmentTypeSetting[] = [
+  { type: "GENERAL_CONSULTATION", durationMinutes: 30, professional: "VETERINARIAN" },
+  { type: "VACCINATION", durationMinutes: 30, professional: "VETERINARIAN" },
+  { type: "CHECKUP", durationMinutes: 30, professional: "VETERINARIAN" },
+  { type: "GROOMING", durationMinutes: 90, professional: "GROOMER" },
+];

@@ -28,3 +28,32 @@ export interface Patient {
   photoPath: string | null;
   active: boolean;
 }
+
+// D-22: veterinarios y estilistas son perfiles enlazados a una cuenta de Usuarios.
+export interface StaffProfile {
+  id: string;
+  userId: string | null;
+  documentType: DocumentType;
+  documentNumber: string;
+  firstNames: string;
+  lastNames: string;
+  phone: string;
+  specialty?: string;
+  active: boolean;
+  createdAt: string;
+}
+
+// weekday va de 1 (lunes) a 7 (domingo); las horas en HH:mm.
+export interface ScheduleBlock {
+  weekday: number;
+  startTime: string;
+  endTime: string;
+}
+
+export type AppointmentType = "GENERAL_CONSULTATION" | "VACCINATION" | "CHECKUP" | "GROOMING";
+
+export interface AppointmentTypeSetting {
+  type: AppointmentType;
+  durationMinutes: number;
+  professional: "VETERINARIAN" | "GROOMER";
+}
