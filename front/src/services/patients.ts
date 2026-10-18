@@ -1,12 +1,15 @@
 import { request } from "@/services/http-client";
-import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
-import { mockClinicPatients } from "@/services/mocks/fixtures";
+import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
+import { mockClinicPatients, mockOwner } from "@/services/mocks/fixtures";
 import { listOwners } from "@/services/owners";
 import type { Paginated } from "@/types/api";
 import type { Patient, Sex, Species } from "@/types/domain";
 
+const FORBIDDEN = 403;
 const NOT_FOUND = 404;
 const DEFAULT_PAGE_SIZE = 10;
+// Un propietario tiene pocas mascotas; una sola página las trae todas.
+const MY_PATIENTS_LIMIT = 100;
 
 export interface ListPatientsParams {
   page: number;
@@ -113,4 +116,31 @@ export async function deactivatePatient(id: string): Promise<void> {
     return;
   }
   return request<void>(`/patients/${id}`, { method: "DELETE" });
+}
+
+// Portal (RN-16): la API solo devuelve las mascotas activas del propietario con sesión.
+export async function getMyPatients(): Promise<Patient[]> {
+  if (isMockEnabled) {
+    const pets = isNewAccount
+      ? []
+      : mockPatientStore
+          .filter((pet) => pet.ownerId === mockOwner.id && pet.active)
+          .sort((a, b) => a.name.localeCompare(b.name));
+    return mockResponse(pets);
+  }
+  const { data } = await request<Paginated<Patient>>("/me/patients", {
+    query: { page: 1, limit: MY_PATIENTS_LIMIT },
+  });
+  return data;
+}
+
+// RN-40: una mascota de otro propietario responde 403.
+export function getMyPatient(id: string): Promise<Patient> {
+  if (isMockEnabled) {
+    const pet = mockPatientStore.find((item) => item.id === id);
+    if (!pet) return mockNotFound();
+    if (pet.ownerId !== mockOwner.id) return mockError(FORBIDDEN, "FORBIDDEN", "Acceso denegado");
+    return mockResponse(pet);
+  }
+  return request<Patient>(`/me/patients/${id}`);
 }

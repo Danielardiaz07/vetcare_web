@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
+import { PetHistory } from "@/features/patients/components/pet-history";
 
 export const metadata: Metadata = { title: "Historial clínico" };
 
-export default function PetHistoryPage() {
-  return <h1 className="text-2xl font-semibold text-ink">Historial clínico</h1>;
+type PetHistoryPageProps = {
+  params: Promise<{ petId: string }>;
+};
+
+export default async function PetHistoryPage({ params }: PetHistoryPageProps) {
+  const { petId } = await params;
+  return <PetHistory petId={petId} />;
 }
