@@ -1,4 +1,4 @@
-# 07 — Modelado de datos
+﻿# 07 — Modelado de datos
 
 ## Regla fundamental: modelado de datos realista
 
@@ -60,9 +60,9 @@ Detalles verificados:
 | Día de la semana (horario) | `SMALLINT` | 1–7 | 🔧 | ISO: 1 = lunes … 7 = domingo; `CHECK` en BD (D-22) |
 | Hora de inicio / fin (horario) | `TIME(0)` | — | 🔧 | Hora local de la clínica, sin zona; la API usa `HH:mm` en múltiplos de 30 min; `CHECK` inicio < fin (D-21, D-22) |
 | Duración de un tipo de cita (min) | `SMALLINT` | — | 🔧 | Múltiplo positivo de 30; `CHECK` en BD (D-21) |
-| Estado de la cita | `ENUM` | — | 🔧 | `SCHEDULED`, `CONFIRMED`, `ATTENDED`, `CANCELLED`, `NO_SHOW` (RN-34, D-23) |
-| Inicio / fin de la cita | `TIMESTAMPTZ(3)` | — | 🔧 | UTC; `CHECK` inicio < fin; exclusión GiST contra el cruce de franjas activas del mismo veterinario, estilista o mascota (RN-23, RN-27, RN-32, D-23) |
-| Motivo de la cita / de la cancelación | `VARCHAR` | 200 | 🔧 | Frase corta libre; el de cancelación es obligatorio (RN-30, D-23) |
+| Estado de la cita | `ENUM` | — | 🔧 | `SCHEDULED`, `CONFIRMED`, `ATTENDED`, `CANCELLED`, `NO_SHOW` (RN-34, D-26) |
+| Inicio / fin de la cita | `TIMESTAMPTZ(3)` | — | 🔧 | UTC; `CHECK` inicio < fin; exclusión GiST contra el cruce de franjas activas del mismo veterinario, estilista o mascota (RN-23, RN-27, RN-32, D-26) |
+| Motivo de la cita / de la cancelación | `VARCHAR` | 200 | 🔧 | Frase corta libre; el de cancelación es obligatorio (RN-30, D-26) |
 | Nombre del paciente | `VARCHAR` | 60 | 🔧 | Un nombre de mascota; mismo tope que los nombres de persona (D-19) |
 | Ruta de la foto del paciente | `VARCHAR` | 100 | 🔧 | Ruta del objeto en Storage `patients/<uuid>/<uuid>.<ext>` (~90 caracteres) (D-19) |
 | Especie del paciente | `ENUM` | — | 🔧 | `DOG`, `CAT`, `OTHER`; catálogo cerrado (D-19) |

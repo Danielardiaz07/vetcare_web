@@ -13,16 +13,23 @@ Fuente para los textos y flujos de pantalla. La interfaz va en español (RN-61) 
 
 **Iniciar y cerrar sesión**: correo y contraseña → “Ingresar”. “¿Olvidaste tu contraseña?” envía un enlace válido 30 min. Para salir: menú del nombre (arriba a la derecha) → “Cerrar sesión”.
 
-**Mis mascotas**: menú lateral → “Mis mascotas”: una tarjeta por mascota con foto, nombre, especie, edad y próxima cita. Al abrir la ficha, tres pestañas: **Datos**, **Historial clínico** y **Vacunas**.
+**Menú del portal**: Inicio · Mis citas · Agendar · Historial clínico · Facturas · Mi perfil, y “Cerrar sesión”.
 
-- Historial clínico: línea de tiempo de la más reciente a la más antigua, con filtros (consultas, cirugías, internaciones, exámenes).
+**Inicio**: saludo con el nombre del propietario, la próxima cita y “Tus mascotas” (una tarjeta por mascota con acceso a su historial). Las mascotas se ven en Inicio y en Mi perfil; no tienen entrada propia en el menú.
+
+**Historial clínico**: se elige la mascota y se ve su ficha con 7 pestañas: **Consultas**, **Internaciones**, **Vacunaciones**, **Medicaciones**, **Cirugías**, **Estética** y **Laboratorio**, de lo más reciente a lo más antiguo.
+
 - Vacunas (carné): verde = al día · amarillo = vence en los próximos 7 días · rojo = vencida.
 
-**Agendar cita** (asistente de 4 pasos, ≤ 3 min, RNF-06): 1) mascota → 2) tipo de cita (consulta general, vacunación, control, estética) → 3) veterinario o “Cualquiera disponible” y fecha en el calendario (franjas en verde = libres) → 4) franja, motivo y “Confirmar cita”. Se muestra el comprobante, llega un correo y, un día antes, un recordatorio.
+**Agendar cita** (asistente de 5 pasos, ≤ 3 min, RNF-06): 1) mascota → 2) tipo de cita (consulta general, vacunación, control, estética) → 3) profesional (veterinario o estilista según el tipo de cita) o “Cualquiera disponible” → 4) día → 5) hora; luego la revisión con el motivo y “Confirmar cita”. Se muestra el comprobante, llega un correo y, un día antes, un recordatorio.
+
+**Ventana de sesión**: cuando una acción pide sesión (por ejemplo, agendar desde la portada), se abre una ventana para iniciar sesión o crear cuenta sin salir de la página.
+
+**Estados de pantalla**: cada vista del portal contempla **cuenta nueva** (sin mascotas ni citas, con la acción siguiente), **cargando** y error de red con el mensaje “No pudimos cargar tus datos” y “Reintentar”.
 
 **Reprogramar o cancelar**: “Mis citas” → pestaña **Próximas** → “Reprogramar” (nueva fecha y franja) o “Cancelar” (motivo). Solo activo hasta 2 h antes (RN-28).
 
-**Facturas y perfil**: “Mis facturas” (fecha, número, total; “Ver detalle” y “Descargar PDF”). “Mi perfil”: cambiar teléfono, dirección y contraseña; “Registrar mascota”.
+**Facturas y perfil**: “Facturas” (fecha, número, total y “Descargar PDF”; no hay página de detalle). “Mi perfil”: cambiar teléfono, dirección y contraseña; “Registrar mascota”.
 
 ## 3. Panel interno
 
