@@ -46,5 +46,11 @@ export const FIELD_LIMITS = {
   SPECIALTY_MAX: 60,
 } as const;
 
+// Los mismos límites de agenda que la API (RN-21, RN-22).
+export const MIN_APPOINTMENT_LEAD_HOURS = 2;
+export const MAX_APPOINTMENT_ADVANCE_DAYS = 30;
+// D-26: las franjas y los horarios son hora de Colombia.
+export const CLINIC_TIME_ZONE = "America/Bogota";
+
 export const OTP_LENGTH = 6;
 export const OTP_RESEND_SECONDS = 60;
