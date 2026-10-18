@@ -1,10 +1,11 @@
-import { bookableDates, clinicDateOf, clinicInstant, isSunday } from "@/lib/clinic-time";
+import { addDays, bookableDates, clinicDateOf, clinicInstant, isSunday } from "@/lib/clinic-time";
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
 import { request } from "@/services/http-client";
-import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
+import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
 import {
   mockAppointmentTypes,
   mockGroomers,
+  mockOwner,
   mockPatients,
   mockVeterinarians,
 } from "@/services/mocks/fixtures";
@@ -24,6 +25,8 @@ const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const SUGGESTED_DATES = 3;
 const PAGE_SIZE = 10;
+// El máximo que acepta la API por página (MAX_PAGE_SIZE).
+const MAX_PAGE_SIZE = 100;
 // La clínica atiende pocos profesionales por tipo; una página los trae todos.
 const PROFESSIONALS_LIMIT = 100;
 
@@ -144,8 +147,82 @@ export function getAvailability(params: AvailabilityParams): Promise<Availabilit
   return request<Availability>("/appointments/availability", { query: { ...params } });
 }
 
+type MockSeed = {
+  petIndex: number;
+  type: AppointmentType;
+  status: Appointment["status"];
+  daysFromToday: number;
+  time: string;
+  reason?: string;
+  cancelReason?: string;
+};
+
+// Citas de prueba de Laura: una por estado, para ver cada color en Mis citas.
+const MOCK_SEEDS: MockSeed[] = [
+  { petIndex: 0, type: "VACCINATION", status: "CONFIRMED", daysFromToday: 3, time: "10:00" },
+  { petIndex: 1, type: "GROOMING", status: "SCHEDULED", daysFromToday: 5, time: "09:00" },
+  {
+    petIndex: 0,
+    type: "GROOMING",
+    status: "CANCELLED",
+    daysFromToday: 7,
+    time: "11:00",
+    cancelReason: "Viaje familiar",
+  },
+  {
+    petIndex: 0,
+    type: "GENERAL_CONSULTATION",
+    status: "ATTENDED",
+    daysFromToday: -20,
+    time: "08:30",
+    reason: "Se rasca mucho las orejas",
+  },
+  { petIndex: 1, type: "CHECKUP", status: "NO_SHOW", daysFromToday: -40, time: "15:00" },
+];
+
+// Corre al lunes siguiente si la fecha cae en domingo, cuando la clínica no atiende.
+const workingDay = (date: string) => (isSunday(date) ? addDays(date, 1) : date);
+
+function seedAppointments(): Appointment[] {
+  if (isNewAccount) return [];
+  const today = clinicDateOf(new Date());
+  const pets = mockPatients.filter((pet) => pet.ownerId === mockOwner.id);
+  return MOCK_SEEDS.flatMap((seed, index) => {
+    const pet = pets[seed.petIndex];
+    const professional = isGrooming(seed.type) ? mockGroomers[0] : mockVeterinarians[0];
+    const durationMinutes =
+      mockAppointmentTypes.find((setting) => setting.type === seed.type)?.durationMinutes ?? 0;
+    if (!pet || !professional) return [];
+    const startsAt = new Date(
+      clinicInstant(workingDay(addDays(today, seed.daysFromToday)), seed.time),
+    ).toISOString();
+    return [
+      {
+        id: `5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d${String(index).padStart(2, "0")}`,
+        type: seed.type,
+        status: seed.status,
+        startsAt,
+        endsAt: new Date(
+          new Date(startsAt).getTime() + durationMinutes * MS_PER_MINUTE,
+        ).toISOString(),
+        reason: seed.reason ?? null,
+        cancelReason: seed.cancelReason ?? null,
+        patient: { id: pet.id, name: pet.name },
+        professional: {
+          id: professional.id,
+          firstNames: professional.firstNames,
+          lastNames: professional.lastNames,
+        },
+      },
+    ];
+  });
+}
+
 // Las citas de prueba viven mientras la pestaña está abierta.
-const mockAppointmentStore: Appointment[] = [];
+const mockAppointmentStore: Appointment[] = isMockEnabled ? seedAppointments() : [];
+mockAppointmentStore
+  .filter((item) => item.status === "SCHEDULED" || item.status === "CONFIRMED")
+  .forEach((item) => mockTakenSlots.add(takenKey(item.professional.id, item.startsAt)));
 
 const mockNotFound = () => mockError(NOT_FOUND, "NOT_FOUND", "Cita no encontrada");
 
@@ -228,22 +305,39 @@ export function cancelAppointment(id: string, reason: string): Promise<Appointme
   });
 }
 
+// Como la API: próximas son las programadas o confirmadas desde ahora; el resto son anteriores.
 export function getMyAppointments(
   when: AppointmentsWhen,
   page = 1,
+  limit = PAGE_SIZE,
 ): Promise<Paginated<Appointment>> {
   if (isMockEnabled) {
     const now = new Date().toISOString();
+    const upcoming = (item: Appointment) =>
+      (item.status === "SCHEDULED" || item.status === "CONFIRMED") && item.startsAt >= now;
     const matches = mockAppointmentStore
-      .filter((item) => (when === "upcoming" ? item.startsAt >= now : item.startsAt < now))
-      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      .filter((item) => (when === "upcoming" ? upcoming(item) : !upcoming(item)))
+      .sort((a, b) =>
+        when === "upcoming"
+          ? a.startsAt.localeCompare(b.startsAt)
+          : b.startsAt.localeCompare(a.startsAt),
+      );
     const total = matches.length;
     return mockResponse({
-      data: matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-      meta: { page, limit: PAGE_SIZE, total, totalPages: Math.ceil(total / PAGE_SIZE) },
+      data: matches.slice((page - 1) * limit, page * limit),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   }
-  return request<Paginated<Appointment>>("/me/appointments", {
-    query: { when, page, limit: PAGE_SIZE },
-  });
+  return request<Paginated<Appointment>>("/me/appointments", { query: { when, page, limit } });
+}
+
+// La API no filtra por mascota, así que Mis citas trae todas las páginas y filtra aquí.
+export async function getAllMyAppointments(when: AppointmentsWhen): Promise<Appointment[]> {
+  const first = await getMyAppointments(when, 1, MAX_PAGE_SIZE);
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(first.meta.totalPages - 1, 0) }, (_, index) =>
+      getMyAppointments(when, index + 2, MAX_PAGE_SIZE),
+    ),
+  );
+  return [first, ...rest].flatMap((result) => result.data);
 }

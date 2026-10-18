@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/components/ui/cn";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { ROUTES } from "@/lib/constants";
+import { getMyAppointments } from "@/services/appointments";
 
 type MenuItem = {
   href: string;
@@ -60,10 +62,49 @@ function activeHref(pathname: string): string | undefined {
     .sort((a, b) => b.length - a.length)[0];
 }
 
+function UpcomingCount({ count, compact = false }: { count: number; compact?: boolean }) {
+  if (count === 0) return null;
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className={cn(
+          "inline-flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-semibold text-white",
+          compact ? "absolute -top-1 left-1/2 ml-2" : "ml-auto h-5",
+        )}
+      >
+        {count}
+      </span>
+      <span className="sr-only">, {count === 1 ? "1 próxima" : `${count} próximas`}</span>
+    </>
+  );
+}
+
 export function PortalSideMenu() {
   const pathname = usePathname();
   const current = activeHref(pathname);
   const isNewAppointment = current === ROUTES.portalNewAppointment;
+  const [upcoming, setUpcoming] = useState(0);
+
+  // Se vuelve a contar al cambiar de página, para reflejar las citas que se agendan o cancelan.
+  useEffect(() => {
+    let active = true;
+    getMyAppointments("upcoming", 1, 1)
+      .then((result) => {
+        if (active) setUpcoming(result.meta.total);
+      })
+      .catch(() => {
+        if (active) setUpcoming(0);
+      });
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+
+  const countFor = (href: string, compact?: boolean) =>
+    href === ROUTES.portalAppointments ? (
+      <UpcomingCount count={upcoming} compact={compact} />
+    ) : null;
 
   return (
     <>
@@ -84,6 +125,7 @@ export function PortalSideMenu() {
                 >
                   <Icon name={icon} className="size-5" />
                   {label}
+                  {countFor(href)}
                 </Link>
               </li>
             ))}
@@ -112,12 +154,13 @@ export function PortalSideMenu() {
                 href={href}
                 aria-current={href === current ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
+                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
                   href === current ? "text-brand-700" : "text-muted",
                 )}
               >
                 <Icon name={icon} className="size-5" />
                 {shortLabel}
+                {countFor(href, true)}
               </Link>
             </li>
           ))}

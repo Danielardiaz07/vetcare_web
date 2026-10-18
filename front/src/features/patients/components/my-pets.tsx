@@ -4,19 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { NextAppointment } from "@/features/appointments/components/next-appointment";
 import { PetCard } from "@/features/patients/components/pet-card";
+import { getMyAppointments } from "@/services/appointments";
 import { getMe } from "@/services/auth";
 import { getMyPatients } from "@/services/patients";
-import type { Patient } from "@/types/domain";
+import type { Appointment, Patient } from "@/types/domain";
 
-type HomeData = { firstName: string; pets: Patient[] };
+type HomeData = { firstName: string; pets: Patient[]; nextAppointment: Appointment | null };
 
 type HomeState = { status: "loading" } | { status: "error" } | { status: "ready"; data: HomeData };
 
 async function loadHome(): Promise<HomeData> {
-  const [profile, pets] = await Promise.all([getMe(), getMyPatients()]);
+  const [profile, pets, upcoming] = await Promise.all([
+    getMe(),
+    getMyPatients(),
+    getMyAppointments("upcoming", 1, 1),
+  ]);
   const firstName = profile.owner?.firstNames.split(" ")[0] ?? "";
-  return { firstName, pets };
+  return { firstName, pets, nextAppointment: upcoming.data[0] ?? null };
 }
 
 export function MyPets() {
@@ -43,13 +49,15 @@ export function MyPets() {
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") return <ErrorState onRetry={reload} />;
 
-  const { firstName, pets } = state.data;
+  const { firstName, pets, nextAppointment } = state.data;
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-ink">
         {firstName ? `Hola, ${firstName}` : "Hola"}
       </h1>
+
+      {pets.length > 0 && <NextAppointment appointment={nextAppointment} />}
 
       <section aria-labelledby="my-pets-title" className="flex flex-col gap-4">
         <h2 id="my-pets-title" className="text-xl font-semibold text-ink">
