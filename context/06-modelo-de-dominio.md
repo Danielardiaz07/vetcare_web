@@ -68,5 +68,5 @@ Prisma no soporta herencia. Se modela como **tablas separadas** `Owner`, `Veteri
 
 - Sin propietario no hay paciente; sin paciente no hay cita; sin cita `CONFIRMED` no hay consulta; el concepto de una consulta/servicio queda “pendiente de facturar” hasta incluirse en una factura (RN-46, RN-73).
 - Eliminación lógica (desactivar) de propietarios y pacientes (RN-14); no hay borrado físico con historial.
-- Una cita no cruza otra del mismo veterinario ni de la misma mascota en la misma franja (RN-23, RN-32), garantizado por restricción en BD **y** por la validación del Service.
+- Una cita no cruza otra del mismo veterinario ni de la misma mascota en la misma franja (RN-23, RN-32), garantizado por restricción en BD (exclusión GiST con `btree_gist`, solo sobre estados `SCHEDULED`, `CONFIRMED` y `ATTENDED`: cancelar o no asistir libera la franja) **y** por la validación del Service (D-23). Una cita tiene exactamente un profesional: veterinario, salvo `GROOMING`, que lleva estilista (`CHECK`).
 - `InvoiceItem` referencia siempre su concepto de origen (consulta, servicio o producto) (RN-73).

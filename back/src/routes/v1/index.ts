@@ -9,6 +9,8 @@ interface V1Modules {
   veterinarians: Router;
   groomers: Router;
   appointmentTypes: Router;
+  appointments: Router;
+  myAppointments: Router;
 }
 
 export function createV1Router({
@@ -20,6 +22,8 @@ export function createV1Router({
   veterinarians,
   groomers,
   appointmentTypes,
+  appointments,
+  myAppointments,
 }: V1Modules): Router {
   const router = Router();
 
@@ -34,6 +38,8 @@ export function createV1Router({
   router.use("/veterinarians", veterinarians);
   router.use("/groomers", groomers);
   router.use("/appointment-types", appointmentTypes);
+  router.use("/appointments", appointments);
+  router.use("/me/appointments", myAppointments);
 
   return router;
 }

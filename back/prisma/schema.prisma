@@ -50,6 +50,14 @@ enum AppointmentType {
   GROOMING
 }
 
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  ATTENDED
+  CANCELLED
+  NO_SHOW
+}
+
 model User {
   id                  String     @id @default(uuid()) @db.Uuid
   email               String     @unique @db.VarChar(254) // RFC 5321: 256 - "<>"
@@ -104,7 +112,8 @@ model Patient {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  owner        Owner         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  appointments Appointment[]
 
   @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
 }
@@ -121,8 +130,9 @@ model Veterinarian {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  user      User?
-  schedules Schedule[]
+  user         User?
+  schedules    Schedule[]
+  appointments Appointment[]
 }
 
 model Groomer {
@@ -136,8 +146,9 @@ model Groomer {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  user      User?
-  schedules Schedule[]
+  user         User?
+  schedules    Schedule[]
+  appointments Appointment[]
 }
 
 // Bloque de atención semanal (RN-19). Exactamente uno de veterinarianId o groomerId (CHECK en la migración).
@@ -161,6 +172,33 @@ model AppointmentTypeSetting {
   type            AppointmentType @id
   durationMinutes Int             @db.SmallInt
   updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+}
+
+// Reserva de una franja (RN-20 a RN-34). Exactamente uno de veterinarianId o groomerId (CHECK en la
+// migración, según el tipo, D-21). Las exclusiones GiST de la migración impiden el cruce de franjas
+// activas del mismo profesional o de la misma mascota (RN-23, RN-27, RN-32).
+model Appointment {
+  id             String            @id @default(uuid()) @db.Uuid
+  patientId      String            @db.Uuid
+  type           AppointmentType
+  veterinarianId String?           @db.Uuid
+  groomerId      String?           @db.Uuid
+  startsAt       DateTime          @db.Timestamptz(3)
+  endsAt         DateTime          @db.Timestamptz(3)
+  status         AppointmentStatus @default(SCHEDULED) // RN-25
+  reason         String?           @db.VarChar(200) // motivo libre del propietario o de recepción
+  cancelReason   String?           @db.VarChar(200) // RN-30: obligatorio al cancelar
+  createdAt      DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
+
+  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian? @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+  groomer      Groomer?      @relation(fields: [groomerId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, startsAt]) // "mis citas" y límite de citas activas por mascota (RN-24)
+  @@index([veterinarianId, startsAt]) // agenda por veterinario (RF-16)
+  @@index([groomerId, startsAt]) // agenda por estilista
+  @@index([startsAt]) // agenda diaria de recepción
 }
 
 model OtpCode {

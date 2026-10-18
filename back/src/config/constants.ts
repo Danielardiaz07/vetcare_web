@@ -68,6 +68,17 @@ export const MINUTES_PER_DAY = 24 * 60;
 export const WEEKDAY_MIN = 1;
 export const WEEKDAY_MAX = 7;
 
+// Colombia no tiene horario de verano: America/Bogota es UTC−5 todo el año (07 §fechas).
+export const CLINIC_UTC_OFFSET_MINUTES = -5 * 60;
+
+export const MIN_APPOINTMENT_LEAD_HOURS = 2; // RN-21, RN-28
+export const MAX_APPOINTMENT_ADVANCE_DAYS = 30; // RN-22
+export const MAX_ACTIVE_APPOINTMENTS_PER_PATIENT = 3; // RN-24
+export const NO_SHOW_GRACE_MINUTES = 15; // RN-31
+export const SUGGESTED_DATES_COUNT = 3; // RN-33
+export const AGENDA_MAX_DAYS = 7; // RF-16: vista diaria o semanal
+export const APPOINTMENT_TEXT_MAX = 200; // motivo y motivo de cancelación
+
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
