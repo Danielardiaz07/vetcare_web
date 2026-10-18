@@ -2,9 +2,11 @@ import {
   CLINIC_TIME_ZONE,
   MAX_APPOINTMENT_ADVANCE_DAYS,
   MIN_APPOINTMENT_LEAD_HOURS,
+  NO_SHOW_GRACE_MINUTES,
 } from "@/lib/constants";
 
-const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
 // D-26: Colombia no cambia de horario, siempre es UTC−5.
 const CLINIC_UTC_OFFSET = "-05:00";
@@ -22,6 +24,13 @@ const timeFormatter = new Intl.DateTimeFormat("es-CO", {
   timeZone: CLINIC_TIME_ZONE,
   hour: "numeric",
   minute: "2-digit",
+});
+
+const clinicHourFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: CLINIC_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
 });
 
 const longDateFormatter = new Intl.DateTimeFormat("es-CO", {
@@ -50,6 +59,12 @@ const MONDAY_OFFSET: Record<number, number> = { 0: 6, 1: 0, 2: 1, 3: 2, 4: 3, 5:
 export const startOfWeek = (date: string) =>
   addDays(date, -(MONDAY_OFFSET[dateAtNoon(date).getUTCDay()] ?? 0));
 
+// Día ISO (1 = lunes … 7 = domingo), como guarda la API los horarios.
+export const isoWeekday = (date: string) => (MONDAY_OFFSET[dateAtNoon(date).getUTCDay()] ?? 0) + 1;
+
+// La hora de la clínica de un instante, como HH:MM (el formato de los horarios).
+export const clinicTimeOf = (instant: string) => clinicHourFormatter.format(new Date(instant));
+
 // La hora de la clínica de ese día como instante (lo que espera la API).
 export const clinicInstant = (date: string, time: string) =>
   new Date(`${date}T${time}:00${CLINIC_UTC_OFFSET}`).toISOString();
@@ -66,6 +81,10 @@ export function bookableDates(now: Date = new Date()): string[] {
 // RN-28: el propietario reprograma o cancela solo con más de 2 horas de anticipación.
 export const isChangeable = (startsAt: string, now: Date = new Date()) =>
   new Date(startsAt).getTime() - now.getTime() > MIN_APPOINTMENT_LEAD_HOURS * MS_PER_HOUR;
+
+// RN-31: "No asistió" se habilita 15 minutos después de la hora de la cita.
+export const noShowFrom = (startsAt: string) =>
+  new Date(new Date(startsAt).getTime() + NO_SHOW_GRACE_MINUTES * MS_PER_MINUTE).toISOString();
 
 export const formatClinicTime = (instant: string) => timeFormatter.format(new Date(instant));
 

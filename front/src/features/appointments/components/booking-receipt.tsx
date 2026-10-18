@@ -16,9 +16,11 @@ const MS_PER_MINUTE = 60 * 1000;
 type BookingReceiptProps = {
   appointment: Appointment;
   onBookAnother: () => void;
+  // Recepción vuelve a la agenda en lugar de ir a Mis citas.
+  onDone?: () => void;
 };
 
-export function BookingReceipt({ appointment, onBookAnother }: BookingReceiptProps) {
+export function BookingReceipt({ appointment, onBookAnother, onDone }: BookingReceiptProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const { startsAt, endsAt } = appointment;
   const minutes = (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / MS_PER_MINUTE;
@@ -58,12 +60,16 @@ export function BookingReceipt({ appointment, onBookAnother }: BookingReceiptPro
       </div>
       <BookingDetails rows={rows} />
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Link
-          href={ROUTES.portalAppointments}
-          className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
-        >
-          Ver en Mis citas
-        </Link>
+        {onDone ? (
+          <Button onClick={onDone}>Volver a la agenda</Button>
+        ) : (
+          <Link
+            href={ROUTES.portalAppointments}
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
+          >
+            Ver en Mis citas
+          </Link>
+        )}
         <Button variant="secondary" onClick={onBookAnother}>
           Agendar otra cita
         </Button>

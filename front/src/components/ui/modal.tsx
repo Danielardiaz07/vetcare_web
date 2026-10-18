@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from "react";
+import { cn } from "./cn";
 import { Icon } from "./icon";
 
 type ModalProps = {
@@ -8,9 +9,11 @@ type ModalProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  // Para contenidos con varias columnas, como el asistente para agendar.
+  wide?: boolean;
 };
 
-export function Modal({ open, title, onClose, children }: ModalProps) {
+export function Modal({ open, title, onClose, children, wide = false }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -43,7 +46,10 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       aria-labelledby={titleId}
       onClose={handleClose}
       onClick={handleBackdropClick}
-      className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-card bg-surface p-0 text-ink backdrop:bg-navy/50"
+      className={cn(
+        "m-auto w-[calc(100%-2rem)] rounded-card bg-surface p-0 text-ink backdrop:bg-navy/50",
+        wide ? "max-w-5xl" : "max-w-lg",
+      )}
     >
       <div className="flex flex-col gap-4 p-6">
         <div className="flex items-start justify-between gap-4">

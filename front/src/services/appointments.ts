@@ -3,12 +3,20 @@ import {
   bookableDates,
   clinicDateOf,
   clinicInstant,
+  clinicTimeOf,
   isChangeable,
+  isoWeekday,
   isSunday,
+  noShowFrom,
 } from "@/lib/clinic-time";
-import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
+import {
+  MAX_ACTIVE_APPOINTMENTS_PER_PATIENT,
+  MIN_APPOINTMENT_LEAD_HOURS,
+  NO_SHOW_GRACE_MINUTES,
+} from "@/lib/constants";
 import { getMe } from "@/services/auth";
 import { request } from "@/services/http-client";
+import { getSchedule } from "@/services/staff";
 import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
 import {
   mockAppointmentTypes,
@@ -225,6 +233,13 @@ const CLINIC_SEEDS: MockSeed[] = (
   status,
   when: { daysFromToday, time },
 }));
+// RN-31: una cita de hace media hora sin llegada, para probar "No asistió".
+CLINIC_SEEDS.push({
+  petIndex: 2,
+  type: "CHECKUP",
+  status: "SCHEDULED",
+  when: { minutesFromNow: -30 },
+});
 
 function seedStart(when: MockSeed["when"], today: string): string {
   if ("minutesFromNow" in when) {
@@ -340,7 +355,7 @@ const isActiveFuture = (appointment: Appointment, now: string) =>
   appointment.startsAt > now;
 
 async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
-  const pet = mockPatients.find((item) => item.id === input.patientId);
+  const pet = mockClinicPatients.find((item) => item.id === input.patientId);
   if (!pet) return mockNotFound();
   const now = new Date().toISOString();
   const activeCount = mockAppointmentStore.filter(
@@ -495,4 +510,117 @@ async function mockAgenda({ from, to, veterinarianId, groomerId }: AgendaParams)
 export function getAgenda(params: AgendaParams): Promise<Appointment[]> {
   if (isMockEnabled) return mockAgenda(params);
   return request<Appointment[]>("/appointments", { query: { ...params } });
+}
+
+const ACTIVE_STATUSES: Appointment["status"][] = ["SCHEDULED", "CONFIRMED"];
+const isActive = (appointment: Appointment) => ACTIVE_STATUSES.includes(appointment.status);
+
+async function mockStaffUpdate(
+  id: string,
+  check: (appointment: Appointment) => string | null,
+  changes: (appointment: Appointment) => Partial<Appointment>,
+): Promise<Appointment> {
+  const appointment = mockAppointmentStore.find((item) => item.id === id);
+  if (!appointment) return mockNotFound();
+  const problem = check(appointment);
+  if (problem) return mockError(CONFLICT, "CONFLICT", problem);
+  Object.assign(appointment, changes(appointment));
+  return mockResponse({ ...appointment, owner: mockOwnerOf(appointment.patient.id) });
+}
+
+function mockReassign(id: string, professionalId: string): Promise<Appointment> {
+  return mockStaffUpdate(
+    id,
+    (appointment) =>
+      !isActive(appointment)
+        ? "La cita ya no admite cambios"
+        : isTaken(professionalId, appointment.startsAt)
+          ? SLOT_TAKEN_MESSAGE
+          : null,
+    (appointment) => {
+      const professionals = isGrooming(appointment.type) ? mockGroomers : mockVeterinarians;
+      const professional = professionals.find((item) => item.id === professionalId);
+      if (!professional) return {};
+      mockTakenSlots.delete(takenKey(appointment.professional.id, appointment.startsAt));
+      mockTakenSlots.add(takenKey(professional.id, appointment.startsAt));
+      const { firstNames, lastNames } = professional;
+      return { professional: { id: professional.id, firstNames, lastNames } };
+    },
+  );
+}
+
+const staffAction = (path: string, body?: object) => (id: string) =>
+  request<Appointment>(`/appointments/${id}/${path}`, { method: "PUT", body });
+
+// RN-31: la llegada pasa la cita de Programada a Confirmada.
+export function registerArrival(id: string): Promise<Appointment> {
+  const updated = isMockEnabled
+    ? mockStaffUpdate(
+        id,
+        (appointment) =>
+          appointment.status === "SCHEDULED"
+            ? null
+            : "Solo se puede registrar la llegada de una cita programada",
+        () => ({ status: "CONFIRMED" }),
+      )
+    : staffAction("arrival")(id);
+  return updated.then(notifyChange);
+}
+
+// RN-31: "No asistió" solo cuando pasaron 15 minutos de la hora de la cita.
+export function markNoShow(id: string): Promise<Appointment> {
+  const updated = isMockEnabled
+    ? mockStaffUpdate(
+        id,
+        (appointment) =>
+          !isActive(appointment)
+            ? "La cita ya no admite cambios"
+            : new Date() < new Date(noShowFrom(appointment.startsAt))
+              ? `Aun no han pasado ${NO_SHOW_GRACE_MINUTES} minutos desde la hora de la cita`
+              : null,
+        (appointment) => {
+          mockTakenSlots.delete(takenKey(appointment.professional.id, appointment.startsAt));
+          return { status: "NO_SHOW" };
+        },
+      )
+    : staffAction("no-show")(id);
+  return updated.then(notifyChange);
+}
+
+// RN-32: recepción pasa la cita a otro profesional del mismo tipo que esté libre.
+export function reassignAppointment(id: string, professionalId: string): Promise<Appointment> {
+  const updated = isMockEnabled
+    ? mockReassign(id, professionalId)
+    : staffAction("reassign", { professionalId })(id);
+  return updated.then(notifyChange);
+}
+
+const overlaps = (a: Appointment, b: Appointment) => a.startsAt < b.endsAt && b.startsAt < a.endsAt;
+
+// La API no da esta lista: se cruzan el horario de cada profesional con su agenda de ese día.
+export async function getReassignOptions(appointment: Appointment): Promise<Professional[]> {
+  const kind = isGrooming(appointment.type) ? "groomers" : "veterinarians";
+  const date = clinicDateOf(new Date(appointment.startsAt));
+  const weekday = isoWeekday(date);
+  const start = clinicTimeOf(appointment.startsAt);
+  const end = clinicTimeOf(appointment.endsAt);
+  const [professionals, agenda] = await Promise.all([
+    listProfessionals(appointment.type),
+    getAgenda({ from: date }),
+  ]);
+  const others = professionals.filter((item) => item.id !== appointment.professional.id);
+  const schedules = await Promise.all(others.map((item) => getSchedule(kind, item.id)));
+  return others.filter((professional, index) => {
+    const works = (schedules[index] ?? []).some(
+      (block) => block.weekday === weekday && block.startTime <= start && end <= block.endTime,
+    );
+    const busy = agenda.some(
+      (item) =>
+        item.id !== appointment.id &&
+        item.professional.id === professional.id &&
+        isActive(item) &&
+        overlaps(item, appointment),
+    );
+    return works && !busy;
+  });
 }
