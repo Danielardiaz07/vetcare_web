@@ -95,3 +95,46 @@ export interface Appointment {
   // Solo para el personal: el propietario no recibe este dato en sus citas.
   owner?: { id: string; firstNames: string; lastNames: string; phone: string };
 }
+
+type StaffName = { id: string; firstNames: string; lastNames: string };
+
+export interface Consultation {
+  id: string;
+  appointmentId: string;
+  patientId: string;
+  veterinarian: StaffName;
+  symptoms: string;
+  weightKg: number;
+  temperatureC: number;
+  diagnosis: string;
+  treatment: string;
+  prescription: string | null;
+  // RN-42: solo llega al personal; el propietario nunca la recibe.
+  internalNotes?: string | null;
+  cost: number;
+  createdAt: string;
+}
+
+export interface Vaccination {
+  id: string;
+  patientId: string;
+  vaccine: { id: string; name: string };
+  veterinarian: StaffName;
+  lot: string;
+  appliedAt: string;
+  nextDoseAt: string | null;
+  price: number;
+  createdAt: string;
+}
+
+// RN-49: estado de la última dosis de cada vacuna en el carné.
+export type VaccineStatus = "UP_TO_DATE" | "DUE_SOON" | "OVERDUE";
+
+export interface VaccinationCardEntry extends Vaccination {
+  status: VaccineStatus;
+}
+
+// RN-41: el historial llega del más reciente al más antiguo.
+export type HistoryEntry =
+  | { kind: "CONSULTATION"; date: string; consultation: Consultation }
+  | { kind: "VACCINATION"; date: string; vaccination: Vaccination };

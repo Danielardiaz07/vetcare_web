@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -13,7 +14,7 @@ import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
 import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
 import { clinicDateOf, formatClinicTime, formatLongDate, noShowFrom } from "@/lib/clinic-time";
-import { NO_SHOW_GRACE_MINUTES } from "@/lib/constants";
+import { NO_SHOW_GRACE_MINUTES, ROUTES } from "@/lib/constants";
 import {
   getReassignOptions,
   markNoShow,
@@ -29,6 +30,8 @@ type AppointmentDetailProps = {
   appointment: Appointment | null;
   // Registrar llegada, No asistió y Reasignar son de recepción (RF-16).
   canManage: boolean;
+  // El veterinario abre la atención de su cita Confirmada (RN-43).
+  canAttend: boolean;
   onClose: () => void;
   onChanged: (appointment: Appointment, message: string) => void;
 };
@@ -36,6 +39,7 @@ type AppointmentDetailProps = {
 export function AppointmentDetail({
   appointment,
   canManage,
+  canAttend,
   onClose,
   onChanged,
 }: AppointmentDetailProps) {
@@ -46,6 +50,14 @@ export function AppointmentDetail({
           <BookingDetails rows={detailRows(appointment)} />
           {canManage && isActive(appointment) && (
             <Actions key={appointment.id} appointment={appointment} onChanged={onChanged} />
+          )}
+          {canAttend && appointment.status === "CONFIRMED" && (
+            <Link
+              href={`${ROUTES.panelAppointmentAttention(appointment.id)}?date=${clinicDateOf(new Date(appointment.startsAt))}`}
+              className="inline-flex min-h-11 items-center justify-center self-start rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
+            >
+              Registrar atención
+            </Link>
           )}
         </div>
       )}
