@@ -43,6 +43,7 @@ export const FIELD_LIMITS = {
   PATIENT_NAME_MAX: 60,
   BREED_MAX: 60,
   WEIGHT_KG_MAX: 999.9,
+  SPECIALTY_MAX: 60,
 } as const;
 
 export const OTP_LENGTH = 6;
