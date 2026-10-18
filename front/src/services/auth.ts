@@ -8,6 +8,7 @@ import {
   mockOwner,
   mockProfile,
   mockSessionUser,
+  mockStaffUsers,
   mockUnlinkedOwner,
 } from "@/services/mocks/fixtures";
 import type { LoginResponse, RegisterResponse, SessionUser, UserProfile } from "@/types/auth";
@@ -16,17 +17,34 @@ const UNAUTHORIZED = 401;
 const CONFLICT = 409;
 const UNPROCESSABLE_ENTITY = 422;
 const MOCK_SESSION_KEY = "vetcare-mock-session";
-const mockSession: LoginResponse = { accessToken: "mock-access-token", user: mockSessionUser };
+const MOCK_ACCESS_TOKEN = "mock-access-token";
 
 // Sin API no hay cookie de refresh; la sesión de prueba se recuerda en la pestaña para sobrevivir a una recarga.
 const mockSessionStore = {
-  has: () => sessionStorage.getItem(MOCK_SESSION_KEY) !== null,
-  save: () => sessionStorage.setItem(MOCK_SESSION_KEY, "1"),
+  email: () => sessionStorage.getItem(MOCK_SESSION_KEY),
+  save: (email: string) => sessionStorage.setItem(MOCK_SESSION_KEY, email),
   clear: () => sessionStorage.removeItem(MOCK_SESSION_KEY),
 };
 
 // Cuentas creadas con el registro de prueba; viven solo mientras la pestaña está abierta.
 const mockAccounts = new Map<string, string>();
+
+let mockCurrentUser: SessionUser | null = null;
+
+function findMockUser(email: string): SessionUser | undefined {
+  if (email === mockSessionUser.email || mockAccounts.has(email)) {
+    return { ...mockSessionUser, email };
+  }
+  return mockStaffUsers.find((user) => user.email === email);
+}
+
+const mockPasswordFor = (email: string) => mockAccounts.get(email) ?? MOCK_PASSWORD;
+
+function mockSessionOf(user: SessionUser): Promise<LoginResponse> {
+  mockCurrentUser = user;
+  mockSessionStore.save(user.email);
+  return mockResponse({ accessToken: MOCK_ACCESS_TOKEN, user });
+}
 
 let restoreInFlight: Promise<SessionUser | null> | null = null;
 
@@ -91,15 +109,12 @@ export function resendOtp(email: string): Promise<void> {
   });
 }
 
-async function mockLogin({ email, password }: LoginInput): Promise<LoginResponse> {
-  const expectedPassword =
-    email === mockSessionUser.email ? MOCK_PASSWORD : mockAccounts.get(email);
-  if (password !== expectedPassword) {
+function mockLogin({ email, password }: LoginInput): Promise<LoginResponse> {
+  const user = findMockUser(email);
+  if (!user || password !== mockPasswordFor(email)) {
     return mockError(UNAUTHORIZED, "UNAUTHORIZED", "Correo o contraseña incorrectos");
   }
-  const session = await mockResponse({ ...mockSession, user: { ...mockSessionUser, email } });
-  mockSessionStore.save();
-  return session;
+  return mockSessionOf(user);
 }
 
 export async function login(input: LoginInput): Promise<SessionUser> {
@@ -116,6 +131,7 @@ export async function login(input: LoginInput): Promise<SessionUser> {
 export async function logout(): Promise<void> {
   try {
     if (isMockEnabled) {
+      mockCurrentUser = null;
       mockSessionStore.clear();
       await mockResponse(undefined);
     } else {
@@ -127,8 +143,11 @@ export async function logout(): Promise<void> {
 }
 
 function fetchSession(): Promise<LoginResponse | null> {
-  if (isMockEnabled)
-    return mockSessionStore.has() ? mockResponse(mockSession) : Promise.resolve(null);
+  if (isMockEnabled) {
+    const email = mockSessionStore.email();
+    const user = email ? findMockUser(email) : undefined;
+    return user ? mockSessionOf(user) : Promise.resolve(null);
+  }
   return request<LoginResponse>(API_REFRESH_PATH, { method: "POST", skipAuthRefresh: true });
 }
 
@@ -143,7 +162,12 @@ export function restoreSession(): Promise<SessionUser | null> {
   return restoreInFlight;
 }
 
+function mockProfileOf({ id, email, role }: SessionUser): UserProfile {
+  if (role === "OWNER") return { ...mockProfile, id, email };
+  return { id, email, role, status: "ACTIVE", owner: null };
+}
+
 export function getMe(): Promise<UserProfile> {
-  if (isMockEnabled) return mockResponse(mockProfile);
+  if (isMockEnabled) return mockResponse(mockProfileOf(mockCurrentUser ?? mockSessionUser));
   return request<UserProfile>("/users/me");
 }

@@ -11,6 +11,14 @@ export const ROUTES = {
   portalProfile: "/portal/profile",
   portalNewPet: "/portal/pets/new",
   panel: "/panel",
+  panelAgenda: "/panel/agenda",
+  panelOwners: "/panel/owners",
+  panelPatients: "/panel/patients",
+  panelAttention: "/panel/attention",
+  panelAppointmentAttention: (appointmentId: string) => `/panel/attention/${appointmentId}`,
+  panelInvoices: "/panel/invoices",
+  panelUsers: "/panel/users",
+  panelStaff: "/panel/staff",
   // El texto de la Ley 1581 va en el pie de la portada.
   dataPolicy: "/#tratamiento-de-datos",
 } as const;
