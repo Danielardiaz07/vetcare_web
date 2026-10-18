@@ -1,7 +1,7 @@
 import { API_REFRESH_PATH } from "@/lib/constants";
 import type { LoginInput, RegisterInput } from "@/features/auth/schemas";
 import { request, setAccessToken } from "@/services/http-client";
-import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
+import { isMockEnabled, mockDelay, mockError, mockResponse } from "@/services/mocks";
 import {
   MOCK_OTP_CODE,
   MOCK_PASSWORD,
@@ -40,10 +40,12 @@ function findMockUser(email: string): SessionUser | undefined {
 
 const mockPasswordFor = (email: string) => mockAccounts.get(email) ?? MOCK_PASSWORD;
 
-function mockSessionOf(user: SessionUser): Promise<LoginResponse> {
+// El escenario network-error no corta la sesión: sin ella no se verían los errores de cada pantalla.
+async function mockSessionOf(user: SessionUser): Promise<LoginResponse> {
   mockCurrentUser = user;
   mockSessionStore.save(user.email);
-  return mockResponse({ accessToken: MOCK_ACCESS_TOKEN, user });
+  await mockDelay();
+  return { accessToken: MOCK_ACCESS_TOKEN, user };
 }
 
 let restoreInFlight: Promise<SessionUser | null> | null = null;
