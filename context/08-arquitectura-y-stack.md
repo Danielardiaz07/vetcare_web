@@ -252,6 +252,7 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `/portal/pets/new` | Propietario | Agregar mascota |
 | `/panel/agenda` | Recepcionista, veterinario, estilista | Agenda (Mi agenda para veterinario y estilista) |
 | `/panel/owners` | Recepcionista | Propietarios |
+| `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas y desactivar |
 | `/panel/patients` | Recepcionista, veterinario | Pacientes |
 | `/panel/attention` | Veterinario | Atención: elegir la cita por atender (destino del menú) |
 | `/panel/attention/[appointmentId]` | Veterinario | Atención de la cita |

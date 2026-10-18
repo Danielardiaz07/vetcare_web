@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { PasswordField } from "@/features/auth/components/password-field";
 import { isNetworkError, NETWORK_ERROR_MESSAGE } from "@/features/auth/errors";
 import {
+  DOCUMENT_TYPE_LABELS,
   REGISTER_DOCUMENT_TYPES,
   registerSchema,
   type RegisterInput,
@@ -22,13 +23,6 @@ import { ApiError } from "@/services/http-client";
 
 const CONFLICT = 409;
 const TOO_MANY_REQUESTS = 429;
-
-const DOCUMENT_TYPE_LABELS: Record<(typeof REGISTER_DOCUMENT_TYPES)[number], string> = {
-  CC: "Cédula de ciudadanía",
-  CE: "Cédula de extranjería",
-  TI: "Tarjeta de identidad",
-  PA: "Pasaporte",
-};
 
 type RegisterError = { kind: "email-taken" } | { kind: "message"; text: string };
 

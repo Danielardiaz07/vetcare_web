@@ -9,6 +9,13 @@ export const REGISTER_DOCUMENT_TYPES = [
   "PA",
 ] as const satisfies readonly DocumentType[];
 
+export const DOCUMENT_TYPE_LABELS: Record<(typeof REGISTER_DOCUMENT_TYPES)[number], string> = {
+  CC: "Cédula de ciudadanía",
+  CE: "Cédula de extranjería",
+  TI: "Tarjeta de identidad",
+  PA: "Pasaporte",
+};
+
 const {
   EMAIL_MAX,
   PASSWORD_MIN,
@@ -51,42 +58,42 @@ export const loginSchema = z.object({
     .max(PASSWORD_MAX, `La contraseña debe tener máximo ${PASSWORD_MAX} caracteres`),
 });
 
-// RN-01, RN-02 y RN-60
-export const registerSchema = z
-  .object({
-    documentType: z.enum(REGISTER_DOCUMENT_TYPES, "Selecciona el tipo de documento"),
-    documentNumber: z
-      .string()
-      .trim()
-      .regex(
-        new RegExp(`^\\d{${DOCUMENT_NUMBER_MIN},${DOCUMENT_NUMBER_MAX}}$`),
-        `El documento debe tener entre ${DOCUMENT_NUMBER_MIN} y ${DOCUMENT_NUMBER_MAX} dígitos`,
-      ),
-    firstNames: nameField("Los nombres"),
-    lastNames: nameField("Los apellidos"),
-    email: emailField,
-    phone: z
-      .string()
-      .trim()
-      .regex(
-        new RegExp(`^3\\d{${PHONE_DIGITS - 1}}$`),
-        `El celular debe tener ${PHONE_DIGITS} dígitos y empezar por 3`,
-      ),
-    address: z
-      .string()
-      .trim()
-      .max(ADDRESS_MAX, `La dirección admite máximo ${ADDRESS_MAX} caracteres`)
-      .optional(),
-    password: passwordField,
-    confirmPassword: z.string().min(1, "Confirma tu contraseña"),
-    acceptDataPolicy: z
-      .boolean()
-      .refine((accepted) => accepted, "Debes aceptar el tratamiento de tus datos personales"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Las contraseñas no coinciden",
-  });
+// RN-01, RN-02 y RN-60. Sin el .refine para que recepción lo reutilice con .omit.
+export const registerFieldsSchema = z.object({
+  documentType: z.enum(REGISTER_DOCUMENT_TYPES, "Selecciona el tipo de documento"),
+  documentNumber: z
+    .string()
+    .trim()
+    .regex(
+      new RegExp(`^\\d{${DOCUMENT_NUMBER_MIN},${DOCUMENT_NUMBER_MAX}}$`),
+      `El documento debe tener entre ${DOCUMENT_NUMBER_MIN} y ${DOCUMENT_NUMBER_MAX} dígitos`,
+    ),
+  firstNames: nameField("Los nombres"),
+  lastNames: nameField("Los apellidos"),
+  email: emailField,
+  phone: z
+    .string()
+    .trim()
+    .regex(
+      new RegExp(`^3\\d{${PHONE_DIGITS - 1}}$`),
+      `El celular debe tener ${PHONE_DIGITS} dígitos y empezar por 3`,
+    ),
+  address: z
+    .string()
+    .trim()
+    .max(ADDRESS_MAX, `La dirección admite máximo ${ADDRESS_MAX} caracteres`)
+    .optional(),
+  password: passwordField,
+  confirmPassword: z.string().min(1, "Confirma tu contraseña"),
+  acceptDataPolicy: z
+    .boolean()
+    .refine((accepted) => accepted, "Debes aceptar el tratamiento de tus datos personales"),
+});
+
+export const registerSchema = registerFieldsSchema.refine(
+  (data) => data.password === data.confirmPassword,
+  { path: ["confirmPassword"], message: "Las contraseñas no coinciden" },
+);
 
 export const otpSchema = z.object({
   code: z

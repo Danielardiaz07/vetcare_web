@@ -14,7 +14,75 @@ export const mockOwner: Owner = {
   phone: "3001234567",
   address: "Calle 16 # 12-45, Valledupar",
   active: true,
+  hasAccount: true,
 };
+
+// Propietarios que ve recepción: Laura y cinco más.
+export const mockOwners: Owner[] = [
+  mockOwner,
+  ...(
+    [
+      [
+        "CC",
+        "1065765432",
+        "Carlos Andrés",
+        "Ruiz Mendoza",
+        "carlos.ruiz@example.com",
+        "3104567890",
+        false,
+      ],
+      [
+        "CC",
+        "77123456",
+        "Rosa Elena",
+        "Daza Pimienta",
+        "rosa.daza@example.com",
+        "3159876543",
+        true,
+      ],
+      [
+        "CE",
+        "4567890",
+        "Martín",
+        "Fernández López",
+        "martin.fernandez@example.com",
+        "3201112233",
+        false,
+      ],
+      [
+        "CC",
+        "1003456789",
+        "Valentina",
+        "Ortega Quintero",
+        "valentina.ortega@example.com",
+        "3014445566",
+        true,
+      ],
+      [
+        "TI",
+        "1065987654",
+        "Samuel",
+        "Pérez Arias",
+        "samuel.perez@example.com",
+        "3127778899",
+        false,
+      ],
+    ] as const
+  ).map(
+    ([documentType, documentNumber, firstNames, lastNames, email, phone, hasAccount], index) => ({
+      id: `6a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c${String(index).padStart(2, "0")}`,
+      documentType,
+      documentNumber,
+      firstNames,
+      lastNames,
+      email,
+      phone,
+      address: null,
+      active: index !== 3,
+      hasAccount,
+    }),
+  ),
+];
 
 export const mockPatients: Patient[] = [
   {
