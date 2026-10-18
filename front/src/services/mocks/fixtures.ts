@@ -1,4 +1,4 @@
-import type { SessionUser, UserProfile } from "@/types/auth";
+import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
 import type { Owner, Patient } from "@/types/domain";
 
 // Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
@@ -85,6 +85,37 @@ export const mockStaffUsers: SessionUser[] = [
     role: "ADMIN",
     ownerId: null,
   },
+];
+
+const MOCK_CREATED_AT = "2026-09-01T13:00:00.000Z";
+
+// Cuentas que ve el administrador en Usuarios: el personal de prueba más otras ocho.
+export const mockStaffAccounts: StaffUser[] = [
+  ...mockStaffUsers.map(({ id, email, role }) => ({
+    id,
+    email,
+    role: role as StaffUser["role"],
+    status: "ACTIVE" as const,
+    createdAt: MOCK_CREATED_AT,
+  })),
+  ...(
+    [
+      ["andres.mejia@example.com", "VETERINARIAN", "ACTIVE"],
+      ["camila.rojas@example.com", "VETERINARIAN", "ACTIVE"],
+      ["diana.castro@example.com", "RECEPTIONIST", "SUSPENDED"],
+      ["felipe.ortiz@example.com", "GROOMER", "ACTIVE"],
+      ["juliana.vega@example.com", "RECEPTIONIST", "ACTIVE"],
+      ["mateo.suarez@example.com", "VETERINARIAN", "SUSPENDED"],
+      ["paola.daza@example.com", "GROOMER", "ACTIVE"],
+      ["sergio.arias@example.com", "ADMIN", "ACTIVE"],
+    ] as const
+  ).map(([email, role, status], index) => ({
+    id: `9c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e${String(index).padStart(2, "0")}`,
+    email,
+    role,
+    status,
+    createdAt: MOCK_CREATED_AT,
+  })),
 ];
 
 export const mockProfile: UserProfile = {

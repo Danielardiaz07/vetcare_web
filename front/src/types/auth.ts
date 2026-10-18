@@ -36,3 +36,11 @@ export interface UserProfile {
   status: UserStatus;
   owner: OwnerSummary | null;
 }
+
+export interface StaffUser {
+  id: string;
+  email: string;
+  role: Exclude<Role, "OWNER">;
+  status: UserStatus;
+  createdAt: string;
+}
