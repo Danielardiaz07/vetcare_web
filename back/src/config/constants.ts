@@ -79,6 +79,21 @@ export const SUGGESTED_DATES_COUNT = 3; // RN-33
 export const AGENDA_MAX_DAYS = 7; // RF-16: vista diaria o semanal
 export const APPOINTMENT_TEXT_MAX = 200; // motivo y motivo de cancelación
 
+export const VACCINE_DUE_SOON_DAYS = 7; // RN-49
+export const IVA_RATE_PERCENT = 19; // RN-71
+export const MONEY_MAX = 9_999_999_999.99; // DECIMAL(12,2)
+export const MONEY_DECIMALS = 2;
+
+// Mismos topes que las columnas de Consultation, Vaccination e Invoice.
+export const ClinicalLimit = {
+  CLINICAL_TEXT_MAX: 500, // síntomas, diagnóstico, tratamiento
+  LONG_TEXT_MAX: 1000, // fórmula y notas internas
+  TEMPERATURE_MAX: 99.9,
+  LOT_MAX: 30,
+  VACCINE_NAME_MAX: 60,
+  VOID_REASON_MAX: 200,
+} as const;
+
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;

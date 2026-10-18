@@ -58,6 +58,17 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum InvoiceStatus {
+  PAID
+  VOIDED
+}
+
 model User {
   id                  String     @id @default(uuid()) @db.Uuid
   email               String     @unique @db.VarChar(254) // RFC 5321: 256 - "<>"
@@ -96,6 +107,7 @@ model Owner {
 
   user     User?
   patients Patient[]
+  invoices Invoice[]
 }
 
 model Patient {
@@ -112,8 +124,10 @@ model Patient {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  owner        Owner         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  appointments Appointment[]
+  owner         Owner          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  appointments  Appointment[]
+  consultations Consultation[]
+  vaccinations  Vaccination[]
 
   @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
 }
@@ -130,9 +144,11 @@ model Veterinarian {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  user         User?
-  schedules    Schedule[]
-  appointments Appointment[]
+  user          User?
+  schedules     Schedule[]
+  appointments  Appointment[]
+  consultations Consultation[]
+  vaccinations  Vaccination[]
 }
 
 model Groomer {
@@ -146,9 +162,11 @@ model Groomer {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  user         User?
-  schedules    Schedule[]
-  appointments Appointment[]
+  user          User?
+  schedules     Schedule[]
+  appointments  Appointment[]
+  consultations Consultation[]
+  vaccinations  Vaccination[]
 }
 
 // Bloque de atención semanal (RN-19). Exactamente uno de veterinarianId o groomerId (CHECK en la migración).
@@ -194,11 +212,105 @@ model Appointment {
   patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
   veterinarian Veterinarian? @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
   groomer      Groomer?      @relation(fields: [groomerId], references: [id], onDelete: Restrict)
+  consultation Consultation?
 
   @@index([patientId, startsAt]) // "mis citas" y límite de citas activas por mascota (RN-24)
   @@index([veterinarianId, startsAt]) // agenda por veterinario (RF-16)
   @@index([groomerId, startsAt]) // agenda por estilista
   @@index([startsAt]) // agenda diaria de recepción
+}
+
+// RN-43 a RN-46: una consulta por cita CONFIRMED; la fórmula es texto libre porque el inventario está en Reserva (D-27).
+model Consultation {
+  id             String   @id @default(uuid()) @db.Uuid
+  appointmentId  String   @unique @db.Uuid
+  patientId      String   @db.Uuid
+  veterinarianId String   @db.Uuid
+  symptoms       String   @db.VarChar(500)
+  weightKg       Decimal  @db.Decimal(5, 2)
+  temperatureC   Decimal  @db.Decimal(3, 1) // 0,0 a 99,9 °C
+  diagnosis      String   @db.VarChar(500) // RN-45
+  treatment      String   @db.VarChar(500) // RN-45
+  prescription   String?  @db.VarChar(1000) // fórmula en texto libre
+  internalNotes  String?  @db.VarChar(1000) // RN-42: nunca se muestra al propietario
+  cost           Decimal  @db.Decimal(12, 2) // COP
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  appointment  Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+  invoiceItem  InvoiceItem?
+  groomer      Groomer?     @relation(fields: [groomerId], references: [id])
+  groomerId    String?      @db.Uuid
+
+  @@index([patientId, createdAt]) // historial (RN-41)
+}
+
+// Catálogo mínimo de vacunas con precio de venta (D-27); sin stock hasta HU-18.
+model Vaccine {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String        @unique @db.VarChar(60)
+  price        Decimal       @db.Decimal(12, 2)
+  active       Boolean       @default(true)
+  vaccinations Vaccination[]
+}
+
+model Vaccination {
+  id             String    @id @default(uuid()) @db.Uuid
+  patientId      String    @db.Uuid
+  veterinarianId String    @db.Uuid
+  vaccineId      String    @db.Uuid
+  lot            String    @db.VarChar(30)
+  appliedAt      DateTime  @db.Date // RN-48
+  nextDoseAt     DateTime? @db.Date
+  price          Decimal   @db.Decimal(12, 2) // precio del catálogo al aplicar
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+  vaccine      Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
+  invoiceItem  InvoiceItem?
+  groomer      Groomer?     @relation(fields: [groomerId], references: [id])
+  groomerId    String?      @db.Uuid
+
+  @@index([patientId, appliedAt])
+}
+
+// RN-70 a RN-76. El número es consecutivo y se muestra como FAC-000001 (D-27).
+model Invoice {
+  id            String        @id @default(uuid()) @db.Uuid
+  number        Int           @unique @default(autoincrement())
+  ownerId       String        @db.Uuid
+  status        InvoiceStatus @default(PAID)
+  paymentMethod PaymentMethod
+  subtotal      Decimal       @db.Decimal(12, 2)
+  tax           Decimal       @db.Decimal(12, 2)
+  total         Decimal       @db.Decimal(12, 2)
+  voidReason    String?       @db.VarChar(200) // RN-74
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+
+  owner Owner         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  items InvoiceItem[]
+
+  @@index([ownerId, createdAt])
+}
+
+// RN-73: cada detalle referencia su concepto de origen (una consulta o una vacunación).
+model InvoiceItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  invoiceId      String  @db.Uuid
+  consultationId String? @unique @db.Uuid
+  vaccinationId  String? @unique @db.Uuid
+  description    String  @db.VarChar(120)
+  amount         Decimal @db.Decimal(12, 2)
+  taxed          Boolean @default(true) // RN-71, D-27
+
+  invoice      Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  consultation Consultation? @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  vaccination  Vaccination?  @relation(fields: [vaccinationId], references: [id], onDelete: Restrict)
+
+  @@index([invoiceId])
 }
 
 model OtpCode {

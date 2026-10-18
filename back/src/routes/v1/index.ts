@@ -11,6 +11,10 @@ interface V1Modules {
   appointmentTypes: Router;
   appointments: Router;
   myAppointments: Router;
+  clinical: Router;
+  myClinical: Router;
+  invoices: Router;
+  myInvoices: Router;
 }
 
 export function createV1Router({
@@ -24,6 +28,10 @@ export function createV1Router({
   appointmentTypes,
   appointments,
   myAppointments,
+  clinical,
+  myClinical,
+  invoices,
+  myInvoices,
 }: V1Modules): Router {
   const router = Router();
 
@@ -40,6 +48,10 @@ export function createV1Router({
   router.use("/appointment-types", appointmentTypes);
   router.use("/appointments", appointments);
   router.use("/me/appointments", myAppointments);
+  router.use("/me/patients", myClinical);
+  router.use("/me/invoices", myInvoices);
+  router.use("/invoices", invoices);
+  router.use(clinical);
 
   return router;
 }

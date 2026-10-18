@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-10-19 · 04, 07, 08, 12 · MVP clínico y de facturación (HU-12 a HU-16; RF-09, 10, 18, 19, 23): tablas `Consultation`, `Vaccine`, `Vaccination`, `Invoice` e `InvoiceItem` con migraciones; endpoints de consulta, vacunación, historial, carné y facturas con IVA 19 %; RN-47 aplazada; P-04 y P-07 resueltos (D-27).
 - 2026-10-19 · 06, 07, 08, 12 · Motor de citas (HU-08, 09, 10, 11; RF-11, 12, 13, 16): tabla `Appointment` con su migración y exclusiones GiST contra cruces; endpoints de disponibilidad, agendar, reprogramar, cancelar, llegada, inasistencia, reasignar, agenda y “mis citas”; supuestos en D-26 (RN-20 a RN-34).
 - 2026-10-17 · 08, 12, 13 · Diseño del frontend: identidad visual, rutas, agendar en 5 pasos, datos de prueba y rewrites de la API (D-23 a D-25).
 - 2026-10-17 · 04, 06, 07, 08, 12 · Personal y horarios (HU-06, RF-07): tablas `Veterinarian`, `Groomer`, `Schedule` y `AppointmentTypeSetting` con su migración; endpoints `/veterinarians`, `/groomers`, sus `/schedules` y `/appointment-types`; franjas de 30 min y duraciones iniciales 30/30/30/90 (D-21, D-22, RN-19); P-06 resuelto.
