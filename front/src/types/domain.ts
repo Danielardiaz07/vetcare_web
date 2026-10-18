@@ -92,4 +92,6 @@ export interface Appointment {
   cancelReason: string | null;
   patient: { id: string; name: string };
   professional: Professional;
+  // Solo para el personal: el propietario no recibe este dato en sus citas.
+  owner?: { id: string; firstNames: string; lastNames: string; phone: string };
 }

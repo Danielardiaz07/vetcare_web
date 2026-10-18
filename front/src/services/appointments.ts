@@ -7,12 +7,14 @@ import {
   isSunday,
 } from "@/lib/clinic-time";
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
+import { getMe } from "@/services/auth";
 import { request } from "@/services/http-client";
 import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
 import {
   mockAppointmentTypes,
+  mockClinicPatients,
   mockGroomers,
-  mockOwner,
+  mockOwners,
   mockPatients,
   mockVeterinarians,
 } from "@/services/mocks/fixtures";
@@ -22,6 +24,7 @@ import type {
   AppointmentType,
   Availability,
   AvailableSlot,
+  Patient,
   Professional,
   StaffProfile,
 } from "@/types/domain";
@@ -156,6 +159,8 @@ export function getAvailability(params: AvailabilityParams): Promise<Availabilit
 
 type MockSeed = {
   petIndex: number;
+  // Por defecto, el primer veterinario o estilista de los datos de prueba.
+  professionalIndex?: number;
   type: AppointmentType;
   status: Appointment["status"];
   // Día y hora de la clínica, o minutos desde ahora para la cita que ya no se puede cambiar.
@@ -197,6 +202,30 @@ const MOCK_SEEDS: MockSeed[] = [
   },
 ];
 
+// Citas de otros propietarios, para que la agenda del panel tenga movimiento esta semana.
+const CLINIC_SEEDS: MockSeed[] = (
+  [
+    [0, 0, "GENERAL_CONSULTATION", "ATTENDED", 0, "08:00"],
+    [1, 0, "VACCINATION", "CONFIRMED", 0, "11:00"],
+    [2, 1, "CHECKUP", "SCHEDULED", 0, "09:30"],
+    [0, 0, "GROOMING", "SCHEDULED", 0, "14:00"],
+    [3, 1, "GENERAL_CONSULTATION", "SCHEDULED", 0, "15:00"],
+    [2, 0, "VACCINATION", "SCHEDULED", 1, "08:30"],
+    [1, 0, "GROOMING", "SCHEDULED", 1, "10:00"],
+    [3, 0, "CHECKUP", "SCHEDULED", 2, "14:30"],
+    [0, 1, "CHECKUP", "SCHEDULED", 2, "11:00"],
+    [1, 0, "GENERAL_CONSULTATION", "SCHEDULED", 4, "09:00"],
+    [2, 0, "GROOMING", "SCHEDULED", 4, "09:00"],
+    [0, 0, "VACCINATION", "NO_SHOW", -1, "10:00"],
+  ] as const
+).map(([petIndex, professionalIndex, type, status, daysFromToday, time]) => ({
+  petIndex,
+  professionalIndex,
+  type,
+  status,
+  when: { daysFromToday, time },
+}));
+
 function seedStart(when: MockSeed["when"], today: string): string {
   if ("minutesFromNow" in when) {
     return new Date(Date.now() + when.minutesFromNow * MS_PER_MINUTE).toISOString();
@@ -207,20 +236,19 @@ function seedStart(when: MockSeed["when"], today: string): string {
 // Corre al lunes siguiente si la fecha cae en domingo, cuando la clínica no atiende.
 const workingDay = (date: string) => (isSunday(date) ? addDays(date, 1) : date);
 
-function seedAppointments(): Appointment[] {
-  if (isNewAccount) return [];
+function buildSeeds(seeds: MockSeed[], pets: Patient[], idPrefix: string): Appointment[] {
   const today = clinicDateOf(new Date());
-  const pets = mockPatients.filter((pet) => pet.ownerId === mockOwner.id);
-  return MOCK_SEEDS.flatMap((seed, index) => {
+  return seeds.flatMap((seed, index) => {
     const pet = pets[seed.petIndex];
-    const professional = isGrooming(seed.type) ? mockGroomers[0] : mockVeterinarians[0];
+    const professionals = isGrooming(seed.type) ? mockGroomers : mockVeterinarians;
+    const professional = professionals[seed.professionalIndex ?? 0];
     const durationMinutes =
       mockAppointmentTypes.find((setting) => setting.type === seed.type)?.durationMinutes ?? 0;
     if (!pet || !professional) return [];
     const startsAt = seedStart(seed.when, today);
     return [
       {
-        id: `5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d${String(index).padStart(2, "0")}`,
+        id: `${idPrefix}${String(index).padStart(2, "0")}`,
         type: seed.type,
         status: seed.status,
         startsAt,
@@ -238,6 +266,18 @@ function seedAppointments(): Appointment[] {
       },
     ];
   });
+}
+
+const isOwnPet = (patientId: string) => mockPatients.some((pet) => pet.id === patientId);
+
+function seedAppointments(): Appointment[] {
+  const otherPets = mockClinicPatients.filter((pet) => pet.active && !isOwnPet(pet.id));
+  return [
+    ...(isNewAccount
+      ? []
+      : buildSeeds(MOCK_SEEDS, mockPatients, "5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d")),
+    ...buildSeeds(CLINIC_SEEDS, otherPets, "6c7d8e9f-0a1b-4c2d-8e3f-4a5b6c7d8e"),
+  ];
 }
 
 // Las citas de prueba viven mientras la pestaña está abierta.
@@ -386,6 +426,7 @@ export function getMyAppointments(
     const upcoming = (item: Appointment) =>
       (item.status === "SCHEDULED" || item.status === "CONFIRMED") && item.startsAt >= now;
     const matches = mockAppointmentStore
+      .filter((item) => isOwnPet(item.patient.id))
       .filter((item) => (when === "upcoming" ? upcoming(item) : !upcoming(item)))
       .sort((a, b) =>
         when === "upcoming"
@@ -410,4 +451,48 @@ export async function getAllMyAppointments(when: AppointmentsWhen): Promise<Appo
     ),
   );
   return [first, ...rest].flatMap((result) => result.data);
+}
+
+export interface AgendaParams {
+  // AAAA-MM-DD de la clínica; la API admite hasta 7 días por consulta.
+  from: string;
+  to?: string;
+  veterinarianId?: string;
+  groomerId?: string;
+}
+
+function mockOwnerOf(patientId: string): Appointment["owner"] {
+  const pet = mockClinicPatients.find((item) => item.id === patientId);
+  const owner = mockOwners.find((item) => item.id === pet?.ownerId);
+  if (!owner) return undefined;
+  const { id, firstNames, lastNames, phone } = owner;
+  return { id, firstNames, lastNames, phone };
+}
+
+// Como la API: el veterinario y el estilista solo reciben su propia agenda.
+async function mockAgenda({ from, to, veterinarianId, groomerId }: AgendaParams) {
+  const me = await getMe();
+  const ownProfile =
+    me.role === "VETERINARIAN"
+      ? mockVeterinarians.find((item) => item.userId === me.id)
+      : me.role === "GROOMER"
+        ? mockGroomers.find((item) => item.userId === me.id)
+        : undefined;
+  const professionalId = ownProfile?.id ?? veterinarianId ?? groomerId;
+  const last = to ?? from;
+  const appointments = mockAppointmentStore
+    .filter((item) => {
+      const date = clinicDateOf(new Date(item.startsAt));
+      return date >= from && date <= last;
+    })
+    .filter((item) => !professionalId || item.professional.id === professionalId)
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    .map((item) => ({ ...item, owner: mockOwnerOf(item.patient.id) }));
+  return mockResponse(appointments);
+}
+
+// RF-16: recepción ve toda la agenda; el veterinario y el estilista, solo la suya.
+export function getAgenda(params: AgendaParams): Promise<Appointment[]> {
+  if (isMockEnabled) return mockAgenda(params);
+  return request<Appointment[]>("/appointments", { query: { ...params } });
 }
