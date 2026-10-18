@@ -1,11 +1,5 @@
 import { DOCUMENT_TYPE_LABELS } from "@/features/auth/schemas";
-import type { Owner, Species } from "@/types/domain";
-
-export const SPECIES_LABELS: Record<Species, string> = {
-  DOG: "Perro",
-  CAT: "Gato",
-  OTHER: "Otra",
-};
+import type { Owner } from "@/types/domain";
 
 export const ownerFullName = (owner: Pick<Owner, "firstNames" | "lastNames">) =>
   `${owner.firstNames} ${owner.lastNames}`;

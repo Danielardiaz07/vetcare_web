@@ -1,8 +1,8 @@
 import { request } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
-import { mockOwners, mockPatients } from "@/services/mocks/fixtures";
+import { mockOwners } from "@/services/mocks/fixtures";
 import type { Paginated } from "@/types/api";
-import type { DocumentType, Owner, Patient } from "@/types/domain";
+import type { DocumentType, Owner } from "@/types/domain";
 
 const NOT_FOUND = 404;
 const CONFLICT = 409;
@@ -10,8 +10,6 @@ const PAGE_SIZE = 10;
 // La API guarda el celular con el indicativo; los formularios usan los 10 dígitos.
 const COLOMBIA_PHONE_PREFIX = "57";
 const PHONE_WITH_PREFIX_LENGTH = 12;
-// Un propietario tiene pocas mascotas; una sola página las trae todas.
-const OWNER_PETS_LIMIT = 100;
 
 export interface ListOwnersParams {
   page: number;
@@ -36,11 +34,6 @@ export type UpdateOwnerInput = Partial<{
   phone: string;
   address: string | null;
 }>;
-
-export interface OwnerWithPets {
-  owner: Owner;
-  pets: Patient[];
-}
 
 function withLocalPhone(owner: Owner): Owner {
   const { phone } = owner;
@@ -72,10 +65,9 @@ function mockList({ page, q }: ListOwnersParams): Promise<Paginated<Owner>> {
   });
 }
 
-function mockGet(id: string): Promise<OwnerWithPets> {
+function mockGet(id: string): Promise<Owner> {
   const owner = mockOwnerStore.find((item) => item.id === id);
-  if (!owner) return mockNotFound();
-  return mockResponse({ owner, pets: mockPatients.filter((pet) => pet.ownerId === id) });
+  return owner ? mockResponse(owner) : mockNotFound();
 }
 
 function mockCreate(input: CreateOwnerInput): Promise<Owner> {
@@ -122,13 +114,9 @@ export async function listOwners(params: ListOwnersParams): Promise<Paginated<Ow
   return { ...result, data: result.data.map(withLocalPhone) };
 }
 
-export async function getOwner(id: string): Promise<OwnerWithPets> {
+export async function getOwner(id: string): Promise<Owner> {
   if (isMockEnabled) return mockGet(id);
-  const [owner, pets] = await Promise.all([
-    request<Owner>(`/owners/${id}`),
-    request<Paginated<Patient>>("/patients", { query: { ownerId: id, limit: OWNER_PETS_LIMIT } }),
-  ]);
-  return { owner: withLocalPhone(owner), pets: pets.data };
+  return withLocalPhone(await request<Owner>(`/owners/${id}`));
 }
 
 export async function createOwner(input: CreateOwnerInput): Promise<Owner> {

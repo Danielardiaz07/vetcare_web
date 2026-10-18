@@ -111,6 +111,31 @@ export const mockPatients: Patient[] = [
   },
 ];
 
+// Mascotas que ve el panel: las de Laura y las de otros propietarios.
+export const mockClinicPatients: Patient[] = [
+  ...mockPatients,
+  ...(
+    [
+      [1, "Rocky", "DOG", "Pastor alemán", "MALE", "2019-05-20", 34.2, true],
+      [2, "Nala", "CAT", "Siamés", "FEMALE", "2024-02-11", 3.8, true],
+      [2, "Toby", "DOG", "Beagle", "MALE", "2026-08-30", 4.5, true],
+      [3, "Kiwi", "OTHER", "Periquito", "FEMALE", "2025-06-01", 0.1, true],
+      [4, "Simba", "CAT", "Persa", "MALE", "2018-11-03", 5.1, false],
+    ] as const
+  ).map(([ownerIndex, name, species, breed, sex, birthDate, weightKg, active], index) => ({
+    id: `7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f${String(index).padStart(2, "0")}`,
+    ownerId: mockOwners[ownerIndex]?.id ?? mockOwner.id,
+    name,
+    species,
+    breed,
+    sex,
+    birthDate,
+    weightKg,
+    photoPath: null,
+    active,
+  })),
+];
+
 export const MOCK_PASSWORD = "Vetcare123";
 export const MOCK_OTP_CODE = "123456";
 
