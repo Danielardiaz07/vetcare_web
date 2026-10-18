@@ -44,11 +44,14 @@ export const FIELD_LIMITS = {
   BREED_MAX: 60,
   WEIGHT_KG_MAX: 999.9,
   SPECIALTY_MAX: 60,
+  APPOINTMENT_REASON_MAX: 200,
 } as const;
 
 // Los mismos límites de agenda que la API (RN-21, RN-22).
 export const MIN_APPOINTMENT_LEAD_HOURS = 2;
 export const MAX_APPOINTMENT_ADVANCE_DAYS = 30;
+// RN-24: citas programadas o confirmadas a futuro por mascota.
+export const MAX_ACTIVE_APPOINTMENTS_PER_PATIENT = 3;
 // D-26: las franjas y los horarios son hora de Colombia.
 export const CLINIC_TIME_ZONE = "America/Bogota";
 
