@@ -27,6 +27,8 @@ export interface OwnerSummary {
   firstNames: string;
   lastNames: string;
   phone: string;
+  // /users/me todavía no envía la dirección; undefined = la API no la mandó, null = no tiene.
+  address?: string | null;
 }
 
 export interface UserProfile {

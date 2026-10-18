@@ -35,12 +35,13 @@ export type UpdateOwnerInput = Partial<{
   address: string | null;
 }>;
 
-function withLocalPhone(owner: Owner): Owner {
-  const { phone } = owner;
+export function localPhone(phone: string): string {
   const hasPrefix =
     phone.length === PHONE_WITH_PREFIX_LENGTH && phone.startsWith(COLOMBIA_PHONE_PREFIX);
-  return hasPrefix ? { ...owner, phone: phone.slice(COLOMBIA_PHONE_PREFIX.length) } : owner;
+  return hasPrefix ? phone.slice(COLOMBIA_PHONE_PREFIX.length) : phone;
 }
+
+const withLocalPhone = (owner: Owner): Owner => ({ ...owner, phone: localPhone(owner.phone) });
 
 // Los cambios de prueba viven mientras la pestaña está abierta.
 const mockOwnerStore = structuredClone(mockOwners);
