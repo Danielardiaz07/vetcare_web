@@ -4,6 +4,8 @@ export const ROUTES = {
   register: "/register",
   portal: "/portal",
   panel: "/panel",
+  // El texto de la Ley 1581 va en el pie de la portada.
+  dataPolicy: "/#tratamiento-de-datos",
 } as const;
 
 export const PROTECTED_ROUTE_PREFIXES = [ROUTES.portal, ROUTES.panel] as const;
@@ -25,3 +27,4 @@ export const FIELD_LIMITS = {
 } as const;
 
 export const OTP_LENGTH = 6;
+export const OTP_RESEND_SECONDS = 60;

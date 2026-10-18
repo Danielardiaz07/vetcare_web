@@ -1,11 +1,11 @@
 "use client";
 
-import { forwardRef, useId, type InputHTMLAttributes } from "react";
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "./cn";
 import { describedBy, FieldMessage } from "./field-message";
 
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
-  label: string;
+  label: ReactNode;
   hint?: string;
   error?: string;
 };

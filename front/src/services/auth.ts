@@ -2,10 +2,19 @@ import { API_REFRESH_PATH } from "@/lib/constants";
 import type { LoginInput, RegisterInput } from "@/features/auth/schemas";
 import { request, setAccessToken } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
-import { MOCK_PASSWORD, mockProfile, mockSessionUser } from "@/services/mocks/fixtures";
+import {
+  MOCK_OTP_CODE,
+  MOCK_PASSWORD,
+  mockOwner,
+  mockProfile,
+  mockSessionUser,
+  mockUnlinkedOwner,
+} from "@/services/mocks/fixtures";
 import type { LoginResponse, RegisterResponse, SessionUser, UserProfile } from "@/types/auth";
 
 const UNAUTHORIZED = 401;
+const CONFLICT = 409;
+const UNPROCESSABLE_ENTITY = 422;
 const MOCK_SESSION_KEY = "vetcare-mock-session";
 const mockSession: LoginResponse = { accessToken: "mock-access-token", user: mockSessionUser };
 
@@ -16,6 +25,9 @@ const mockSessionStore = {
   clear: () => sessionStorage.removeItem(MOCK_SESSION_KEY),
 };
 
+// Cuentas creadas con el registro de prueba; viven solo mientras la pestaña está abierta.
+const mockAccounts = new Map<string, string>();
+
 let restoreInFlight: Promise<SessionUser | null> | null = null;
 
 function startSession(session: LoginResponse): SessionUser {
@@ -23,11 +35,33 @@ function startSession(session: LoginResponse): SessionUser {
   return session.user;
 }
 
+// Repite las comprobaciones de la API (RN-04, D-17, D-18) para poder ver cada mensaje sin backend.
+async function mockRegister(input: RegisterInput): Promise<RegisterResponse> {
+  const { email, documentNumber, password } = input;
+  if (email === mockOwner.email || mockAccounts.has(email)) {
+    return mockError(CONFLICT, "CONFLICT", "El correo ya esta registrado");
+  }
+  if (documentNumber === mockOwner.documentNumber) {
+    return mockError(CONFLICT, "CONFLICT", "La cedula ya tiene una cuenta registrada");
+  }
+  if (documentNumber === mockUnlinkedOwner.documentNumber && email !== mockUnlinkedOwner.email) {
+    return mockError(
+      CONFLICT,
+      "CONFLICT",
+      "La cedula ya esta registrada en la clinica con otro correo. Acercate a recepcion para actualizarlo",
+    );
+  }
+  const response = await mockResponse({
+    email,
+    message: "Te enviamos un codigo de verificacion a tu correo",
+  });
+  mockAccounts.set(email, password);
+  return response;
+}
+
 export function register(input: RegisterInput): Promise<RegisterResponse> {
   const body = { ...input, address: input.address || undefined };
-  if (isMockEnabled) {
-    return mockResponse({ email: input.email, message: "Te enviamos un código a tu correo" });
-  }
+  if (isMockEnabled) return mockRegister(input);
   return request<RegisterResponse>("/auth/register", {
     method: "POST",
     body,
@@ -36,7 +70,11 @@ export function register(input: RegisterInput): Promise<RegisterResponse> {
 }
 
 export function verifyOtp(email: string, code: string): Promise<void> {
-  if (isMockEnabled) return mockResponse(undefined);
+  if (isMockEnabled) {
+    return code === MOCK_OTP_CODE
+      ? mockResponse(undefined)
+      : mockError(UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Codigo invalido o expirado");
+  }
   return request<void>("/auth/otp/verify", {
     method: "POST",
     body: { email, code },
@@ -54,10 +92,12 @@ export function resendOtp(email: string): Promise<void> {
 }
 
 async function mockLogin({ email, password }: LoginInput): Promise<LoginResponse> {
-  if (email !== mockSessionUser.email || password !== MOCK_PASSWORD) {
+  const expectedPassword =
+    email === mockSessionUser.email ? MOCK_PASSWORD : mockAccounts.get(email);
+  if (password !== expectedPassword) {
     return mockError(UNAUTHORIZED, "UNAUTHORIZED", "Correo o contraseña incorrectos");
   }
-  const session = await mockResponse(mockSession);
+  const session = await mockResponse({ ...mockSession, user: { ...mockSessionUser, email } });
   mockSessionStore.save();
   return session;
 }
