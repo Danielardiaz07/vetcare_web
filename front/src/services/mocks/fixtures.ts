@@ -44,6 +44,13 @@ export const mockPatients: Patient[] = [
 ];
 
 export const MOCK_PASSWORD = "Vetcare123";
+export const MOCK_OTP_CODE = "123456";
+
+// Propietario que la clínica ya tiene registrado pero que aún no creó su cuenta (D-17).
+export const mockUnlinkedOwner = {
+  documentNumber: "1065765432",
+  email: "carlos.ruiz@example.com",
+};
 
 export const mockSessionUser: SessionUser = {
   id: "3e7a9c1b-5d2f-4b8a-9e6c-7f1a2b3c4d5e",

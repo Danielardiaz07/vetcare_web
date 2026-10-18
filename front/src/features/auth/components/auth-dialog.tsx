@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { LoginForm } from "@/features/auth/components/login-form";
+import { RegisterFlow } from "@/features/auth/components/register-flow";
 import { homeRouteFor } from "@/features/auth/redirects";
 import type { SessionUser } from "@/types/auth";
 
@@ -71,6 +72,9 @@ export function AuthDialog({ open, reason, tab, onTabChange, onClose }: AuthDial
         ))}
       </div>
       {open && tab === "login" && <LoginForm onSuccess={handleLogin} />}
+      {open && tab === "register" && (
+        <RegisterFlow onGoToLogin={() => onTabChange("login")} onDone={onClose} />
+      )}
     </Modal>
   );
 }
