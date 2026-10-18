@@ -13,7 +13,9 @@ export type IconName =
   | "chevron-right"
   | "alert"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "users"
+  | "clock";
 
 const ICON_SIZE = 24;
 
@@ -82,6 +84,19 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
       <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </>
   ),
   "eye-off": (

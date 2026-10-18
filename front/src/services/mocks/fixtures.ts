@@ -59,6 +59,34 @@ export const mockSessionUser: SessionUser = {
   ownerId: mockOwner.id,
 };
 
+// Personal de prueba, uno por rol; entran con MOCK_PASSWORD.
+export const mockStaffUsers: SessionUser[] = [
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d41",
+    email: "recepcion@example.com",
+    role: "RECEPTIONIST",
+    ownerId: null,
+  },
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d42",
+    email: "veterinario@example.com",
+    role: "VETERINARIAN",
+    ownerId: null,
+  },
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d43",
+    email: "estilista@example.com",
+    role: "GROOMER",
+    ownerId: null,
+  },
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d44",
+    email: "admin@example.com",
+    role: "ADMIN",
+    ownerId: null,
+  },
+];
+
 export const mockProfile: UserProfile = {
   id: mockSessionUser.id,
   email: mockSessionUser.email,
