@@ -45,6 +45,11 @@ export const FIELD_LIMITS = {
   WEIGHT_KG_MAX: 999.9,
   SPECIALTY_MAX: 60,
   APPOINTMENT_REASON_MAX: 200,
+  // Síntomas, diagnóstico y tratamiento; la fórmula y las notas internas admiten más.
+  CLINICAL_TEXT_MAX: 500,
+  LONG_TEXT_MAX: 1000,
+  TEMPERATURE_MAX: 99.9,
+  COST_MAX: 9_999_999_999,
 } as const;
 
 // Los mismos límites de agenda que la API (RN-21, RN-22).

@@ -236,6 +236,7 @@ export function AgendaView() {
       <AppointmentDetail
         appointment={selected}
         canManage={isReception}
+        canAttend={user?.role === "VETERINARIAN"}
         onClose={() => setSelected(null)}
         onChanged={handleChanged}
       />

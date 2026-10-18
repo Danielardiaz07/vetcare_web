@@ -240,6 +240,14 @@ CLINIC_SEEDS.push({
   status: "SCHEDULED",
   when: { minutesFromNow: -30 },
 });
+// RN-43: Rocky ya llegó a su consulta con Natalia, lista para registrar la atención.
+CLINIC_SEEDS.push({
+  petIndex: 0,
+  type: "GENERAL_CONSULTATION",
+  status: "CONFIRMED",
+  when: { minutesFromNow: -10 },
+  reason: "Cojea de la pata trasera derecha",
+});
 
 function seedStart(when: MockSeed["when"], today: string): string {
   if ("minutesFromNow" in when) {
@@ -624,3 +632,7 @@ export async function getReassignOptions(appointment: Appointment): Promise<Prof
     return works && !busy;
   });
 }
+
+// Datos de prueba: la atención clínica cambia el estado de la cita guardada aquí (RN-46).
+export const mockAppointmentById = (id: string) =>
+  mockAppointmentStore.find((item) => item.id === id);

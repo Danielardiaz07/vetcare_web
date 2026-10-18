@@ -1,10 +1,12 @@
 import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
 import type {
   AppointmentTypeSetting,
+  Consultation,
   Owner,
   Patient,
   ScheduleBlock,
   StaffProfile,
+  Vaccination,
 } from "@/types/domain";
 
 // Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
@@ -303,3 +305,67 @@ export const mockAppointmentTypes: AppointmentTypeSetting[] = [
   { type: "CHECKUP", durationMinutes: 30, professional: "VETERINARIAN" },
   { type: "GROOMING", durationMinutes: 90, professional: "GROOMER" },
 ];
+
+// D-27: catálogo mínimo de vacunas, sin stock.
+export const mockVaccines = [
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e01", name: "Rabia", price: 45000, active: true },
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e02", name: "Parvovirus", price: 55000, active: true },
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e03", name: "Triple felina", price: 60000, active: true },
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e04", name: "Moquillo", price: 50000, active: true },
+];
+
+const [mockVet] = mockVeterinarians;
+const mockVetName = {
+  id: mockVet?.id ?? "",
+  firstNames: mockVet?.firstNames ?? "",
+  lastNames: mockVet?.lastNames ?? "",
+};
+const ROCKY_ID = "7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f00";
+const LUNA_ID = "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+
+// Historial de prueba: Rocky tiene cuatro consultas para ver que solo salen las tres últimas.
+export const mockConsultations: Consultation[] = (
+  [
+    [ROCKY_ID, "2026-09-28", "Otitis externa", "Limpieza y gotas óticas por 7 días", 34.2],
+    [ROCKY_ID, "2026-07-15", "Dermatitis alérgica", "Champú medicado y cambio de alimento", 33.8],
+    [ROCKY_ID, "2026-04-02", "Control general sin hallazgos", "Desparasitación interna", 33.1],
+    [ROCKY_ID, "2025-12-10", "Gastroenteritis leve", "Dieta blanda por 3 días", 32.6],
+    [LUNA_ID, "2026-08-20", "Conjuntivitis", "Colirio antibiótico por 5 días", 27.5],
+  ] as const
+).map(([patientId, date, diagnosis, treatment, weightKg], index) => ({
+  id: `2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d${String(index).padStart(2, "0")}`,
+  appointmentId: `3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e${String(index).padStart(2, "0")}`,
+  patientId,
+  veterinarian: mockVetName,
+  symptoms: "Revisión de prueba",
+  weightKg,
+  temperatureC: 38.5,
+  diagnosis,
+  treatment,
+  prescription: null,
+  internalNotes: null,
+  cost: 60000,
+  createdAt: `${date}T14:00:00.000Z`,
+}));
+
+export const mockVaccinations: Vaccination[] = (
+  [
+    [ROCKY_ID, 0, "2025-10-20", "2026-10-20"],
+    [ROCKY_ID, 1, "2025-08-01", "2026-08-01"],
+    [ROCKY_ID, 3, "2026-05-10", "2027-05-10"],
+    [LUNA_ID, 0, "2026-03-14", "2027-03-14"],
+  ] as const
+).map(([patientId, vaccineIndex, appliedAt, nextDoseAt], index) => {
+  const vaccine = mockVaccines[vaccineIndex];
+  return {
+    id: `4d5e6f7a-8b9c-4d0e-8f1a-2b3c4d5e6f${String(index).padStart(2, "0")}`,
+    patientId,
+    vaccine: { id: vaccine?.id ?? "", name: vaccine?.name ?? "" },
+    veterinarian: mockVetName,
+    lot: `L-2026-${String(index + 1).padStart(3, "0")}`,
+    appliedAt,
+    nextDoseAt,
+    price: vaccine?.price ?? 0,
+    createdAt: `${appliedAt}T15:00:00.000Z`,
+  };
+});
