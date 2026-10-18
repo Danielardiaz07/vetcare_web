@@ -57,3 +57,39 @@ export interface AppointmentTypeSetting {
   durationMinutes: number;
   professional: "VETERINARIAN" | "GROOMER";
 }
+
+export type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "ATTENDED" | "CANCELLED" | "NO_SHOW";
+
+// Lo que cualquier usuario ve de un veterinario o estilista activo.
+export interface Professional {
+  id: string;
+  firstNames: string;
+  lastNames: string;
+  specialty?: string;
+}
+
+export interface AvailableSlot {
+  startsAt: string;
+  endsAt: string;
+  professionals: Professional[];
+}
+
+// RN-33: si el día no tiene franjas, la API sugiere otras fechas.
+export interface Availability {
+  date: string;
+  durationMinutes: number;
+  slots: AvailableSlot[];
+  suggestedDates: string[];
+}
+
+export interface Appointment {
+  id: string;
+  type: AppointmentType;
+  status: AppointmentStatus;
+  startsAt: string;
+  endsAt: string;
+  reason: string | null;
+  cancelReason: string | null;
+  patient: { id: string; name: string };
+  professional: Professional;
+}
