@@ -24,7 +24,7 @@ import { bookableDates, dayParts, formatClinicTime, formatLongDate } from "@/lib
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
 import { createAppointment, getAvailability, listProfessionals } from "@/services/appointments";
-import { getMyPatients } from "@/services/patients";
+import { getMyPatients, listPatients } from "@/services/patients";
 import { listAppointmentTypes } from "@/services/staff";
 import type {
   Appointment,
@@ -32,6 +32,7 @@ import type {
   AppointmentTypeSetting,
   Availability,
   AvailableSlot,
+  Owner,
   Patient,
   Professional,
 } from "@/types/domain";
@@ -40,6 +41,8 @@ import type {
 const ANY_PROFESSIONAL = "any";
 const LAST_STEP = 5;
 const REVIEW = "review";
+// Un propietario tiene pocas mascotas; una sola página las trae todas.
+const OWNER_PETS_LIMIT = 100;
 
 type Step = 1 | 2 | 3 | 4 | 5;
 type View = Step | typeof REVIEW;
@@ -94,9 +97,22 @@ function firstMissingStep(selection: Selection): Step {
 type AppointmentWizardProps = {
   initialPetId?: string;
   initialType?: string;
+  // Recepción agenda por un propietario (RF-16); sin él, son las mascotas de quien tiene sesión.
+  owner?: Owner;
+  onDone?: () => void;
 };
 
-export function AppointmentWizard({ initialPetId, initialType }: AppointmentWizardProps) {
+async function ownerPets(ownerId: string): Promise<Patient[]> {
+  const { data } = await listPatients({ page: 1, limit: OWNER_PETS_LIMIT, ownerId });
+  return data.filter((pet) => pet.active);
+}
+
+export function AppointmentWizard({
+  initialPetId,
+  initialType,
+  owner,
+  onDone,
+}: AppointmentWizardProps) {
   const [base, setBase] = useState<Loadable<BaseData>>({ status: "loading" });
   const [baseKey, setBaseKey] = useState(0);
   const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
@@ -118,7 +134,7 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
   useEffect(() => {
     let active = true;
     setBase({ status: "loading" });
-    Promise.all([getMyPatients(), listAppointmentTypes()])
+    Promise.all([owner ? ownerPets(owner.id) : getMyPatients(), listAppointmentTypes()])
       .then(([pets, types]) => {
         if (!active) return;
         setBase({ status: "ready", data: { pets, types } });
@@ -135,7 +151,7 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
     return () => {
       active = false;
     };
-  }, [baseKey, initialPetId, initialType]);
+  }, [baseKey, initialPetId, initialType, owner]);
 
   const { type, professionalId, date } = selection;
 
@@ -199,9 +215,27 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
   if (base.status === "loading") return <LoadingState />;
   if (base.status === "error") return <ErrorState onRetry={() => setBaseKey((key) => key + 1)} />;
 
-  if (confirmed) return <BookingReceipt appointment={confirmed} onBookAnother={restart} />;
+  if (confirmed) {
+    return <BookingReceipt appointment={confirmed} onBookAnother={restart} onDone={onDone} />;
+  }
 
   const { pets, types } = base.data;
+  if (pets.length === 0 && owner) {
+    return (
+      <EmptyState
+        title="Este propietario no tiene mascotas activas"
+        description="Registra la mascota en la ficha del propietario para poder agendarle una cita."
+        action={
+          <Link
+            href={ROUTES.panelOwner(owner.id)}
+            className="font-semibold text-brand-700 underline"
+          >
+            Ir a la ficha del propietario
+          </Link>
+        }
+      />
+    );
+  }
   if (pets.length === 0) {
     return (
       <EmptyState
@@ -263,6 +297,10 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
         choose({ slot: null });
         setStepError(SLOT_TAKEN_MESSAGE);
         setAvailabilityKey((key) => key + 1);
+      } else if (isActiveLimit(error) && owner) {
+        setBookingError(
+          `Esta mascota ya tiene ${MAX_ACTIVE_APPOINTMENTS_PER_PATIENT} citas activas. Cancela una de ellas para agendar otra.`,
+        );
       } else if (isActiveLimit(error)) {
         setBookingError(
           <>
@@ -354,7 +392,7 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
             className="text-xl font-semibold text-ink outline-none"
           >
             {reviewing
-              ? "Revisa y confirma tu cita"
+              ? `Revisa y confirma ${owner ? "la" : "tu"} cita`
               : `Paso ${step} de ${LAST_STEP} · ${stepTitles[step]}`}
           </h2>
 
@@ -413,7 +451,7 @@ export function AppointmentWizard({ initialPetId, initialType }: AppointmentWiza
                 selected={professionalId === ANY_PROFESSIONAL}
                 onSelect={() => choose({ professionalId: ANY_PROFESSIONAL, slot: null })}
                 label="Cualquiera disponible"
-                detail="Te asignamos el primero libre"
+                detail={owner ? "Se asigna el primero libre" : "Te asignamos el primero libre"}
               />
               {professionals.data.map((item) => (
                 <ChoiceButton

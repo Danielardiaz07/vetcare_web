@@ -7,12 +7,19 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Icon } from "@/components/ui/icon";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import { AgendaItem } from "@/features/agenda/components/agenda-item";
 import { AppointmentDetail } from "@/features/agenda/components/appointment-detail";
+import { NewAppointmentDialog } from "@/features/agenda/components/new-appointment-dialog";
 import { useAuth } from "@/features/auth/auth-provider";
 import { ownerFullName } from "@/features/owners/labels";
 import { addDays, clinicDateOf, dayParts, formatLongDate, startOfWeek } from "@/lib/clinic-time";
-import { getAgenda, listProfessionals, type AgendaParams } from "@/services/appointments";
+import {
+  APPOINTMENTS_CHANGED_EVENT,
+  getAgenda,
+  listProfessionals,
+  type AgendaParams,
+} from "@/services/appointments";
 import type { Appointment, Professional } from "@/types/domain";
 
 type View = "day" | "week";
@@ -59,6 +66,8 @@ export function AgendaView() {
   const [agenda, setAgenda] = useState<Load<Appointment[]>>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [selected, setSelected] = useState<Appointment | null>(null);
+  const [creating, setCreating] = useState(false);
+  const { show } = useToast();
 
   const from = view === "day" ? date : startOfWeek(date);
   const to = view === "day" ? date : addDays(from, DAYS_IN_WEEK - 1);
@@ -94,6 +103,17 @@ export function AgendaView() {
   }, [from, to, filter, reloadKey]);
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
+
+  // Crear, registrar llegada, No asistió o reasignar cambian la agenda en pantalla.
+  useEffect(() => {
+    window.addEventListener(APPOINTMENTS_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, reload);
+  }, [reload]);
+
+  function handleChanged(updated: Appointment, message: string) {
+    setSelected((current) => ({ ...updated, owner: updated.owner ?? current?.owner }));
+    show(message, "success");
+  }
 
   const professionals = staff.status === "ready" ? staff.data : null;
   const firstProfessional = professionals?.veterinarians[0]
@@ -162,6 +182,12 @@ export function AgendaView() {
             </Button>
           </div>
         </div>
+        {isReception && (
+          <Button onClick={() => setCreating(true)}>
+            <Icon name="calendar-plus" className="size-5" />
+            Nueva cita
+          </Button>
+        )}
         {isReception && professionals && (
           <div className="w-full sm:w-72">
             <Select label="Profesional" value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -207,7 +233,13 @@ export function AgendaView() {
         </>
       )}
 
-      <AppointmentDetail appointment={selected} onClose={() => setSelected(null)} />
+      <AppointmentDetail
+        appointment={selected}
+        canManage={isReception}
+        onClose={() => setSelected(null)}
+        onChanged={handleChanged}
+      />
+      {isReception && <NewAppointmentDialog open={creating} onClose={() => setCreating(false)} />}
     </div>
   );
 }

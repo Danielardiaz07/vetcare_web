@@ -284,6 +284,11 @@ export const mockSchedules: Record<string, ScheduleBlock[]> = {
     { weekday, startTime: "08:00", endTime: "12:00" },
     { weekday, startTime: "14:00", endTime: "18:00" },
   ]),
+  "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a02": WEEKDAYS.map((weekday) => ({
+    weekday,
+    startTime: "08:00",
+    endTime: "17:00",
+  })),
   "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b01": WEEKDAYS.map((weekday) => ({
     weekday,
     startTime: "09:00",
