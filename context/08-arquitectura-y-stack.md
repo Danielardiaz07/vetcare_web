@@ -245,6 +245,7 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `/portal` | Propietario | Inicio: saludo, próxima cita y mascotas |
 | `/portal/appointments` | Propietario | Mis citas |
 | `/portal/appointments/new` | Propietario | Agendar cita |
+| `/portal/history` | Propietario | Historial clínico: elegir la mascota (destino del menú) |
 | `/portal/history/[petId]` | Propietario | Historial clínico de una mascota |
 | `/portal/invoices` | Propietario | Facturas y su PDF |
 | `/portal/profile` | Propietario | Mi perfil |
