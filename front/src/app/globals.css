@@ -1,19 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #effaf6;
-  --color-brand-100: #d7f2e6;
-  --color-brand-500: #1f9d6b;
-  --color-brand-600: #17805a;
-  --color-brand-700: #136849;
-  --color-ink: #16241f;
-  --color-muted: #5b6b64;
+  --color-brand-50: #eef7fa;
+  --color-brand-100: #e3f1f5;
+  --color-brand-200: #c5e1e9;
+  --color-brand-500: #2b87a0;
+  --color-brand-600: #1f6f85;
+  --color-brand-700: #185a6c;
+  --color-navy: #1a2e3b;
+  --color-ink: #1a2e3b;
+  --color-muted: #44535c;
+  --color-subtle: #55636b;
   --color-surface: #ffffff;
-  --color-canvas: #f6f9f7;
-  --color-line: #dfe8e3;
-  --color-danger: #b42318;
+  --color-canvas: #f5f5f0;
+  --color-line: #e6e4dc;
+  --color-divider: #ecebe4;
+  --color-field-border: #8c8d84;
+  --color-sand: #f3e9dc;
+  --color-sand-border: #e8d5bd;
+  --color-honey: #8a4f1c;
+  --color-success: #047857;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-danger: #be123c;
+  --color-danger-bg: #fff1f2;
+  --color-danger-border: #fecdd3;
+  --color-info: #1f6f85;
+  --color-info-bg: #eef7fa;
+  --color-info-border: #c5e1e9;
+
+  --radius-control: 10px;
+  --radius-chip: 14px;
+  --radius-card: 24px;
+  --radius-block: 32px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    var(--font-ibm-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
 }
 
 @layer base {
@@ -28,7 +55,18 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 3px solid var(--color-brand-500);
     outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
