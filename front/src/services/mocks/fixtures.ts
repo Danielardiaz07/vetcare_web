@@ -1,0 +1,41 @@
+import type { Owner, Patient } from "@/types/domain";
+
+// Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
+export const mockOwner: Owner = {
+  id: "5f0c2a8e-3b1d-4c6e-9a7f-1d2e3f4a5b6c",
+  documentType: "CC",
+  documentNumber: "1065123456",
+  firstNames: "Laura Marcela",
+  lastNames: "Gómez Pérez",
+  email: "laura.gomez@example.com",
+  phone: "3001234567",
+  address: "Calle 16 # 12-45, Valledupar",
+  active: true,
+};
+
+export const mockPatients: Patient[] = [
+  {
+    id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    ownerId: mockOwner.id,
+    name: "Luna",
+    species: "DOG",
+    breed: "Golden retriever",
+    sex: "FEMALE",
+    birthDate: "2021-03-14",
+    weightKg: 27.5,
+    photoPath: null,
+    active: true,
+  },
+  {
+    id: "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    ownerId: mockOwner.id,
+    name: "Milo",
+    species: "CAT",
+    breed: "Criollo",
+    sex: "MALE",
+    birthDate: "2023-07-02",
+    weightKg: 4.2,
+    photoPath: null,
+    active: true,
+  },
+];
