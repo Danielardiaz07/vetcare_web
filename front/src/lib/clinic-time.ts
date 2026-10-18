@@ -44,6 +44,12 @@ export const addDays = (date: string, days: number) =>
 
 export const isSunday = (date: string) => dateAtNoon(date).getUTCDay() === SUNDAY;
 
+const MONDAY_OFFSET: Record<number, number> = { 0: 6, 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 };
+
+// Lunes de la semana de esa fecha (la agenda semanal va de lunes a domingo).
+export const startOfWeek = (date: string) =>
+  addDays(date, -(MONDAY_OFFSET[dateAtNoon(date).getUTCDay()] ?? 0));
+
 // La hora de la clínica de ese día como instante (lo que espera la API).
 export const clinicInstant = (date: string, time: string) =>
   new Date(`${date}T${time}:00${CLINIC_UTC_OFFSET}`).toISOString();
