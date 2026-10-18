@@ -208,10 +208,54 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 - Formularios con React Hook Form + Zod (mismos esquemas que los DTOs, vía `packages/shared` si se desea).
 - Rutas protegidas con `proxy.ts` de Next (en Next 16 `middleware.ts` está deprecado y se llama `proxy`): solo comprueba que exista la cookie de sesión (`refresh_token`) y redirige a `/login?next=<ruta>`; la verificación real y el rol los hace la API. La navegación por rol se resuelve en la UI.
 - `services/http-client.ts` guarda el access token en memoria, envía cookies (`credentials: include`) y, ante un 401, hace un único `POST /auth/refresh` compartido entre peticiones concurrentes y reintenta.
+- Next reescribe `/api/v1/*` hacia la API (*rewrites* en `next.config.ts`) para que la cookie `refresh_token` quede en el mismo dominio del front y `proxy.ts` la pueda leer (D-25).
+- `NEXT_PUBLIC_USE_MOCKS=true` activa los datos de prueba: `services/` responde con datos locales en vez de llamar a la API (D-24).
 - Variables públicas solo con prefijo `NEXT_PUBLIC_`.
 - Responsivo desde 360 px (RNF-07), en español (RNF-08).
 
-Áreas de la interfaz: **portal del propietario** (`mis mascotas`, `historial`, `vacunas`, `agendar cita`, `mis citas`, `mis facturas`, `mi perfil`) y **panel interno** por rol (recepción, clínico, estética, administración). Flujo de autenticación: `Registro → Verificación OTP → Login → Área protegida`.
+Áreas de la interfaz: **portal del propietario** (Inicio, Mis citas, Agendar, Historial clínico, Facturas y Mi perfil; ver [13](13-mensajes-y-experiencia.md) §2) y **panel interno** por rol (recepción, clínico, estética, administración). Flujo de autenticación: `Registro → Verificación OTP → Login → Área protegida`.
+
+### 7.1 Identidad visual (D-23)
+
+| Token | Hexadecimal |
+|-------|-------------|
+| `brand-50` / `brand-100` / `brand-200` | `#EEF7FA` / `#E3F1F5` / `#C5E1E9` |
+| `brand-500` / `brand-600` / `brand-700` | `#2B87A0` / `#1F6F85` / `#185A6C` |
+| `navy`, `ink` | `#1A2E3B` |
+| `muted` / `subtle` | `#44535C` / `#55636B` |
+| `canvas` / `surface` | `#F5F5F0` / `#FFFFFF` |
+| `line` / `divider` / `field-border` | `#E6E4DC` / `#ECEBE4` / `#8C8D84` |
+| `sand` / `sand-border` / `honey` | `#F3E9DC` / `#E8D5BD` / `#8A4F1C` |
+| `success` / `success-bg` / `success-border` | `#047857` / `#ECFDF5` / `#A7F3D0` |
+| `warning` / `warning-bg` / `warning-border` | `#B45309` / `#FFFBEB` / `#FDE68A` |
+| `danger` / `danger-bg` / `danger-border` | `#BE123C` / `#FFF1F2` / `#FECDD3` |
+| `info` / `info-bg` / `info-border` | `#1F6F85` / `#EEF7FA` / `#C5E1E9` |
+
+- Fuente: **IBM Plex Sans**.
+- Logo: `front/public/logo.png`; ícono de la pestaña: `front/src/app/icon.png`.
+- Radios: 10, 14, 24 y 32 px.
+
+### 7.2 Rutas del frontend
+
+| Ruta | Quién entra | Para qué |
+|------|-------------|----------|
+| `/` | Cualquiera | Portada |
+| `/login` | Cualquiera | Iniciar sesión |
+| `/register` | Cualquiera | Crear cuenta con verificación OTP |
+| `/portal` | Propietario | Inicio: saludo, próxima cita y mascotas |
+| `/portal/appointments` | Propietario | Mis citas |
+| `/portal/appointments/new` | Propietario | Agendar cita |
+| `/portal/history/[petId]` | Propietario | Historial clínico de una mascota |
+| `/portal/invoices` | Propietario | Facturas y su PDF |
+| `/portal/profile` | Propietario | Mi perfil |
+| `/portal/pets/new` | Propietario | Agregar mascota |
+| `/panel/agenda` | Recepcionista, veterinario, estilista | Agenda (Mi agenda para veterinario y estilista) |
+| `/panel/owners` | Recepcionista | Propietarios |
+| `/panel/patients` | Recepcionista, veterinario | Pacientes |
+| `/panel/attention/[appointmentId]` | Veterinario | Atención de la cita |
+| `/panel/invoices` | Recepcionista | Facturación |
+| `/panel/users` | Administrador | Usuarios |
+| `/panel/staff` | Administrador | Personal y horarios |
 
 ## 8. Principios de diseño
 
