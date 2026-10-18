@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { PROTECTED_ROUTE_PREFIXES, REFRESH_COOKIE_NAME, ROUTES } from "@/lib/constants";
+import { env } from "@/lib/env";
 
 const isProtected = (pathname: string) =>
   PROTECTED_ROUTE_PREFIXES.some(
@@ -10,6 +11,9 @@ const isProtected = (pathname: string) =>
 // Solo comprueba que exista sesión; la verificación real y el rol los hace la API.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Con datos de prueba no existe la cookie de refresh: la sesión simulada vive en el navegador.
+  if (env.NEXT_PUBLIC_USE_MOCKS) return NextResponse.next();
 
   if (isProtected(pathname) && !request.cookies.has(REFRESH_COOKIE_NAME)) {
     const loginUrl = new URL(ROUTES.login, request.url);
