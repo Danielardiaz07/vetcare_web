@@ -15,7 +15,20 @@ export type IconName =
   | "eye"
   | "eye-off"
   | "users"
-  | "clock";
+  | "clock"
+  | "menu"
+  | "phone"
+  | "map-pin"
+  | "message"
+  | "stethoscope"
+  | "syringe"
+  | "clipboard-check"
+  | "scissors"
+  | "scalpel"
+  | "flask"
+  | "shield"
+  | "arrow-right"
+  | "log-in";
 
 const ICON_SIZE = 24;
 
@@ -103,6 +116,63 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.7 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6" />
       <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+    </>
+  ),
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  phone: (
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
+  ),
+  "map-pin": (
+    <>
+      <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </>
+  ),
+  message: <path d="M4 5h16v11H9l-5 4z" />,
+  stethoscope: (
+    <>
+      <path d="M6 3v6a4 4 0 0 0 8 0V3" />
+      <path d="M10 13v2a5 5 0 0 0 10 0v-2" />
+      <circle cx="20" cy="11" r="2" />
+    </>
+  ),
+  syringe: (
+    <>
+      <path d="m18 2 4 4M17 7l-9.5 9.5-3-3L14 4M15 9l-2-2M12 12l-2-2" />
+      <path d="M4.5 13.5 2 22l8.5-2.5" />
+    </>
+  ),
+  "clipboard-check": (
+    <>
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4V3h6v1M9 13l2 2 4-4" />
+    </>
+  ),
+  scissors: (
+    <>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M8.1 8.1 20 20M8.1 15.9 20 4" />
+    </>
+  ),
+  scalpel: <path d="M3 21 15 9l3 3-6 6zM15 9l4-6 2 2-3 7" />,
+  flask: (
+    <>
+      <path d="M9 3h6M10 3v6L4.5 19A1.5 1.5 0 0 0 5.8 21h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3" />
+      <path d="M7 15h10" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  "arrow-right": <path d="M5 12h14M13 6l6 6-6 6" />,
+  "log-in": (
+    <>
+      <path d="M14 4h5v16h-5" />
+      <path d="M3 12h11M10 8l4 4-4 4" />
     </>
   ),
 };

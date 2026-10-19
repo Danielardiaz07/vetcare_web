@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Crear cuenta" };
 
 export default function RegisterPage() {
   return (
-    <section className="mx-auto flex w-full max-w-xl flex-col gap-6 rounded-card border border-line bg-surface p-6 sm:p-8">
+    <section className="mx-4 my-8 flex flex-col gap-6 rounded-card border border-line bg-surface p-6 sm:mx-auto sm:w-full sm:max-w-xl sm:p-8">
       <div className="flex flex-col items-center gap-3 text-center">
         <Image src="/logo.png" alt="" width={44} height={44} priority />
         <h1 className="text-2xl font-semibold text-ink">Crea tu cuenta</h1>
