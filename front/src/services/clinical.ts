@@ -3,18 +3,26 @@ import { getAgenda, mockAppointmentById } from "@/services/appointments";
 import { getMe } from "@/services/auth";
 import { request } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
-import { mockConsultations, mockVaccinations, mockVeterinarians } from "@/services/mocks/fixtures";
+import {
+  mockConsultations,
+  mockVaccinations,
+  mockVaccines,
+  mockVeterinarians,
+} from "@/services/mocks/fixtures";
 import { getPatient } from "@/services/patients";
 import type {
   Appointment,
   Consultation,
   HistoryEntry,
   Patient,
+  Vaccination,
   VaccinationCardEntry,
+  Vaccine,
   VaccineStatus,
 } from "@/types/domain";
 
 const FORBIDDEN = 403;
+const NOT_FOUND = 404;
 const CONFLICT = 409;
 const RECENT_CONSULTATIONS = 3;
 // RN-49: una vacuna cuya próxima dosis cae en los próximos 7 días está por vencer.
@@ -33,8 +41,18 @@ export interface ConsultationInput {
   cost: number;
 }
 
+export interface VaccinationInput {
+  patientId: string;
+  vaccineId: string;
+  lot: string;
+  // AAAA-MM-DD (RN-48).
+  appliedAt: string;
+  nextDoseAt?: string;
+}
+
 // Los cambios de prueba viven mientras la pestaña está abierta.
 const mockConsultationStore = structuredClone(mockConsultations);
+const mockVaccinationStore = structuredClone(mockVaccinations);
 
 function mockHistory(patientId: string, type?: HistoryType): HistoryEntry[] {
   const consultations: HistoryEntry[] =
@@ -50,7 +68,7 @@ function mockHistory(patientId: string, type?: HistoryType): HistoryEntry[] {
   const vaccinations: HistoryEntry[] =
     type === "CONSULTATION"
       ? []
-      : mockVaccinations
+      : mockVaccinationStore
           .filter((item) => item.patientId === patientId)
           .map((vaccination) => ({
             kind: "VACCINATION",
@@ -70,7 +88,7 @@ function vaccineStatus(nextDoseAt: string | null, today: string): VaccineStatus 
 function mockVaccinationCard(patientId: string): VaccinationCardEntry[] {
   const today = clinicDateOf(new Date());
   const latest = new Map<string, VaccinationCardEntry>();
-  mockVaccinations
+  mockVaccinationStore
     .filter((item) => item.patientId === patientId)
     .sort((a, b) => a.appliedAt.localeCompare(b.appliedAt))
     .forEach((item) =>
@@ -173,4 +191,43 @@ export function saveConsultation(
     method: "POST",
     body: { appointmentId, ...input },
   });
+}
+
+// El select solo ofrece las vacunas activas del catálogo.
+export async function listVaccines(): Promise<Vaccine[]> {
+  const vaccines = isMockEnabled
+    ? await mockResponse(mockVaccines)
+    : await request<Vaccine[]>("/vaccines");
+  return vaccines.filter((vaccine) => vaccine.active);
+}
+
+async function mockRegisterVaccination(input: VaccinationInput): Promise<Vaccination> {
+  const me = await getMe();
+  const veterinarian = mockVeterinarians.find((item) => item.userId === me.id);
+  const vaccine = mockVaccines.find((item) => item.id === input.vaccineId && item.active);
+  if (!veterinarian) return mockError(FORBIDDEN, "FORBIDDEN", "No tienes permiso");
+  if (!vaccine) return mockError(NOT_FOUND, "NOT_FOUND", "Vacuna no encontrada");
+  const vaccination: Vaccination = {
+    id: crypto.randomUUID(),
+    patientId: input.patientId,
+    vaccine: { id: vaccine.id, name: vaccine.name },
+    veterinarian: {
+      id: veterinarian.id,
+      firstNames: veterinarian.firstNames,
+      lastNames: veterinarian.lastNames,
+    },
+    lot: input.lot,
+    appliedAt: input.appliedAt,
+    nextDoseAt: input.nextDoseAt ?? null,
+    price: vaccine.price,
+    createdAt: new Date().toISOString(),
+  };
+  mockVaccinationStore.push(vaccination);
+  return mockResponse(vaccination);
+}
+
+// RN-48: la API cobra la vacuna con el precio del catálogo al aplicarla (D-27).
+export function registerVaccination(input: VaccinationInput): Promise<Vaccination> {
+  if (isMockEnabled) return mockRegisterVaccination(input);
+  return request<Vaccination>("/vaccinations", { method: "POST", body: input });
 }

@@ -1,15 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ConsultationForm } from "@/features/clinical/components/consultation-form";
 import { PatientSummary } from "@/features/clinical/components/patient-summary";
+import { VaccinationForm } from "@/features/clinical/components/vaccination-form";
 import { ROUTES } from "@/lib/constants";
-import { getAttentionContext, type AttentionContext } from "@/services/clinical";
+import {
+  getAttentionContext,
+  getVaccinationCard,
+  type AttentionContext,
+} from "@/services/clinical";
 import type { Appointment } from "@/types/domain";
+
+type Tab = "consultation" | "vaccination";
+
+const TABS: { value: Tab; label: string }[] = [
+  { value: "consultation", label: "Consulta" },
+  { value: "vaccination", label: "Vacunación" },
+];
+
+const tabId = (tab: Tab) => `attention-tab-${tab}`;
+const panelId = (tab: Tab) => `attention-panel-${tab}`;
 
 type State =
   { status: "loading" } | { status: "error" } | { status: "loaded"; data: AttentionContext };
@@ -56,18 +72,97 @@ export function AttentionView({ appointmentId, date }: AttentionViewProps) {
   if (data.status === "not-confirmed") return <NotConfirmed appointment={data.appointment} />;
 
   return (
+    <AttentionTabs
+      context={data}
+      onContextChange={(next) => setState({ status: "loaded", data: next })}
+    />
+  );
+}
+
+type ReadyContext = Extract<AttentionContext, { status: "ready" }>;
+
+type AttentionTabsProps = {
+  context: ReadyContext;
+  onContextChange: (context: ReadyContext) => void;
+};
+
+// Una cita de Vacunación abre en su pestaña; las dos quedan montadas para no perder lo escrito.
+function AttentionTabs({ context, onContextChange }: AttentionTabsProps) {
+  const { appointment, patient } = context;
+  const [tab, setTab] = useState<Tab>(
+    appointment.type === "VACCINATION" ? "vaccination" : "consultation",
+  );
+
+  function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    const next = TABS.find((item) => item.value !== tab)?.value ?? tab;
+    setTab(next);
+    document.getElementById(tabId(next))?.focus();
+  }
+
+  // El carné del resumen se actualiza con la vacuna recién aplicada (RN-49).
+  async function refreshVaccinations() {
+    try {
+      onContextChange({ ...context, vaccinations: await getVaccinationCard(patient.id) });
+    } catch {
+      // Si falla, el carné se queda como estaba; la vacuna ya quedó guardada.
+    }
+  }
+
+  return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="lg:order-2">
         <PatientSummary
-          appointment={data.appointment}
-          patient={data.patient}
-          consultations={data.consultations}
-          vaccinations={data.vaccinations}
+          appointment={appointment}
+          patient={patient}
+          consultations={context.consultations}
+          vaccinations={context.vaccinations}
         />
       </div>
-      <div className="lg:order-1">
-        <ConsultationForm appointment={data.appointment} patient={data.patient} />
-      </div>
+      <section className="flex flex-col gap-5 rounded-card border border-line bg-surface p-5 lg:order-1">
+        <div role="tablist" aria-label="Atención" className="flex gap-2">
+          {TABS.map((item) => {
+            const selected = item.value === tab;
+            return (
+              <button
+                key={item.value}
+                id={tabId(item.value)}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls={panelId(item.value)}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => setTab(item.value)}
+                onKeyDown={handleTabKey}
+                className={cn(
+                  "min-h-11 rounded-control border px-4 font-semibold transition-colors duration-150 ease-out",
+                  selected
+                    ? "border-brand-600 bg-brand-50 text-brand-700"
+                    : "border-field-border bg-surface text-ink hover:bg-brand-50",
+                )}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+        <div
+          id={panelId("consultation")}
+          role="tabpanel"
+          aria-labelledby={tabId("consultation")}
+          hidden={tab !== "consultation"}
+        >
+          <ConsultationForm appointment={appointment} patient={patient} />
+        </div>
+        <div
+          id={panelId("vaccination")}
+          role="tabpanel"
+          aria-labelledby={tabId("vaccination")}
+          hidden={tab !== "vaccination"}
+        >
+          <VaccinationForm patient={patient} onRegistered={refreshVaccinations} />
+        </div>
+      </section>
     </div>
   );
 }
