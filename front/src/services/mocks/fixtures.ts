@@ -332,6 +332,7 @@ export const mockConsultations: Consultation[] = (
     [ROCKY_ID, "2026-04-02", "Control general sin hallazgos", "Desparasitación interna", 33.1],
     [ROCKY_ID, "2025-12-10", "Gastroenteritis leve", "Dieta blanda por 3 días", 32.6],
     [LUNA_ID, "2026-08-20", "Conjuntivitis", "Colirio antibiótico por 5 días", 27.5],
+    [LUNA_ID, "2026-01-12", "Otitis leve", "Gotas óticas por 5 días", 26.9],
   ] as const
 ).map(([patientId, date, diagnosis, treatment, weightKg], index) => ({
   id: `2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d${String(index).padStart(2, "0")}`,
@@ -344,7 +345,8 @@ export const mockConsultations: Consultation[] = (
   diagnosis,
   treatment,
   prescription: null,
-  internalNotes: null,
+  // Una nota interna para comprobar que el portal no la muestra (RN-42).
+  internalNotes: patientId === LUNA_ID ? "Nota interna de prueba" : null,
   cost: 60000,
   createdAt: `${date}T14:00:00.000Z`,
 }));
@@ -355,6 +357,7 @@ export const mockVaccinations: Vaccination[] = (
     [ROCKY_ID, 1, "2025-08-01", "2026-08-01"],
     [ROCKY_ID, 3, "2026-05-10", "2027-05-10"],
     [LUNA_ID, 0, "2026-03-14", "2027-03-14"],
+    [LUNA_ID, 1, "2026-06-03", null],
   ] as const
 ).map(([patientId, vaccineIndex, appliedAt, nextDoseAt], index) => {
   const vaccine = mockVaccines[vaccineIndex];

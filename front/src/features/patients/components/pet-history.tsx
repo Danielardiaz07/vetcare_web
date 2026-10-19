@@ -6,6 +6,7 @@ import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { ClinicalHistory } from "@/features/clinical/components/clinical-history";
 import { PatientAvatar } from "@/features/patients/components/patient-avatar";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
 import { ROUTES } from "@/lib/constants";
@@ -127,6 +128,8 @@ export function PetHistory({ petId }: PetHistoryProps) {
           ))}
         </dl>
       </section>
+
+      <ClinicalHistory key={pet.id} pet={pet} />
     </div>
   );
 }
