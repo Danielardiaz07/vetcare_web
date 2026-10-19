@@ -1,3 +1,4 @@
+import { addDays, clinicDateOf } from "@/lib/clinic-time";
 import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
 import type {
   AppointmentTypeSetting,
@@ -323,6 +324,9 @@ const mockVetName = {
 };
 const ROCKY_ID = "7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f00";
 const LUNA_ID = "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+const MILO_ID = "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f";
+// Fechas relativas a hoy para que siempre haya una vacuna vencida y otra por vencer (RN-49).
+const mockToday = clinicDateOf(new Date());
 
 // Historial de prueba: Rocky tiene cuatro consultas para ver que solo salen las tres últimas.
 export const mockConsultations: Consultation[] = (
@@ -358,7 +362,9 @@ export const mockVaccinations: Vaccination[] = (
     [ROCKY_ID, 3, "2026-05-10", "2027-05-10"],
     [LUNA_ID, 0, "2026-03-14", "2027-03-14"],
     [LUNA_ID, 1, "2026-06-03", null],
-  ] as const
+    [LUNA_ID, 3, addDays(mockToday, -380), addDays(mockToday, -15)],
+    [MILO_ID, 2, addDays(mockToday, -360), addDays(mockToday, 5)],
+  ] as [string, number, string, string | null][]
 ).map(([patientId, vaccineIndex, appliedAt, nextDoseAt], index) => {
   const vaccine = mockVaccines[vaccineIndex];
   return {
