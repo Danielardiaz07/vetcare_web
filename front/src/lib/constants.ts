@@ -18,6 +18,7 @@ export const ROUTES = {
   panelAttention: "/panel/attention",
   panelAppointmentAttention: (appointmentId: string) => `/panel/attention/${appointmentId}`,
   panelInvoices: "/panel/invoices",
+  panelNewInvoice: "/panel/invoices/new",
   panelUsers: "/panel/users",
   panelStaff: "/panel/staff",
   // El texto de la Ley 1581 va en el pie de la portada.
@@ -51,6 +52,7 @@ export const FIELD_LIMITS = {
   TEMPERATURE_MAX: 99.9,
   COST_MAX: 9_999_999_999,
   VACCINE_LOT_MAX: 30,
+  VOID_REASON_MAX: 200,
 } as const;
 
 // Los mismos límites de agenda que la API (RN-21, RN-22).
@@ -65,3 +67,6 @@ export const CLINIC_TIME_ZONE = "America/Bogota";
 
 export const OTP_LENGTH = 6;
 export const OTP_RESEND_SECONDS = 60;
+
+// RN-71 y D-27: todo lo facturado lleva IVA del 19 %.
+export const IVA_RATE_PERCENT = 19;
