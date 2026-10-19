@@ -7,20 +7,22 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ClinicalHistory } from "@/features/clinical/components/clinical-history";
+import { VaccineAlerts } from "@/features/clinical/components/vaccine-alerts";
 import { PatientAvatar } from "@/features/patients/components/patient-avatar";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
 import { ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
+import { getMyVaccinationCard } from "@/services/clinical";
 import { ApiError } from "@/services/http-client";
 import { getMyPatient, getMyPatients } from "@/services/patients";
-import type { Patient } from "@/types/domain";
+import type { Patient, VaccinationCardEntry } from "@/types/domain";
 
 const FORBIDDEN = 403;
 const NOT_FOUND = 404;
 
 const weightFormatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 });
 
-type HistoryData = { pet: Patient; pets: Patient[] };
+type HistoryData = { pet: Patient; pets: Patient[]; card: VaccinationCardEntry[] };
 
 type HistoryState =
   | { status: "loading" }
@@ -29,8 +31,12 @@ type HistoryState =
   | { status: "ready"; data: HistoryData };
 
 async function loadHistory(petId: string): Promise<HistoryData> {
-  const [pet, pets] = await Promise.all([getMyPatient(petId), getMyPatients()]);
-  return { pet, pets };
+  const [pet, pets, card] = await Promise.all([
+    getMyPatient(petId),
+    getMyPatients(),
+    getMyVaccinationCard(petId),
+  ]);
+  return { pet, pets, card };
 }
 
 type PetHistoryProps = {
@@ -81,7 +87,7 @@ export function PetHistory({ petId }: PetHistoryProps) {
     );
   }
 
-  const { pet, pets } = state.data;
+  const { pet, pets, card } = state.data;
   const details: [string, string][] = [
     ["Especie", SPECIES_LABELS[pet.species]],
     ["Raza", pet.breed],
@@ -129,7 +135,9 @@ export function PetHistory({ petId }: PetHistoryProps) {
         </dl>
       </section>
 
-      <ClinicalHistory key={pet.id} pet={pet} />
+      <VaccineAlerts items={[{ pet, card }]} />
+
+      <ClinicalHistory key={pet.id} pet={pet} card={card} />
     </div>
   );
 }

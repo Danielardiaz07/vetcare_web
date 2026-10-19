@@ -5,13 +5,15 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { NextAppointment } from "@/features/appointments/components/next-appointment";
+import { VaccineAlerts, type PetVaccines } from "@/features/clinical/components/vaccine-alerts";
 import { PetCard } from "@/features/patients/components/pet-card";
 import { getMyAppointments } from "@/services/appointments";
 import { getMe } from "@/services/auth";
+import { getMyVaccinationCard } from "@/services/clinical";
 import { getMyPatients } from "@/services/patients";
-import type { Appointment, Patient } from "@/types/domain";
+import type { Appointment } from "@/types/domain";
 
-type HomeData = { firstName: string; pets: Patient[]; nextAppointment: Appointment | null };
+type HomeData = { firstName: string; pets: PetVaccines[]; nextAppointment: Appointment | null };
 
 type HomeState = { status: "loading" } | { status: "error" } | { status: "ready"; data: HomeData };
 
@@ -21,8 +23,13 @@ async function loadHome(): Promise<HomeData> {
     getMyPatients(),
     getMyAppointments("upcoming", 1, 1),
   ]);
+  const cards = await Promise.all(pets.map((pet) => getMyVaccinationCard(pet.id)));
   const firstName = profile.owner?.firstNames.split(" ")[0] ?? "";
-  return { firstName, pets, nextAppointment: upcoming.data[0] ?? null };
+  return {
+    firstName,
+    pets: pets.map((pet, index) => ({ pet, card: cards[index] ?? [] })),
+    nextAppointment: upcoming.data[0] ?? null,
+  };
 }
 
 export function MyPets() {
@@ -57,6 +64,8 @@ export function MyPets() {
         {firstName ? `Hola, ${firstName}` : "Hola"}
       </h1>
 
+      <VaccineAlerts items={pets} />
+
       {pets.length > 0 && <NextAppointment appointment={nextAppointment} />}
 
       <section aria-labelledby="my-pets-title" className="flex flex-col gap-4">
@@ -70,9 +79,9 @@ export function MyPets() {
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
-            {pets.map((pet) => (
+            {pets.map(({ pet, card }) => (
               <li key={pet.id}>
-                <PetCard pet={pet} />
+                <PetCard pet={pet} card={card} />
               </li>
             ))}
           </ul>

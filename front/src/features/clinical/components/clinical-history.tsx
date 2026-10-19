@@ -9,7 +9,7 @@ import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { HistoryEntry } from "@/features/clinical/components/history-entry";
 import { getMyPatientHistory, type HistoryFilters, type HistoryType } from "@/services/clinical";
-import type { HistoryEntry as Entry, Patient } from "@/types/domain";
+import type { HistoryEntry as Entry, Patient, VaccinationCardEntry } from "@/types/domain";
 
 // Solo las pestañas que la API devuelve hoy; cirugías, internaciones y laboratorio llegan después.
 const TABS: { type: HistoryType; label: string }[] = [
@@ -25,9 +25,11 @@ type LoadState =
 
 type ClinicalHistoryProps = {
   pet: Patient;
+  // Carné de la mascota: da el estado de la última dosis de cada vacuna (RN-49).
+  card: VaccinationCardEntry[];
 };
 
-export function ClinicalHistory({ pet }: ClinicalHistoryProps) {
+export function ClinicalHistory({ pet, card }: ClinicalHistoryProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [filters, setFilters] = useState<HistoryFilters>({});
@@ -71,6 +73,10 @@ export function ClinicalHistory({ pet }: ClinicalHistoryProps) {
   const current =
     countOf(tab) > 0 ? tab : (TABS.find((item) => countOf(item.type) > 0)?.type ?? tab);
   const visible = entries.filter((entry) => entry.kind === current);
+  const statusOf = (entry: Entry) =>
+    entry.kind === "VACCINATION"
+      ? card.find((item) => item.id === entry.vaccination.id)?.status
+      : undefined;
 
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
@@ -161,7 +167,7 @@ export function ClinicalHistory({ pet }: ClinicalHistoryProps) {
                 <li
                   key={entry.kind === "CONSULTATION" ? entry.consultation.id : entry.vaccination.id}
                 >
-                  <HistoryEntry entry={entry} />
+                  <HistoryEntry entry={entry} vaccineStatus={statusOf(entry)} />
                 </li>
               ))}
             </ol>

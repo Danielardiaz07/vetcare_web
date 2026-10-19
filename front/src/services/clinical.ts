@@ -142,6 +142,17 @@ export function getVaccinationCard(patientId: string): Promise<VaccinationCardEn
   return request<VaccinationCardEntry[]>(`/patients/${patientId}/vaccination-card`);
 }
 
+async function mockMyVaccinationCard(patientId: string): Promise<VaccinationCardEntry[]> {
+  await getMyPatient(patientId);
+  return mockResponse(mockVaccinationCard(patientId));
+}
+
+// RN-40: solo las mascotas del propietario de la sesión.
+export function getMyVaccinationCard(patientId: string): Promise<VaccinationCardEntry[]> {
+  if (isMockEnabled) return mockMyVaccinationCard(patientId);
+  return request<VaccinationCardEntry[]>(`/me/patients/${patientId}/vaccination-card`);
+}
+
 export type AttentionContext =
   // RN-44: la agenda del veterinario solo trae sus citas, así que una ajena no aparece.
   | { status: "not-found" }
