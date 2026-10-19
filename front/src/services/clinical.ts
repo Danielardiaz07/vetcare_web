@@ -9,7 +9,7 @@ import {
   mockVaccines,
   mockVeterinarians,
 } from "@/services/mocks/fixtures";
-import { getPatient } from "@/services/patients";
+import { getMyPatient, getPatient } from "@/services/patients";
 import type {
   Appointment,
   Consultation,
@@ -29,6 +29,12 @@ const RECENT_CONSULTATIONS = 3;
 const DUE_SOON_DAYS = 7;
 
 export type HistoryType = "CONSULTATION" | "VACCINATION";
+
+// AAAA-MM-DD; los dos extremos se incluyen.
+export interface HistoryFilters {
+  from?: string;
+  to?: string;
+}
 
 export interface ConsultationInput {
   symptoms: string;
@@ -101,6 +107,34 @@ function mockVaccinationCard(patientId: string): VaccinationCardEntry[] {
 export function getPatientHistory(patientId: string, type?: HistoryType): Promise<HistoryEntry[]> {
   if (isMockEnabled) return mockResponse(mockHistory(patientId, type));
   return request<HistoryEntry[]>(`/patients/${patientId}/history`, { query: { type } });
+}
+
+const entryDate = (entry: HistoryEntry) =>
+  entry.kind === "CONSULTATION" ? clinicDateOf(new Date(entry.date)) : entry.date;
+
+async function mockMyHistory(patientId: string, filters: HistoryFilters): Promise<HistoryEntry[]> {
+  await getMyPatient(patientId);
+  const entries = mockHistory(patientId)
+    .filter((entry) => {
+      const date = entryDate(entry);
+      return (!filters.from || date >= filters.from) && (!filters.to || date <= filters.to);
+    })
+    // RN-42: el propietario nunca recibe las notas internas.
+    .map((entry) =>
+      entry.kind === "CONSULTATION"
+        ? { ...entry, consultation: { ...entry.consultation, internalNotes: null } }
+        : entry,
+    );
+  return mockResponse(entries);
+}
+
+// RN-40: la API solo responde por las mascotas del propietario de la sesión.
+export function getMyPatientHistory(
+  patientId: string,
+  filters: HistoryFilters = {},
+): Promise<HistoryEntry[]> {
+  if (isMockEnabled) return mockMyHistory(patientId, filters);
+  return request<HistoryEntry[]>(`/me/patients/${patientId}/history`, { query: { ...filters } });
 }
 
 export function getVaccinationCard(patientId: string): Promise<VaccinationCardEntry[]> {
