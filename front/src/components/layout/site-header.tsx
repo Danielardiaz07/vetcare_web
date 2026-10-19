@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { LoginButton } from "@/features/auth/components/login-button";
 import { ROUTES } from "@/lib/constants";
 
 export function SiteHeader() {
@@ -14,9 +15,7 @@ export function SiteHeader() {
           VetCare
         </Link>
         <nav aria-label="Principal" className="flex items-center gap-4 text-sm">
-          <Link href={ROUTES.login} className="text-muted hover:text-ink">
-            Iniciar sesión
-          </Link>
+          <LoginButton />
           <Link
             href={ROUTES.register}
             className="rounded-lg bg-brand-600 px-3 py-1.5 font-medium text-white hover:bg-brand-700"

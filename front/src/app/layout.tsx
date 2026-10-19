@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import type { ReactNode } from "react";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { ToastProvider } from "@/components/ui/toast";
+import { AuthProvider } from "@/features/auth/auth-provider";
+import { AuthDialogProvider } from "@/features/auth/components/auth-dialog";
 import "./globals.css";
 
 const ibmPlex = IBM_Plex_Sans({
@@ -25,9 +26,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" className={ibmPlex.variable}>
       <body className="flex min-h-dvh flex-col">
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-        <SiteFooter />
+        <ToastProvider>
+          <AuthProvider>
+            <AuthDialogProvider>{children}</AuthDialogProvider>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );
