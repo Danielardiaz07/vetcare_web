@@ -124,15 +124,21 @@ export class ClinicalService {
     const vaccine = await this.repository.findVaccine(dto.vaccineId);
     if (!vaccine?.active) throw new NotFoundError("Vacuna no encontrada");
 
-    const record = await this.repository.createVaccination({
-      patientId: patient.id,
-      veterinarianId,
-      vaccineId: vaccine.id,
-      lot: dto.lot,
-      appliedAt: utcMidnight(dto.appliedAt),
-      nextDoseAt: dto.nextDoseAt ? utcMidnight(dto.nextDoseAt) : undefined,
-      price: vaccine.price,
-    });
+    if (dto.appointmentId)
+      await this.assertCanCloseAppointment(dto.appointmentId, patient.id, veterinarianId);
+
+    const record = await this.repository.createVaccination(
+      {
+        patientId: patient.id,
+        veterinarianId,
+        vaccineId: vaccine.id,
+        lot: dto.lot,
+        appliedAt: utcMidnight(dto.appliedAt),
+        nextDoseAt: dto.nextDoseAt ? utcMidnight(dto.nextDoseAt) : undefined,
+        price: vaccine.price,
+      },
+      dto.appointmentId,
+    );
     return toVaccinationResponse(record);
   }
 
@@ -183,6 +189,25 @@ export class ClinicalService {
       const response = toVaccinationResponse(record);
       return { ...response, status: this.statusOf(response.nextDoseAt, today) };
     });
+  }
+
+  // Mismas reglas que la consulta: RN-44 (veterinario asignado) y RN-43 (cita confirmada).
+  private async assertCanCloseAppointment(
+    appointmentId: string,
+    patientId: string,
+    veterinarianId: string,
+  ): Promise<void> {
+    const appointment = await this.repository.findAppointment(appointmentId);
+    if (!appointment) throw new NotFoundError("Cita no encontrada");
+    if (appointment.veterinarianId !== veterinarianId) {
+      throw new ForbiddenError("Solo el veterinario asignado puede registrar la vacunacion");
+    }
+    if (appointment.patientId !== patientId) {
+      throw new ConflictError("La cita no corresponde a esa mascota");
+    }
+    if (appointment.status !== AppointmentStatus.CONFIRMED) {
+      throw new ConflictError("Solo se registra una vacunacion sobre una cita confirmada");
+    }
   }
 
   private statusOf(nextDoseAt: string | null, today: string): VaccineStatus {

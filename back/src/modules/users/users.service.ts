@@ -44,6 +44,7 @@ export class UsersService {
         firstNames: owner.firstNames,
         lastNames: owner.lastNames,
         phone: owner.phone,
+        address: owner.address,
       },
     };
   }

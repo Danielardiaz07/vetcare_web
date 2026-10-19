@@ -1,4 +1,3 @@
-import type { Patient } from "@prisma/client";
 import type {
   CreatePatientRequestDto,
   ListMyPatientsQueryDto,
@@ -6,17 +5,18 @@ import type {
   PatientResponseDto,
   UpdatePatientRequestDto,
 } from "@/modules/patients/dto/patients.dto";
-import type { PatientsRepository } from "@/modules/patients/patients.repository";
+import type { PatientRecord, PatientsRepository } from "@/modules/patients/patients.repository";
 import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
 import { ageFrom } from "@/shared/utils/age";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
 
 const ISO_DATE_LENGTH = 10;
 
-function toPatientResponse(patient: Patient): PatientResponseDto {
+function toPatientResponse(patient: PatientRecord): PatientResponseDto {
   return {
     id: patient.id,
     ownerId: patient.ownerId,
+    owner: patient.owner,
     name: patient.name,
     species: patient.species,
     breed: patient.breed,
@@ -44,6 +44,7 @@ export class PatientsService {
   async list(query: ListPatientsQueryDto): Promise<Paginated<PatientResponseDto>> {
     const { items, total } = await this.repository.list({
       ownerId: query.ownerId,
+      ownerDocument: query.ownerDocument,
       species: query.species,
       q: query.q,
       active: query.active,
@@ -96,7 +97,7 @@ export class PatientsService {
     return ownerId;
   }
 
-  private async findOrFail(id: string): Promise<Patient> {
+  private async findOrFail(id: string): Promise<PatientRecord> {
     const patient = await this.repository.findById(id);
     if (!patient) throw new NotFoundError("Paciente no encontrado");
     return patient;
