@@ -4,7 +4,7 @@ import { VACCINE_STATUS } from "@/features/clinical/labels";
 import { ownerFullName } from "@/features/owners/labels";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
-import { formatClinicTime } from "@/lib/clinic-time";
+import { clinicDateOf, formatClinicTime } from "@/lib/clinic-time";
 import { calculateAge, formatDate } from "@/lib/format";
 import type { Appointment, Consultation, Patient, VaccinationCardEntry } from "@/types/domain";
 
@@ -61,7 +61,9 @@ export function PatientSummary({
           <ul className="flex flex-col gap-3">
             {consultations.map((item) => (
               <li key={item.id} className="flex flex-col gap-0.5">
-                <span className="text-sm text-subtle">{formatDate(item.createdAt)}</span>
+                <span className="text-sm text-subtle">
+                  {formatDate(clinicDateOf(new Date(item.createdAt)))}
+                </span>
                 <span className="break-words text-ink">{item.diagnosis}</span>
               </li>
             ))}

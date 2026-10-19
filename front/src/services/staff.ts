@@ -160,8 +160,10 @@ export async function listAccountsWithoutProfile(kind: StaffKind): Promise<Staff
 
 export async function getSchedule(kind: StaffKind, id: string): Promise<ScheduleBlock[]> {
   if (isMockEnabled) return mockResponse(mockScheduleStore[id] ?? []);
-  const blocks = await request<(ScheduleBlock & { id: string })[]>(`/${kind}/${id}/schedules`);
-  return blocks.map(({ weekday, startTime, endTime }) => ({ weekday, startTime, endTime }));
+  const { schedules } = await request<{ schedules: (ScheduleBlock & { id: string })[] }>(
+    `/${kind}/${id}/schedules`,
+  );
+  return schedules.map(({ weekday, startTime, endTime }) => ({ weekday, startTime, endTime }));
 }
 
 // D-22: se reemplaza la semana completa en un solo PUT.
@@ -181,9 +183,10 @@ export async function saveSchedule(
   });
 }
 
-export function listAppointmentTypes(): Promise<AppointmentTypeSetting[]> {
+export async function listAppointmentTypes(): Promise<AppointmentTypeSetting[]> {
   if (isMockEnabled) return mockResponse(mockTypeStore);
-  return request<AppointmentTypeSetting[]>("/appointment-types");
+  const { data } = await request<{ data: AppointmentTypeSetting[] }>("/appointment-types");
+  return data;
 }
 
 // D-21: la duración siempre es múltiplo de 30 minutos.

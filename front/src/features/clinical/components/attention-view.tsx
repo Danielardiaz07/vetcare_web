@@ -160,7 +160,11 @@ function AttentionTabs({ context, onContextChange }: AttentionTabsProps) {
           aria-labelledby={tabId("vaccination")}
           hidden={tab !== "vaccination"}
         >
-          <VaccinationForm patient={patient} onRegistered={refreshVaccinations} />
+          <VaccinationForm
+            patient={patient}
+            appointmentId={appointment.id}
+            onRegistered={refreshVaccinations}
+          />
         </div>
       </section>
     </div>
@@ -181,7 +185,7 @@ function NotConfirmed({ appointment }: { appointment: Appointment }) {
     return (
       <Unavailable
         title="Esta cita ya fue atendida"
-        description="La consulta ya quedó registrada en el historial de la mascota."
+        description="La atención ya quedó registrada en el historial de la mascota."
       />
     );
   }

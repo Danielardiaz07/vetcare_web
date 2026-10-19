@@ -1,7 +1,7 @@
 import { request } from "@/services/http-client";
 import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
-import { mockClinicPatients, mockOwner } from "@/services/mocks/fixtures";
-import { listOwners } from "@/services/owners";
+import { FIELD_LIMITS } from "@/lib/constants";
+import { mockClinicPatients, mockOwner, mockOwners } from "@/services/mocks/fixtures";
 import type { Paginated } from "@/types/api";
 import type { Patient, Sex, Species } from "@/types/domain";
 
@@ -16,7 +16,7 @@ export interface ListPatientsParams {
   limit?: number;
   q?: string;
   ownerId?: string;
-  // La API no filtra por cédula: se busca primero el propietario y luego sus mascotas.
+  // D-28 (1): cédula exacta del propietario.
   ownerDocument?: string;
 }
 
@@ -39,10 +39,10 @@ const emptyPage = (page: number, limit: number): Paginated<Patient> => ({
   meta: { page, limit, total: 0, totalPages: 0 },
 });
 
-async function ownerIdByDocument(documentNumber: string): Promise<string | undefined> {
-  const { data } = await listOwners({ page: 1, q: documentNumber });
-  return data.find((owner) => owner.documentNumber === documentNumber)?.id;
-}
+// La API rechaza (422) una cédula fuera de 6 a 10 dígitos; esa búsqueda no tiene resultados.
+const isDocumentNumber = (value: string) =>
+  value.length >= FIELD_LIMITS.DOCUMENT_NUMBER_MIN &&
+  value.length <= FIELD_LIMITS.DOCUMENT_NUMBER_MAX;
 
 // Los cambios de prueba viven mientras la pestaña está abierta.
 const mockPatientStore = structuredClone(mockClinicPatients);
@@ -54,10 +54,12 @@ function mockList(
   limit: number,
   q: string | undefined,
   ownerId: string | undefined,
+  ownerDocument: string | undefined,
 ): Promise<Paginated<Patient>> {
   const search = q?.toLowerCase();
   const matches = mockPatientStore
     .filter((pet) => !ownerId || pet.ownerId === ownerId)
+    .filter((pet) => !ownerDocument || pet.owner.documentNumber === ownerDocument)
     .filter((pet) => !search || pet.name.toLowerCase().includes(search))
     .sort((a, b) => a.name.localeCompare(b.name));
   const total = matches.length;
@@ -81,10 +83,13 @@ export async function listPatients({
   ownerId,
   ownerDocument,
 }: ListPatientsParams): Promise<Paginated<Patient>> {
-  const owner = ownerDocument ? await ownerIdByDocument(ownerDocument) : ownerId;
-  if (ownerDocument && !owner) return emptyPage(page, limit);
-  if (isMockEnabled) return mockList(page, limit, q, owner);
-  return request<Paginated<Patient>>("/patients", { query: { page, limit, q, ownerId: owner } });
+  if (ownerDocument !== undefined && !isDocumentNumber(ownerDocument)) {
+    return emptyPage(page, limit);
+  }
+  if (isMockEnabled) return mockList(page, limit, q, ownerId, ownerDocument);
+  return request<Paginated<Patient>>("/patients", {
+    query: { page, limit, q, ownerId, ownerDocument },
+  });
 }
 
 export function getPatient(id: string): Promise<Patient> {
@@ -97,7 +102,19 @@ export function getPatient(id: string): Promise<Patient> {
 
 export function createPatient(input: CreatePatientInput): Promise<Patient> {
   if (isMockEnabled) {
-    const pet: Patient = { ...input, id: crypto.randomUUID(), photoPath: null, active: true };
+    const owner = mockOwners.find((item) => item.id === input.ownerId) ?? mockOwner;
+    const pet: Patient = {
+      ...input,
+      owner: {
+        id: owner.id,
+        firstNames: owner.firstNames,
+        lastNames: owner.lastNames,
+        documentNumber: owner.documentNumber,
+      },
+      id: crypto.randomUUID(),
+      photoPath: null,
+      active: true,
+    };
     mockPatientStore.push(pet);
     return mockResponse(pet);
   }

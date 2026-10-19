@@ -21,11 +21,12 @@ type Load<T> = { status: "loading" } | { status: "error" } | { status: "ready"; 
 
 type VaccinationFormProps = {
   patient: Patient;
+  appointmentId: string;
   onRegistered: (vaccination: Vaccination) => void;
 };
 
 // RF-19: cada vacuna se guarda al registrarla; en una atención se pueden aplicar varias.
-export function VaccinationForm({ patient, onRegistered }: VaccinationFormProps) {
+export function VaccinationForm({ patient, appointmentId, onRegistered }: VaccinationFormProps) {
   const { show } = useToast();
   const today = useMemo(() => clinicDateOf(new Date()), []);
   const [vaccines, setVaccines] = useState<Load<Vaccine[]>>({ status: "loading" });
@@ -70,6 +71,8 @@ export function VaccinationForm({ patient, onRegistered }: VaccinationFormProps)
         ...input,
         patientId: patient.id,
         ...(nextDoseAt && { nextDoseAt }),
+        // RN-53: la primera vacuna cierra la cita; las siguientes ya no la llevan.
+        ...(applied.length === 0 && { appointmentId }),
       });
       setApplied((current) => [...current, vaccination]);
       onRegistered(vaccination);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -19,19 +19,15 @@ import { SPECIES_LABELS } from "@/features/patients/labels";
 import { calculateAge } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { ApiError } from "@/services/http-client";
-import { getOwner } from "@/services/owners";
 import { deactivatePatient, listPatients } from "@/services/patients";
 import type { Paginated } from "@/types/api";
 import type { Patient } from "@/types/domain";
 
 const SEARCH_DELAY_MS = 300;
 const DIGITS_ONLY = /^\d+$/;
-const UNKNOWN_OWNER = "No disponible";
-
-type PatientRow = Patient & { ownerName: string };
 
 type ListState =
-  { status: "loading" } | { status: "error" } | { status: "ready"; result: Paginated<PatientRow> };
+  { status: "loading" } | { status: "error" } | { status: "ready"; result: Paginated<Patient> };
 
 export function PatientsList() {
   const { show } = useToast();
@@ -43,25 +39,7 @@ export function PatientsList() {
   const [editing, setEditing] = useState<Patient | null>(null);
   const [deactivating, setDeactivating] = useState<Patient | null>(null);
   const [deactivatingBusy, setDeactivatingBusy] = useState(false);
-  const ownerNames = useRef(new Map<string, string>());
   const term = useDebouncedValue(search.trim(), SEARCH_DELAY_MS);
-
-  // La API devuelve solo el id del propietario; los nombres se piden una vez y se guardan.
-  const withOwnerNames = useCallback(async (patients: Patient[]): Promise<PatientRow[]> => {
-    const missing = [...new Set(patients.map((pet) => pet.ownerId))].filter(
-      (id) => !ownerNames.current.has(id),
-    );
-    const owners = await Promise.allSettled(missing.map((id) => getOwner(id)));
-    for (const outcome of owners) {
-      if (outcome.status === "fulfilled") {
-        ownerNames.current.set(outcome.value.id, ownerFullName(outcome.value));
-      }
-    }
-    return patients.map((pet) => ({
-      ...pet,
-      ownerName: ownerNames.current.get(pet.ownerId) ?? UNKNOWN_OWNER,
-    }));
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -69,7 +47,6 @@ export function PatientsList() {
     // Solo dígitos es una cédula; lo demás es el nombre de la mascota.
     const filter = DIGITS_ONLY.test(term) ? { ownerDocument: term } : { q: term || undefined };
     listPatients({ page, ...filter })
-      .then(async (result) => ({ ...result, data: await withOwnerNames(result.data) }))
       .then((result) => {
         if (active) setList({ status: "ready", result });
       })
@@ -79,7 +56,7 @@ export function PatientsList() {
     return () => {
       active = false;
     };
-  }, [page, term, reloadKey, withOwnerNames]);
+  }, [page, term, reloadKey]);
 
   // Una búsqueda nueva vuelve a la primera página.
   useEffect(() => setPage(1), [term]);
@@ -104,7 +81,7 @@ export function PatientsList() {
     }
   }
 
-  const columns: DataTableColumn<PatientRow>[] = [
+  const columns: DataTableColumn<Patient>[] = [
     {
       key: "name",
       header: "Nombre",
@@ -118,7 +95,7 @@ export function PatientsList() {
     { key: "species", header: "Especie", render: (pet) => SPECIES_LABELS[pet.species] },
     { key: "breed", header: "Raza", render: (pet) => pet.breed },
     { key: "age", header: "Edad", render: (pet) => calculateAge(pet.birthDate) },
-    { key: "owner", header: "Propietario", render: (pet) => pet.ownerName },
+    { key: "owner", header: "Propietario", render: (pet) => ownerFullName(pet.owner) },
     {
       key: "status",
       header: "Estado",

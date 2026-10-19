@@ -16,9 +16,18 @@ export interface Owner {
   hasAccount: boolean;
 }
 
+// D-28 (1): cada paciente trae los datos básicos de su propietario.
+export interface PatientOwner {
+  id: string;
+  firstNames: string;
+  lastNames: string;
+  documentNumber: string;
+}
+
 export interface Patient {
   id: string;
   ownerId: string;
+  owner: PatientOwner;
   name: string;
   species: Species;
   breed: string;
