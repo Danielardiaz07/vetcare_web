@@ -146,3 +146,42 @@ export interface VaccinationCardEntry extends Vaccination {
 export type HistoryEntry =
   | { kind: "CONSULTATION"; date: string; consultation: Consultation }
   | { kind: "VACCINATION"; date: string; vaccination: Vaccination };
+
+export type PaymentMethod = "CASH" | "CARD" | "TRANSFER";
+
+export type InvoiceStatus = "PAID" | "VOIDED";
+
+// RN-70: consulta o vacunación atendida que aún no se ha facturado.
+export interface PendingConcept {
+  kind: "CONSULTATION" | "VACCINATION";
+  id: string;
+  description: string;
+  patientName: string;
+  amount: number;
+  date: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  amount: number;
+  taxed: boolean;
+  tax: number;
+  consultationId: string | null;
+  vaccinationId: string | null;
+}
+
+// D-27: nace Pagada; solo el ADMIN la anula con motivo (RN-74).
+export interface Invoice {
+  id: string;
+  number: string;
+  status: InvoiceStatus;
+  paymentMethod: PaymentMethod;
+  owner: { id: string; firstNames: string; lastNames: string; documentNumber: string };
+  subtotal: number;
+  tax: number;
+  total: number;
+  voidReason: string | null;
+  items: InvoiceItem[];
+  createdAt: string;
+}

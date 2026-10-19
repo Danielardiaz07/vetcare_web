@@ -34,6 +34,8 @@ export const PANEL_MENU: Record<StaffRole, PanelMenuItem[]> = {
   ADMIN: [
     { href: ROUTES.panelUsers, label: "Usuarios", icon: "users" },
     { href: ROUTES.panelStaff, label: "Personal y horarios", icon: "clock" },
+    // RN-74: el administrador entra para anular facturas.
+    { href: ROUTES.panelInvoices, label: "Facturación", icon: "receipt" },
   ],
 };
 

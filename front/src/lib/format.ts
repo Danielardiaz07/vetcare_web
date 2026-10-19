@@ -17,6 +17,20 @@ export function formatDate(iso: string): string {
   return `${part("day")} ${part("month")} ${part("year")}`;
 }
 
+const copFormatter = (fractionDigits: number) =>
+  new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+const copWhole = copFormatter(0);
+const copCents = copFormatter(2);
+
+// "$ 85.000"; los centavos solo aparecen cuando el IVA los produce ("$ 8.550,50").
+export const formatCop = (value: number) =>
+  (Number.isInteger(value) ? copWhole : copCents).format(value);
+
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 // RN-15: la edad nunca se guarda; se calcula con la fecha de nacimiento (AAAA-MM-DD).

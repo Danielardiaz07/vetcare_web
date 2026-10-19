@@ -1,8 +1,10 @@
 import { addDays, clinicDateOf } from "@/lib/clinic-time";
+import { IVA_RATE_PERCENT } from "@/lib/constants";
 import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
 import type {
   AppointmentTypeSetting,
   Consultation,
+  Invoice,
   Owner,
   Patient,
   ScheduleBlock,
@@ -377,5 +379,46 @@ export const mockVaccinations: Vaccination[] = (
     nextDoseAt,
     price: vaccine?.price ?? 0,
     createdAt: `${appliedAt}T15:00:00.000Z`,
+  };
+});
+
+// Facturas de prueba: una pagada y una anulada, cuya consulta vuelve a quedar pendiente (RN-73).
+const [, mockRockyOwner] = mockOwners;
+export const mockInvoices: Invoice[] = (
+  [
+    [3, "PAID", "CASH", null, "2025-12-11T15:00:00.000Z"],
+    [2, "VOIDED", "CARD", "Se facturó con el valor equivocado", "2026-04-03T15:00:00.000Z"],
+  ] as const
+).map(([consultationIndex, status, paymentMethod, voidReason, createdAt], index) => {
+  const consultation = mockConsultations[consultationIndex];
+  const amount = consultation?.cost ?? 0;
+  const tax = (amount * IVA_RATE_PERCENT) / 100;
+  return {
+    id: `6e7f8a9b-0c1d-4e2f-8a3b-4c5d6e7f8a${String(index).padStart(2, "0")}`,
+    number: `FAC-${String(index + 1).padStart(6, "0")}`,
+    status,
+    paymentMethod,
+    owner: {
+      id: mockRockyOwner?.id ?? "",
+      firstNames: mockRockyOwner?.firstNames ?? "",
+      lastNames: mockRockyOwner?.lastNames ?? "",
+      documentNumber: mockRockyOwner?.documentNumber ?? "",
+    },
+    subtotal: amount,
+    tax,
+    total: amount + tax,
+    voidReason,
+    items: [
+      {
+        id: `7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b${String(index).padStart(2, "0")}`,
+        description: "Consulta - Rocky",
+        amount,
+        taxed: true,
+        tax,
+        consultationId: consultation?.id ?? null,
+        vaccinationId: null,
+      },
+    ],
+    createdAt,
   };
 });
