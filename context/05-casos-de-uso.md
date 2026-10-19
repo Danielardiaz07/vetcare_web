@@ -65,7 +65,7 @@ Módulos: M1 Seguridad y acceso · M2 Portal del propietario · M3 Gestión · M
 
 - **Actor**: Veterinario. **Precondición**: sesión como veterinario; cita `CONFIRMADA` asignada a él.
 - **Flujo básico**: 1) abre su agenda y elige la cita; 2) el sistema muestra historial y carné del paciente (*include*); 3) registra síntomas, peso, temperatura, diagnóstico y tratamiento; 4) guarda; 5) el sistema guarda la consulta, actualiza el peso del paciente, pasa la cita a `ATENDIDA` y deja la consulta pendiente de facturar.
-- **Alternos**: 3a) formula medicamentos (*extend*): agrega medicamentos y cantidades, el sistema valida y descuenta stock; 3b) stock insuficiente → advierte y no permite entregar; 3c) aplica vacuna → continúa en CU-22.
+- **Alternos**: 3a) formula medicamentos (*extend*): agrega medicamentos y cantidades, el sistema valida y descuenta stock; 3b) stock insuficiente → advierte y no permite entregar; 3c) aplica vacuna → continúa en CU-22; si la cita es de vacunación y no hubo consulta, CU-22 recibe la cita y la pasa a `ATENDIDA` en la misma transacción (RN-53).
 - **Postcondición**: consulta en el historial, visible en el portal. **Trazabilidad**: RF-18, RF-19 · RNF-11 · RN-43 a RN-48.
 
 ### CU-28 Generar factura

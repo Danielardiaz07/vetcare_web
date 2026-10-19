@@ -82,6 +82,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-50 | Cirugía, internación (con ingreso y egreso) y examen de laboratorio (con resultados) se asocian al paciente | RF-20 |
 | RN-51 | Servicio estético: tipo (baño, corte, peluquería), estilista, observaciones y costo | RF-21 |
 | RN-52 | Tipos de cita: consulta general, vacunación, control, estética | RF-11 |
+| RN-53 | Una cita puede cerrarse con la **vacunación**, sin consulta: si `POST /vaccinations` recibe el `appointmentId`, exige las mismas condiciones que la consulta (veterinario asignado, RN-44; cita `CONFIRMADA`, RN-43; mascota de la cita) y, en la misma transacción, guarda la vacunación y pasa la cita a `ATENDIDA` (D-28) | RF-19 |
 
 ## Inventario
 

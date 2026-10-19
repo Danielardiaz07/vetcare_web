@@ -57,6 +57,14 @@ export const updatePatientRequestSchema = z
 
 export const listPatientsQuerySchema = paginationQuerySchema.extend({
   ownerId: z.uuid("Identificador de propietario invalido").optional(),
+  ownerDocument: z
+    .string()
+    .trim()
+    .regex(
+      new RegExp(`^\\d{${FieldLimit.DOCUMENT_NUMBER_MIN},${FieldLimit.DOCUMENT_NUMBER_MAX}}$`),
+      `La cedula debe tener entre ${FieldLimit.DOCUMENT_NUMBER_MIN} y ${FieldLimit.DOCUMENT_NUMBER_MAX} digitos`,
+    )
+    .optional(),
   species: z.enum(Species).optional(),
   q: z.string().trim().min(1).max(FieldLimit.SEARCH_MAX).optional(),
   active: z
@@ -75,6 +83,7 @@ export type ListMyPatientsQueryDto = z.infer<typeof listMyPatientsQuerySchema>;
 export interface PatientResponseDto {
   id: string;
   ownerId: string;
+  owner: { id: string; firstNames: string; lastNames: string; documentNumber: string };
   name: string;
   species: string;
   breed: string;

@@ -38,6 +38,7 @@ export const createConsultationRequestSchema = z.object({
 export const createVaccinationRequestSchema = z
   .object({
     patientId: z.uuid("Identificador invalido"),
+    appointmentId: z.uuid("Identificador invalido").optional(),
     vaccineId: z.uuid("Identificador invalido"),
     lot: requiredText("El lote", ClinicalLimit.LOT_MAX),
     appliedAt: dateField,

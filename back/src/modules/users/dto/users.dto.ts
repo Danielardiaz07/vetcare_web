@@ -40,6 +40,7 @@ export interface OwnerSummaryDto {
   firstNames: string;
   lastNames: string;
   phone: string;
+  address: string | null;
 }
 
 export interface UserProfileResponseDto {

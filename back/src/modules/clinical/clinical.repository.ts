@@ -145,8 +145,20 @@ export class ClinicalRepository {
     }
   }
 
-  createVaccination(data: NewVaccinationData): Promise<VaccinationRecord> {
-    return prisma.vaccination.create({ data, include: vaccinationInclude });
+  // Con cita, la vacunación y el paso de la cita a ATENDIDA van en una sola transacción (RN-46).
+  createVaccination(data: NewVaccinationData, appointmentId?: string): Promise<VaccinationRecord> {
+    if (!appointmentId) return prisma.vaccination.create({ data, include: vaccinationInclude });
+
+    return prisma.$transaction(async (tx) => {
+      const closed = await tx.appointment.updateMany({
+        where: { id: appointmentId, status: AppointmentStatus.CONFIRMED },
+        data: { status: AppointmentStatus.ATTENDED },
+      });
+      if (closed.count === 0) {
+        throw new ConflictError("Solo se registra una vacunacion sobre una cita confirmada");
+      }
+      return tx.vaccination.create({ data, include: vaccinationInclude });
+    });
   }
 
   listVaccinations(patientId: string, filters: HistoryFilters): Promise<VaccinationRecord[]> {
