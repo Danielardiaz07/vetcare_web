@@ -319,6 +319,7 @@ MAIL_FROM_NAME=
 CORS_ORIGINS=
 SEED_ADMIN_EMAIL=               # solo para `npm run db:seed` (primer administrador)
 SEED_ADMIN_PASSWORD=
+SEED_DEMO_PASSWORD=             # solo para `npm run db:seed:demo` (datos de demostración, D-29)
 
 # front/
 NEXT_PUBLIC_API_URL=
