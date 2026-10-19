@@ -50,6 +50,7 @@ export const FIELD_LIMITS = {
   LONG_TEXT_MAX: 1000,
   TEMPERATURE_MAX: 99.9,
   COST_MAX: 9_999_999_999,
+  VACCINE_LOT_MAX: 30,
 } as const;
 
 // Los mismos límites de agenda que la API (RN-21, RN-22).

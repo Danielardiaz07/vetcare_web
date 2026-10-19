@@ -7,6 +7,7 @@ import type {
   ScheduleBlock,
   StaffProfile,
   Vaccination,
+  Vaccine,
 } from "@/types/domain";
 
 // Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
@@ -307,7 +308,7 @@ export const mockAppointmentTypes: AppointmentTypeSetting[] = [
 ];
 
 // D-27: catálogo mínimo de vacunas, sin stock.
-export const mockVaccines = [
+export const mockVaccines: Vaccine[] = [
   { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e01", name: "Rabia", price: 45000, active: true },
   { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e02", name: "Parvovirus", price: 55000, active: true },
   { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e03", name: "Triple felina", price: 60000, active: true },

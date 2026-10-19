@@ -127,6 +127,14 @@ export interface Vaccination {
   createdAt: string;
 }
 
+// D-27: catálogo mínimo de vacunas (nombre y precio), sin stock.
+export interface Vaccine {
+  id: string;
+  name: string;
+  price: number;
+  active: boolean;
+}
+
 // RN-49: estado de la última dosis de cada vacuna en el carné.
 export type VaccineStatus = "UP_TO_DATE" | "DUE_SOON" | "OVERDUE";
 

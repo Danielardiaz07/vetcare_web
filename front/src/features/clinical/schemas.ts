@@ -1,7 +1,15 @@
 import { z } from "zod";
+import { clinicDateOf } from "@/lib/clinic-time";
 import { FIELD_LIMITS } from "@/lib/constants";
 
-const { CLINICAL_TEXT_MAX, LONG_TEXT_MAX, TEMPERATURE_MAX, WEIGHT_KG_MAX, COST_MAX } = FIELD_LIMITS;
+const {
+  CLINICAL_TEXT_MAX,
+  LONG_TEXT_MAX,
+  TEMPERATURE_MAX,
+  WEIGHT_KG_MAX,
+  COST_MAX,
+  VACCINE_LOT_MAX,
+} = FIELD_LIMITS;
 const ONE_DECIMAL = /^\d+(\.\d)?$/;
 
 const requiredText = (label: string, required: string, max: number) =>
@@ -35,3 +43,23 @@ export const consultationSchema = z.object({
 });
 
 export type ConsultationFormInput = z.infer<typeof consultationSchema>;
+
+// RN-48: la próxima dosis es opcional, pero si se escribe va después de la aplicación.
+export const vaccinationSchema = z
+  .object({
+    vaccineId: z.string().min(1, "Selecciona la vacuna"),
+    lot: requiredText("El lote", "El lote es obligatorio", VACCINE_LOT_MAX),
+    appliedAt: z.iso
+      .date("Escribe la fecha de aplicación")
+      .refine(
+        (date) => date <= clinicDateOf(new Date()),
+        "La fecha de aplicación no puede ser futura",
+      ),
+    nextDoseAt: z.union([z.literal(""), z.iso.date("Escribe una fecha válida")]),
+  })
+  .refine((input) => !input.nextDoseAt || input.nextDoseAt > input.appliedAt, {
+    message: "La próxima dosis debe ser después de la aplicación",
+    path: ["nextDoseAt"],
+  });
+
+export type VaccinationFormInput = z.infer<typeof vaccinationSchema>;

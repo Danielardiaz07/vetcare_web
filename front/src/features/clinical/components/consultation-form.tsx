@@ -51,12 +51,7 @@ export function ConsultationForm({ appointment, patient }: ConsultationFormProps
   });
 
   return (
-    <form
-      onSubmit={onSubmit}
-      noValidate
-      className="flex flex-col gap-5 rounded-card border border-line bg-surface p-5"
-    >
-      <h2 className="text-lg font-semibold text-ink">Consulta</h2>
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <Textarea
         label="Síntomas"
         maxLength={CLINICAL_TEXT_MAX}
