@@ -14,7 +14,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { next } = await searchParams;
 
   return (
-    <section className="mx-auto flex w-full max-w-md flex-col gap-6 rounded-card border border-line bg-surface p-6 sm:p-8">
+    <section className="mx-4 my-8 flex flex-col gap-6 rounded-card border border-line bg-surface p-6 sm:mx-auto sm:w-full sm:max-w-md sm:p-8">
       <div className="flex flex-col items-center gap-3 text-center">
         <Image src="/logo.png" alt="" width={44} height={44} priority />
         <h1 className="text-2xl font-semibold text-ink">Inicia sesión</h1>
