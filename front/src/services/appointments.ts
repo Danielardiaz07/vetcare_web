@@ -88,7 +88,8 @@ export function listProfessionals(type: AppointmentType): Promise<Professional[]
   }
   const path = isGrooming(type) ? "/groomers" : "/veterinarians";
   return request<Paginated<Professional>>(path, {
-    query: { page: 1, limit: PROFESSIONALS_LIMIT },
+    // Recepción también recibe al personal inactivo; agendar y reasignar solo admiten activos.
+    query: { page: 1, limit: PROFESSIONALS_LIMIT, active: true },
   }).then((result) => result.data);
 }
 

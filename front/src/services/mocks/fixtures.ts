@@ -96,10 +96,18 @@ export const mockOwners: Owner[] = [
   ),
 ];
 
+const ownerSummary = (owner: Owner) => ({
+  id: owner.id,
+  firstNames: owner.firstNames,
+  lastNames: owner.lastNames,
+  documentNumber: owner.documentNumber,
+});
+
 export const mockPatients: Patient[] = [
   {
     id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
     ownerId: mockOwner.id,
+    owner: ownerSummary(mockOwner),
     name: "Luna",
     species: "DOG",
     breed: "Golden retriever",
@@ -112,6 +120,7 @@ export const mockPatients: Patient[] = [
   {
     id: "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
     ownerId: mockOwner.id,
+    owner: ownerSummary(mockOwner),
     name: "Milo",
     species: "CAT",
     breed: "Criollo",
@@ -137,6 +146,7 @@ export const mockClinicPatients: Patient[] = [
   ).map(([ownerIndex, name, species, breed, sex, birthDate, weightKg, active], index) => ({
     id: `7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f${String(index).padStart(2, "0")}`,
     ownerId: mockOwners[ownerIndex]?.id ?? mockOwner.id,
+    owner: ownerSummary(mockOwners[ownerIndex] ?? mockOwner),
     name,
     species,
     breed,

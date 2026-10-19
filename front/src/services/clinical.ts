@@ -54,6 +54,8 @@ export interface VaccinationInput {
   // AAAA-MM-DD (RN-48).
   appliedAt: string;
   nextDoseAt?: string;
+  // D-28 (3): la vacuna aplicada en una cita la pasa a Atendida (RN-53).
+  appointmentId?: string;
 }
 
 // Los cambios de prueba viven mientras la pestaña está abierta.
@@ -252,6 +254,13 @@ async function mockRegisterVaccination(input: VaccinationInput): Promise<Vaccina
   const vaccine = mockVaccines.find((item) => item.id === input.vaccineId && item.active);
   if (!veterinarian) return mockError(FORBIDDEN, "FORBIDDEN", "No tienes permiso");
   if (!vaccine) return mockError(NOT_FOUND, "NOT_FOUND", "Vacuna no encontrada");
+  if (input.appointmentId) {
+    const appointment = mockAppointmentById(input.appointmentId);
+    if (appointment?.status !== "CONFIRMED") {
+      return mockError(CONFLICT, "CONFLICT", "La cita no esta confirmada");
+    }
+    appointment.status = "ATTENDED";
+  }
   const vaccination: Vaccination = {
     id: crypto.randomUUID(),
     patientId: input.patientId,
