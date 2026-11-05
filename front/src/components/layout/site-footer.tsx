@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
-import { CLINIC, bookingHref, sectionHref } from "@/features/landing/content";
+import { BOOKING_SECTION_ID, CLINIC, sectionHref } from "@/features/landing/content";
 import { ROUTES } from "@/lib/constants";
 
 const ACCESS_LINKS = [
   { label: "Servicios", href: sectionHref("servicios") },
-  { label: "Agendar cita", href: bookingHref() },
+  { label: "Agendar cita", href: sectionHref(BOOKING_SECTION_ID) },
   { label: "Ubicación", href: sectionHref("ubicacion") },
   { label: "Portal del cliente", href: ROUTES.portal },
   { label: "Tratamiento de datos", href: ROUTES.dataPolicy },

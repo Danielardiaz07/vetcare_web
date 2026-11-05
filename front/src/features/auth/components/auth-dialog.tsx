@@ -11,8 +11,11 @@ import type { SessionUser } from "@/types/auth";
 
 export type AuthTab = "login" | "register";
 
+// Quien abre la ventana para seguir con una tarea (agendar desde la portada) se queda en la página.
+export type SignedInHandler = (user: SessionUser) => void;
+
 type AuthDialogContextValue = {
-  open: (reason?: string, tab?: AuthTab) => void;
+  open: (reason?: string, tab?: AuthTab, onSignedIn?: SignedInHandler) => void;
   close: () => void;
 };
 
@@ -23,6 +26,13 @@ const TABS: { value: AuthTab; label: string }[] = [
   { value: "register", label: "Crear cuenta" },
 ];
 
+type DialogState = {
+  open: boolean;
+  reason: string;
+  tab: AuthTab;
+  onSignedIn?: SignedInHandler;
+};
+
 const AuthDialogContext = createContext<AuthDialogContextValue | null>(null);
 
 type AuthDialogProps = {
@@ -31,14 +41,26 @@ type AuthDialogProps = {
   tab: AuthTab;
   onTabChange: (tab: AuthTab) => void;
   onClose: () => void;
+  onSignedIn?: SignedInHandler;
 };
 
-export function AuthDialog({ open, reason, tab, onTabChange, onClose }: AuthDialogProps) {
+export function AuthDialog({
+  open,
+  reason,
+  tab,
+  onTabChange,
+  onClose,
+  onSignedIn,
+}: AuthDialogProps) {
   const router = useRouter();
   const { show } = useToast();
 
   function handleLogin(user: SessionUser) {
     onClose();
+    if (onSignedIn) {
+      onSignedIn(user);
+      return;
+    }
     show("Sesión iniciada", "success", [
       { label: "Ir a mi portal", onClick: () => router.push(homeRouteFor(user.role)) },
       { label: "Seguir en la página", onClick: () => undefined },
@@ -73,25 +95,32 @@ export function AuthDialog({ open, reason, tab, onTabChange, onClose }: AuthDial
       </div>
       {open && tab === "login" && <LoginForm onSuccess={handleLogin} />}
       {open && tab === "register" && (
-        <RegisterFlow onGoToLogin={() => onTabChange("login")} onDone={onClose} />
+        <RegisterFlow
+          onGoToLogin={() => onTabChange("login")}
+          onDone={onClose}
+          onSignedIn={onSignedIn}
+        />
       )}
     </Modal>
   );
 }
 
 export function AuthDialogProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState({
+  const [state, setState] = useState<DialogState>({
     open: false,
     reason: DEFAULT_REASON,
-    tab: "login" as AuthTab,
+    tab: "login",
   });
 
-  const open = useCallback((reason: string = DEFAULT_REASON, tab: AuthTab = "login") => {
-    setState({ open: true, reason, tab });
-  }, []);
+  const open = useCallback(
+    (reason: string = DEFAULT_REASON, tab: AuthTab = "login", onSignedIn?: SignedInHandler) => {
+      setState({ open: true, reason, tab, onSignedIn });
+    },
+    [],
+  );
 
   const close = useCallback(() => {
-    setState((current) => ({ ...current, open: false }));
+    setState((current) => ({ ...current, open: false, onSignedIn: undefined }));
   }, []);
 
   const value = useMemo(() => ({ open, close }), [open, close]);
@@ -105,6 +134,7 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
         tab={state.tab}
         onTabChange={(tab) => setState((current) => ({ ...current, tab }))}
         onClose={close}
+        onSignedIn={state.onSignedIn}
       />
     </AuthDialogContext.Provider>
   );

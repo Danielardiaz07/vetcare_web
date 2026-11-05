@@ -1,7 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
-import { BOOKABLE_SERVICES, bookingHref } from "@/features/landing/content";
+import { BookingTrigger } from "@/features/landing/components/booking-trigger";
+import { BOOKABLE_SERVICES } from "@/features/landing/content";
 
 export function Hero() {
   return (
@@ -30,22 +30,19 @@ export function Hero() {
         <span className="px-2 font-semibold text-ink">¿Qué necesita tu mascota?</span>
         <div className="-mx-3 flex gap-2 overflow-x-auto px-3 md:mx-0 md:flex-wrap md:px-0">
           {BOOKABLE_SERVICES.map((service) => (
-            <Link
+            <BookingTrigger
               key={service.shortName}
-              href={bookingHref(service.appointmentType)}
+              type={service.appointmentType}
               className="inline-flex min-h-11 flex-none items-center rounded-control border border-line bg-canvas px-4 font-medium whitespace-nowrap text-ink transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50"
             >
               {service.shortName}
-            </Link>
+            </BookingTrigger>
           ))}
         </div>
-        <Link
-          href={bookingHref()}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand-600 px-6 font-semibold text-white transition-colors duration-150 ease-out hover:bg-brand-700 md:ml-auto"
-        >
+        <BookingTrigger className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-brand-600 px-6 font-semibold text-white transition-colors duration-150 ease-out hover:bg-brand-700 md:ml-auto">
           <Icon name="calendar-plus" width={20} height={20} />
           Agendar cita
-        </Link>
+        </BookingTrigger>
       </nav>
 
       <figure className="relative aspect-[4/3] overflow-hidden rounded-block bg-sand sm:aspect-[16/7]">

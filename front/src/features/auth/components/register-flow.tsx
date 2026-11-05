@@ -6,15 +6,18 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { OtpForm } from "@/features/auth/components/otp-form";
 import { RegisterForm } from "@/features/auth/components/register-form";
 import { ROUTES } from "@/lib/constants";
+import type { SessionUser } from "@/types/auth";
 
 type Credentials = { email: string; password: string };
 
 type RegisterFlowProps = {
   onGoToLogin?: () => void;
   onDone?: () => void;
+  // Si está, la persona sigue en la página donde abrió la ventana en lugar de ir al portal.
+  onSignedIn?: (user: SessionUser) => void;
 };
 
-export function RegisterFlow({ onGoToLogin, onDone }: RegisterFlowProps) {
+export function RegisterFlow({ onGoToLogin, onDone, onSignedIn }: RegisterFlowProps) {
   const router = useRouter();
   const { signIn } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
@@ -30,8 +33,9 @@ export function RegisterFlow({ onGoToLogin, onDone }: RegisterFlowProps) {
     const credentials = credentialsRef.current;
     credentialsRef.current = null;
     try {
-      if (credentials) await signIn(credentials.email, credentials.password);
-      router.push(ROUTES.portal);
+      const user = credentials ? await signIn(credentials.email, credentials.password) : null;
+      if (user && onSignedIn) onSignedIn(user);
+      else router.push(ROUTES.portal);
     } catch {
       router.push(ROUTES.login);
     } finally {

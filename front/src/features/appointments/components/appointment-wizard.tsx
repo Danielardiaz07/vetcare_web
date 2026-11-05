@@ -240,7 +240,12 @@ export function AppointmentWizard({
     return (
       <EmptyState
         title="Primero agrega a tu mascota"
-        description="Para agendar necesitamos saber para quién es la cita. Pídele a recepción que la registre en tu próxima visita."
+        description="Para agendar necesitamos saber para quién es la cita."
+        action={
+          <Link href={ROUTES.portalNewPet} className="font-semibold text-brand-700 underline">
+            Agregar mascota
+          </Link>
+        }
       />
     );
   }

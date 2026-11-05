@@ -1,5 +1,4 @@
 import type { IconName } from "@/components/ui/icon";
-import { ROUTES } from "@/lib/constants";
 import type { AppointmentType } from "@/types/domain";
 
 // Los datos de la clínica que aún no tenemos van entre corchetes para reemplazarlos.
@@ -30,15 +29,14 @@ export const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${
 
 export const sectionHref = (id: string) => `/#${id}`;
 
-export const bookingHref = (type?: AppointmentType) =>
-  type ? `${ROUTES.portalNewAppointment}?type=${type}` : ROUTES.portalNewAppointment;
+export const BOOKING_SECTION_ID = "agendar";
 
 type NavItem = { label: string; href: string; sectionId?: string };
 
 export const LANDING_NAV: NavItem[] = [
   { label: "Inicio", href: sectionHref("inicio"), sectionId: "inicio" },
   { label: "Servicios", href: sectionHref("servicios"), sectionId: "servicios" },
-  { label: "Agendar", href: bookingHref() },
+  { label: "Agendar", href: sectionHref(BOOKING_SECTION_ID), sectionId: BOOKING_SECTION_ID },
   { label: "Equipo", href: sectionHref("equipo"), sectionId: "equipo" },
   { label: "Ubicación", href: sectionHref("ubicacion"), sectionId: "ubicacion" },
 ];
