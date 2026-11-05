@@ -334,7 +334,7 @@ Validación de variables al arrancar con Zod (falla rápido si falta alguna).
 | Pieza | Plataforma | Configuración |
 |-------|------------|---------------|
 | Base de datos | Supabase (la misma de desarrollo, ya migrada) | Migraciones nuevas con `npm run db:migrate:deploy -w back` |
-| API (`back/`) | Render, servicio web (`render.yaml`) | Build `npm ci && npm run db:generate -w back`; start `npm run start -w back`; `NODE_ENV=production`, `TRUST_PROXY_HOPS=2`, `HUSKY=0`; secretos en el panel |
+| API (`back/`) | Render, servicio web (`render.yaml`) | Build `NODE_ENV=development npm ci && npm run db:generate -w back` (con `production` npm omite `husky` y falla el script `prepare`); start `npm run start -w back`; `NODE_ENV=production`, `TRUST_PROXY_HOPS=2`, `HUSKY=0`; secretos en el panel |
 | Front (`front/`) | Vercel, con *Root Directory* `front` | `NEXT_PUBLIC_API_URL` y `API_PROXY_TARGET` (arriba) |
 
 - El navegador solo habla con el dominio del front; Next reenvía `/api/v1/*` a la API (*rewrites*, D-25). Así la cookie `refresh_token` queda en el dominio del front y `proxy.ts` la puede leer.
