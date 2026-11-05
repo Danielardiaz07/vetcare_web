@@ -4,7 +4,8 @@ services:
     name: vetcare-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run db:generate -w back
+    # Con NODE_ENV=production npm omite las devDependencies y el script prepare de la raíz falla al no encontrar husky.
+    buildCommand: NODE_ENV=development npm ci && npm run db:generate -w back
     startCommand: npm run start -w back
     healthCheckPath: /api/v1/health
     envVars:
