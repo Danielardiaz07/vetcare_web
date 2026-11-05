@@ -1,0 +1,36 @@
+# Servicio de la API (back/) en Render. Los secretos se cargan en el panel (sync: false), nunca aquí.
+services:
+  - type: web
+    name: vetcare-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run db:generate -w back
+    startCommand: npm run start -w back
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HUSKY
+        value: "0"
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_EMAIL
+        sync: false
+      - key: MAIL_FROM_NAME
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-05 · 08, 12 · Preparación del despliegue (Render, Vercel y Supabase): rewrites del front, `TRUST_PROXY_HOPS`, scripts de producción y `render.yaml` (D-30; implementa D-25).
 - 2026-10-18 · 08, 12 · Script de datos de demostración `npm run db:seed:demo` y variable `SEED_DEMO_PASSWORD` (D-29).
 - 2026-10-18 · 04, 05, 08, 12 · Ajustes de la API para el frontend: pacientes con propietario y filtro `ownerDocument`, `address` en `GET /users/me` y cierre de la cita de vacunación desde `POST /vaccinations` (RN-53, D-28).
 - 2026-10-18 · 08 · Se agrega la ruta `/panel/owners/[id]`, la ficha del propietario con sus mascotas, desde donde recepción lo edita o lo desactiva (§7.2, RN-14).

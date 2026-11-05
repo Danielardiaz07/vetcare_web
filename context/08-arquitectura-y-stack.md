@@ -311,6 +311,7 @@ JWT_ACCESS_TTL=15m
 JWT_REFRESH_TTL=7d
 OTP_TTL_MINUTES=10
 BCRYPT_COST=12                  # mínimo 12 (09 §1)
+TRUST_PROXY_HOPS=0              # proxies delante de la API: 0 en local, 2 en producción (D-30)
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=      # solo backend, jamás exponer al frontend
 BREVO_API_KEY=
@@ -322,10 +323,24 @@ SEED_ADMIN_PASSWORD=
 SEED_DEMO_PASSWORD=             # solo para `npm run db:seed:demo` (datos de demostración, D-29)
 
 # front/
-NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_API_URL=            # local: http://localhost:3001/api/v1; producción: https://<dominio-del-front>/api/v1
+API_PROXY_TARGET=               # solo servidor; en producción, la URL base de la API (activa los rewrites, D-25)
 ```
 
 Validación de variables al arrancar con Zod (falla rápido si falta alguna).
+
+### 9.1 Despliegue (D-30)
+
+| Pieza | Plataforma | Configuración |
+|-------|------------|---------------|
+| Base de datos | Supabase (la misma de desarrollo, ya migrada) | Migraciones nuevas con `npm run db:migrate:deploy -w back` |
+| API (`back/`) | Render, servicio web (`render.yaml`) | Build `npm ci && npm run db:generate -w back`; start `npm run start -w back`; `NODE_ENV=production`, `TRUST_PROXY_HOPS=2`, `HUSKY=0`; secretos en el panel |
+| Front (`front/`) | Vercel, con *Root Directory* `front` | `NEXT_PUBLIC_API_URL` y `API_PROXY_TARGET` (arriba) |
+
+- El navegador solo habla con el dominio del front; Next reenvía `/api/v1/*` a la API (*rewrites*, D-25). Así la cookie `refresh_token` queda en el dominio del front y `proxy.ts` la puede leer.
+- `CORS_ORIGINS` de la API debe contener la URL del front.
+- En producción el arranque no lee `.env`: las variables vienen del panel de la plataforma (`npm run start`); `npm run start:local` conserva la lectura de `.env`.
+- El plan gratuito de Render duerme la API tras un rato sin tráfico: la primera petición tarda unos 50 s. Antes de una demostración, abrir `/api/v1/health` para despertarla.
 
 ## 10. Calidad
 

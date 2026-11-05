@@ -135,6 +135,8 @@ export function createApp() {
 
   const app = express();
 
+  // Detrás de proxies (Vercel, hosting de la API) la IP real viene en X-Forwarded-For; sin esto el rate-limit contaría a todos como una sola IP.
+  app.set("trust proxy", env.TRUST_PROXY_HOPS);
   app.use(helmet());
   app.use(corsMiddleware);
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
