@@ -19,6 +19,7 @@ const envSchema = z.object({
   BREVO_API_KEY: z.string().min(1),
   MAIL_FROM_EMAIL: z.email(),
   MAIL_FROM_NAME: z.string().min(1),
+  FRONTEND_URL: z.url().optional(),
   CORS_ORIGINS: z
     .string()
     .min(1)

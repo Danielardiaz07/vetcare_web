@@ -1,6 +1,6 @@
 import { DocumentType } from "@prisma/client";
 import { z } from "zod";
-import { FieldLimit, OTP_LENGTH } from "@/config/constants";
+import { FieldLimit, OTP_LENGTH, PASSWORD_RESET_TOKEN_MAX } from "@/config/constants";
 import {
   addressField,
   documentNumberField,
@@ -42,7 +42,27 @@ export const loginRequestSchema = z.object({
   password: z.string().min(1, "La contrasena es obligatoria").max(FieldLimit.PASSWORD_MAX),
 });
 
+// RN-11, D-18: la cuenta se identifica por correo o por cédula, nunca por ambos.
+export const forgotPasswordRequestSchema = z
+  .object({ email: email.optional(), documentNumber: documentNumberField.optional() })
+  .refine((data) => Boolean(data.email) !== Boolean(data.documentNumber), {
+    message: "Indica tu correo o tu cedula",
+  });
+
+export const resetPasswordRequestSchema = z
+  .object({
+    token: z.string().min(1, "El enlace es invalido").max(PASSWORD_RESET_TOKEN_MAX),
+    password,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Las contrasenas no coinciden",
+  });
+
 export type RegisterRequestDto = z.infer<typeof registerRequestSchema>;
+export type ForgotPasswordRequestDto = z.infer<typeof forgotPasswordRequestSchema>;
+export type ResetPasswordRequestDto = z.infer<typeof resetPasswordRequestSchema>;
 export type OtpVerifyRequestDto = z.infer<typeof otpVerifyRequestSchema>;
 export type OtpResendRequestDto = z.infer<typeof otpResendRequestSchema>;
 export type LoginRequestDto = z.infer<typeof loginRequestSchema>;
@@ -61,5 +81,9 @@ export interface AuthSessionResponseDto {
 
 export interface RegisterResponseDto {
   email: string;
+  message: string;
+}
+
+export interface MessageResponseDto {
   message: string;
 }

@@ -3,10 +3,12 @@ import { HttpStatus, REFRESH_COOKIE_NAME } from "@/config/constants";
 import { env } from "@/config/env";
 import type { IssuedSession, AuthService } from "@/modules/auth/auth.service";
 import type {
+  ForgotPasswordRequestDto,
   LoginRequestDto,
   OtpResendRequestDto,
   OtpVerifyRequestDto,
   RegisterRequestDto,
+  ResetPasswordRequestDto,
 } from "@/modules/auth/dto/auth.dto";
 import { readCookie } from "@/shared/utils/cookies";
 
@@ -32,6 +34,15 @@ export class AuthController {
 
   resendOtp: RequestHandler = async (req, res) => {
     await this.service.resendOtp(req.body as OtpResendRequestDto);
+    res.status(HttpStatus.NO_CONTENT).send();
+  };
+
+  forgotPassword: RequestHandler = async (req, res) => {
+    res.json(await this.service.requestPasswordReset(req.body as ForgotPasswordRequestDto));
+  };
+
+  resetPassword: RequestHandler = async (req, res) => {
+    await this.service.resetPassword(req.body as ResetPasswordRequestDto);
     res.status(HttpStatus.NO_CONTENT).send();
   };
 

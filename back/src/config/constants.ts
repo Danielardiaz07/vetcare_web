@@ -42,6 +42,11 @@ export const OTP_LENGTH = 6;
 export const OTP_MAX_ATTEMPTS = 5;
 export const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 
+export const PASSWORD_RESET_TTL_MS = 30 * MINUTE_MS; // RN-11
+export const PASSWORD_RESET_TOKEN_BYTES = 32;
+export const PASSWORD_RESET_TOKEN_MAX = 128;
+export const PASSWORD_RESET_PATH = "/reset-password";
+
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * MINUTE_MS;
 
