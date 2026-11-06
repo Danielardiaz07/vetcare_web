@@ -15,6 +15,7 @@ export type AuthTab = "login" | "register";
 export type SignedInHandler = (user: SessionUser) => void;
 
 type AuthDialogContextValue = {
+  isOpen: boolean;
   open: (reason?: string, tab?: AuthTab, onSignedIn?: SignedInHandler) => void;
   close: () => void;
 };
@@ -123,7 +124,7 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
     setState((current) => ({ ...current, open: false, onSignedIn: undefined }));
   }, []);
 
-  const value = useMemo(() => ({ open, close }), [open, close]);
+  const value = useMemo(() => ({ isOpen: state.open, open, close }), [state.open, open, close]);
 
   return (
     <AuthDialogContext.Provider value={value}>

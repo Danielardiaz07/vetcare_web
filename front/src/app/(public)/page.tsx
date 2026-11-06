@@ -5,6 +5,7 @@ import { LocationSection } from "@/features/landing/components/location-section"
 import { PortalSection } from "@/features/landing/components/portal-section";
 import { ServicesSection } from "@/features/landing/components/services-section";
 import { TeamSection } from "@/features/landing/components/team-section";
+import { VetBotSection } from "@/features/landing/components/vetbot-section";
 
 export default function HomePage() {
   return (
@@ -15,6 +16,7 @@ export default function HomePage() {
       <TeamSection />
       <PortalSection />
       <LocationSection />
+      <VetBotSection />
     </LandingBookingProvider>
   );
 }
