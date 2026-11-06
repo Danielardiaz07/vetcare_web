@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
-import { LANDING_SERVICES, bookingHref, sectionHref } from "@/features/landing/content";
+import { BookingTrigger } from "@/features/landing/components/booking-trigger";
+import { LANDING_SERVICES, sectionHref } from "@/features/landing/content";
 import { SectionHeading } from "@/features/landing/components/section-heading";
 import { durationLabel } from "@/features/staff/labels";
+
+const SERVICE_ACTION_CLASS =
+  "inline-flex min-h-11 items-center gap-2 self-start font-semibold text-brand-700 hover:underline";
 
 export function ServicesSection() {
   return (
@@ -31,17 +35,17 @@ export function ServicesSection() {
                   · <strong className="font-semibold text-ink">{service.price}</strong>
                 </p>
               </div>
-              <Link
-                href={
-                  service.appointmentType
-                    ? bookingHref(service.appointmentType)
-                    : sectionHref("contacto")
-                }
-                className="inline-flex min-h-11 items-center gap-2 self-start font-semibold text-brand-700 hover:underline"
-              >
-                {service.appointmentType ? "Agendar" : "Consultar con la clínica"}
-                <Icon name="arrow-right" width={18} height={18} />
-              </Link>
+              {service.appointmentType ? (
+                <BookingTrigger type={service.appointmentType} className={SERVICE_ACTION_CLASS}>
+                  Agendar
+                  <Icon name="arrow-right" width={18} height={18} />
+                </BookingTrigger>
+              ) : (
+                <Link href={sectionHref("contacto")} className={SERVICE_ACTION_CLASS}>
+                  Consultar con la clínica
+                  <Icon name="arrow-right" width={18} height={18} />
+                </Link>
+              )}
             </li>
           ))}
         </ul>
