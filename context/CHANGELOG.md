@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-05 · 02, 04, 08, 09, 10, 12 · Recuperación de contraseña por correo o cédula (HU-21, RF-03, RN-11): endpoints `/auth/password/forgot` y `/auth/password/reset`, enlace de un solo uso, cierre de sesiones y variable opcional `FRONTEND_URL`; HU-21 pasa de Reserva al Sprint 3 (D-31).
 - 2026-11-05 · 08 · Corrección del build en Render: se instala con `NODE_ENV=development` para que `husky` esté disponible (D-30).
 - 2026-11-05 · 08, 12 · Preparación del despliegue (Render, Vercel y Supabase): rewrites del front, `TRUST_PROXY_HOPS`, scripts de producción y `render.yaml` (D-30; implementa D-25).
 - 2026-10-18 · 08, 12 · Script de datos de demostración `npm run db:seed:demo` y variable `SEED_DEMO_PASSWORD` (D-29).

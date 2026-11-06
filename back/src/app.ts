@@ -72,6 +72,10 @@ export function createApp() {
     name: env.MAIL_FROM_NAME,
   });
 
+  // Sin FRONTEND_URL se usa el primer origen permitido; CORS_ORIGINS exige al menos uno.
+  const [firstCorsOrigin = ""] = env.CORS_ORIGINS;
+  const frontendUrl = (env.FRONTEND_URL ?? firstCorsOrigin).replace(/\/+$/, "");
+
   const authRepository = new AuthRepository();
   const otpService = new OtpService(authRepository, hasher, env.OTP_TTL_MINUTES);
   const authService = new AuthService(
@@ -81,6 +85,7 @@ export function createApp() {
     tokens,
     mail,
     env.OTP_TTL_MINUTES,
+    frontendUrl,
   );
   const usersService = new UsersService(new UsersRepository(), hasher);
 

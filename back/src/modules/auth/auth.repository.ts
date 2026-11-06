@@ -1,4 +1,12 @@
-import type { DocumentType, Owner, OtpCode, Prisma, RefreshToken, User } from "@prisma/client";
+import type {
+  DocumentType,
+  Owner,
+  OtpCode,
+  PasswordResetToken,
+  Prisma,
+  RefreshToken,
+  User,
+} from "@prisma/client";
 import { prisma } from "@/shared/prisma";
 
 export interface NewOwnerData {
@@ -93,6 +101,48 @@ export class AuthRepository {
     return prisma.user.update({
       where: { id: userId },
       data: { failedLoginAttempts: 0, lockedUntil: null },
+    });
+  }
+
+  // Un solo enlace vigente por usuario: pedir otro invalida los anteriores.
+  createPasswordResetToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ): Promise<PasswordResetToken> {
+    return prisma.$transaction(async (tx) => {
+      await tx.passwordResetToken.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      return tx.passwordResetToken.create({ data: { userId, tokenHash, expiresAt } });
+    });
+  }
+
+  findPasswordResetToken(tokenHash: string): Promise<(PasswordResetToken & { user: User }) | null> {
+    return prisma.passwordResetToken.findUnique({ where: { tokenHash }, include: { user: true } });
+  }
+
+  // Devuelve false si otra petición ya consumió el enlace (uso único, RN-11); el cambio de
+  // contraseña, el fin del bloqueo y el cierre de sesiones ocurren juntos o no ocurren.
+  resetPassword(tokenId: string, userId: string, passwordHash: string): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: { id: tokenId, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      if (claimed.count === 0) return false;
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { passwordHash, failedLoginAttempts: 0, lockedUntil: null },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      return true;
     });
   }
 

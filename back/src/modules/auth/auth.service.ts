@@ -5,18 +5,29 @@ import {
   DUMMY_PASSWORD_HASH,
   LOGIN_LOCK_MS,
   MAX_FAILED_LOGIN_ATTEMPTS,
+  PASSWORD_RESET_PATH,
+  PASSWORD_RESET_TOKEN_BYTES,
+  PASSWORD_RESET_TTL_MS,
 } from "@/config/constants";
 import { logger } from "@/config/logger";
 import type {
   AuthSessionResponseDto,
+  ForgotPasswordRequestDto,
   LoginRequestDto,
+  MessageResponseDto,
   OtpResendRequestDto,
   OtpVerifyRequestDto,
   RegisterRequestDto,
   RegisterResponseDto,
+  ResetPasswordRequestDto,
   UserResponseDto,
 } from "@/modules/auth/dto/auth.dto";
-import { buildOtpEmail, buildWelcomeEmail } from "@/modules/auth/auth.emails";
+import {
+  buildOtpEmail,
+  buildPasswordChangedEmail,
+  buildPasswordResetEmail,
+  buildWelcomeEmail,
+} from "@/modules/auth/auth.emails";
 import type { AuthRepository } from "@/modules/auth/auth.repository";
 import type { OtpService } from "@/modules/auth/otp.service";
 import {
@@ -27,6 +38,7 @@ import {
   ValidationError,
 } from "@/shared/errors";
 import type { IHasher, IMailProvider, ITokenService, MailMessage } from "@/shared/providers";
+import { generateOpaqueToken, sha256Hex } from "@/shared/utils/token-hash";
 
 export interface IssuedSession {
   session: AuthSessionResponseDto;
@@ -35,6 +47,9 @@ export interface IssuedSession {
 }
 
 const INVALID_CREDENTIALS = "Correo o contrasena incorrectos";
+const INVALID_RESET_LINK = "El enlace es invalido o ya expiro. Solicita uno nuevo";
+const PASSWORD_RESET_REQUESTED =
+  "Si la cuenta existe, enviamos un enlace de recuperacion al correo registrado";
 const MS_PER_MINUTE = 60 * 1000;
 
 const toUserDto = (user: User): UserResponseDto => ({
@@ -52,6 +67,7 @@ export class AuthService {
     private readonly tokens: ITokenService,
     private readonly mail: IMailProvider,
     private readonly otpTtlMinutes: number,
+    private readonly frontendUrl: string,
   ) {}
 
   // RN-01 a RN-05, RN-60. Con el correo coincidente se vincula al propietario existente (R-01).
@@ -186,6 +202,46 @@ export class AuthService {
     };
   }
 
+  // RN-11, D-18: respuesta idéntica exista o no la cuenta; el enlace va siempre al correo registrado.
+  async requestPasswordReset(dto: ForgotPasswordRequestDto): Promise<MessageResponseDto> {
+    const user = await this.findAccountToRecover(dto);
+    if (user?.status === "ACTIVE") {
+      const token = generateOpaqueToken(PASSWORD_RESET_TOKEN_BYTES);
+      await this.repository.createPasswordResetToken(
+        user.id,
+        sha256Hex(token),
+        new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+      );
+      const resetUrl = `${this.frontendUrl}${PASSWORD_RESET_PATH}?token=${token}`;
+      // Sin await: el tiempo de respuesta no debe delatar si la cuenta existe.
+      void this.sendSafely(
+        buildPasswordResetEmail(user.email, resetUrl, PASSWORD_RESET_TTL_MS / MS_PER_MINUTE),
+      );
+    }
+    return { message: PASSWORD_RESET_REQUESTED };
+  }
+
+  async resetPassword({ token, password }: ResetPasswordRequestDto): Promise<void> {
+    const stored = await this.repository.findPasswordResetToken(sha256Hex(token));
+    if (
+      !stored ||
+      stored.usedAt ||
+      stored.expiresAt.getTime() <= Date.now() ||
+      stored.user.status !== "ACTIVE"
+    ) {
+      throw new ValidationError(INVALID_RESET_LINK);
+    }
+
+    const changed = await this.repository.resetPassword(
+      stored.id,
+      stored.userId,
+      await this.hasher.hash(password),
+    );
+    if (!changed) throw new ValidationError(INVALID_RESET_LINK);
+
+    void this.sendSafely(buildPasswordChangedEmail(stored.user.email));
+  }
+
   async logout(refreshToken: string | undefined): Promise<void> {
     if (!refreshToken) return;
     try {
@@ -194,6 +250,17 @@ export class AuthService {
     } catch (error) {
       if (!(error instanceof UnauthorizedError)) throw error;
     }
+  }
+
+  private async findAccountToRecover({
+    email,
+    documentNumber,
+  }: ForgotPasswordRequestDto): Promise<User | null> {
+    if (email) return this.repository.findUserByEmail(email);
+    if (documentNumber) {
+      return (await this.repository.findOwnerByDocument(documentNumber))?.user ?? null;
+    }
+    return null;
   }
 
   private async issueSession(user: User): Promise<IssuedSession> {

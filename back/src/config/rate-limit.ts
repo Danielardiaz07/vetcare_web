@@ -22,6 +22,14 @@ const ipAndEmailKey = (req: Request): string => {
   return `${ipKeyGenerator(req.ip ?? "")}|${email}`;
 };
 
+// La recuperación se pide con correo o con cédula; la clave usa el que venga para limitar por cuenta.
+const ipAndAccountKey = (req: Request): string => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const document =
+    typeof req.body?.documentNumber === "string" ? req.body.documentNumber.trim() : "";
+  return `${ipKeyGenerator(req.ip ?? "")}|${email || document}`;
+};
+
 export const globalRateLimiter = rateLimit({
   ...baseOptions,
   windowMs: RATE_LIMIT_WINDOW_MS,
@@ -40,4 +48,11 @@ export const registerRateLimiter = rateLimit({
   windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
   limit: REGISTER_RATE_LIMIT_MAX,
   keyGenerator: ipAndEmailKey,
+});
+
+export const passwordRecoveryRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+  limit: REGISTER_RATE_LIMIT_MAX,
+  keyGenerator: ipAndAccountKey,
 });

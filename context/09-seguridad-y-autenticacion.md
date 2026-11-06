@@ -49,6 +49,13 @@ Enlace de restablecimiento al correo registrado, **válido 30 minutos**. Token o
 
 La cuenta se puede identificar por **correo o por cédula** (D-18). Con la cédula, el enlace va siempre al correo ya registrado y nunca a uno indicado por quien lo pide; así quien olvidó su correo y su clave recupera el acceso, y quien solo conoce la cédula de otra persona no obtiene nada. La respuesta es genérica (sin revelar si la cédula existe ni el correo completo) y el endpoint tiene rate limit. El correo de la cuenta solo se cambia en la clínica, tras verificar la identidad en persona.
 
+Implementación (D-31):
+
+1. `POST /auth/password/forgot` recibe `email` **o** `documentNumber` (uno solo) y responde siempre `200` con el mismo mensaje. Solo las cuentas `ACTIVE` reciben el correo, que se envía sin esperar su resultado para que el tiempo de respuesta no delate si la cuenta existe. Rate limit de 5 / 10 min por IP + correo o cédula.
+2. El enlace es `<FRONTEND_URL>/reset-password?token=<token>`. El token son 32 bytes aleatorios en base64url; en la base solo se guarda su SHA-256 (`tokenHash`). Pedir otro enlace invalida el anterior.
+3. `POST /auth/password/reset` recibe `token`, `password` y `confirmPassword` y responde `204`. El enlace se consume de forma atómica (un solo uso); caducado, usado o inventado da el mismo error `400`.
+4. Al cambiar la contraseña, en una sola transacción: se marca el token como usado, se guarda el nuevo hash, se reinicia el bloqueo por intentos (RN-08) y se revocan todos los refresh tokens. Después se envía un aviso al correo de la cuenta.
+
 ## 6. Roles y permisos (RBAC)
 
 Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`. Cada petición verifica JWT y rol (RN-13); además, para recursos del propietario se verifica la **propiedad** del dato (RN-16, RN-40 → 403).

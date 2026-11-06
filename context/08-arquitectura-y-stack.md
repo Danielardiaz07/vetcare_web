@@ -133,7 +133,8 @@ Las funciones PL/SQL de la versión de escritorio (`fn_vet_disponible`, `fn_calc
 |---------|-----------------|
 | Global (`/api`) | 100 req / 15 min por IP |
 | `POST /auth/login` | 5 intentos / 15 min por IP + email |
-| `POST /auth/register`, `/auth/otp/*` | 3–5 / 10 min por IP + email |
+| `POST /auth/register`, `/auth/otp/*`, `/auth/password/reset` | 3–5 / 10 min por IP + email |
+| `POST /auth/password/forgot` | 5 / 10 min por IP + correo o cédula |
 
 `429 Too Many Requests` con `Retry-After`. En producción, store compartido (p. ej. Redis) si hay más de una instancia.
 
@@ -155,7 +156,7 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 
 | Módulo | Recursos |
 |--------|----------|
-| auth | `POST /auth/register`, `/auth/otp/verify`, `/auth/otp/resend`, `/auth/login`, `/auth/refresh`, `/auth/logout`, recuperación de contraseña |
+| auth | `POST /auth/register`, `/auth/otp/verify`, `/auth/otp/resend`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `POST /auth/password/forgot` (correo o cédula) y `POST /auth/password/reset` (D-31) |
 | users | `GET /users/me`; personal, solo ADMIN: `POST /users`, `GET /users`, `GET /users/{id}`, `PATCH /users/{id}` (rol, estado y contraseña; no se elimina) |
 | owners / patients | `/owners`, `/patients`, `/me/patients` (portal). Cada paciente trae `owner: { id, firstNames, lastNames, documentNumber }` y `GET /patients` filtra por `?ownerDocument=` (cédula exacta) además de `ownerId`, `species`, `q` y `active`, para que el veterinario no dependa de `/owners` (D-28). `GET /users/me` incluye `owner.address` |
 | staff | `/veterinarians`, `/groomers` (alta y edición solo ADMIN; lectura para cualquier sesión, con vista reducida para el propietario) y `/veterinarians/{id}/schedules`, `/groomers/{id}/schedules` (`GET` y `PUT` que reemplaza el horario semanal completo) |
@@ -318,6 +319,7 @@ BREVO_API_KEY=
 MAIL_FROM_EMAIL=
 MAIL_FROM_NAME=
 CORS_ORIGINS=
+FRONTEND_URL=                   # opcional; dominio del front para el enlace de recuperación (D-31); si se omite, el primer origen de CORS_ORIGINS
 SEED_ADMIN_EMAIL=               # solo para `npm run db:seed` (primer administrador)
 SEED_ADMIN_PASSWORD=
 SEED_DEMO_PASSWORD=             # solo para `npm run db:seed:demo` (datos de demostración, D-29)
