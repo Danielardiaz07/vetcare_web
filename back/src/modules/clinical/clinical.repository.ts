@@ -18,6 +18,41 @@ export type ConsultationRecord = Prisma.ConsultationGetPayload<{
 export type VaccinationRecord = Prisma.VaccinationGetPayload<{
   include: typeof vaccinationInclude;
 }>;
+export type SurgeryRecord = Prisma.SurgeryGetPayload<{ include: typeof consultationInclude }>;
+export type HospitalizationRecord = Prisma.HospitalizationGetPayload<{
+  include: typeof consultationInclude;
+}>;
+export type LabExamRecord = Prisma.LabExamGetPayload<{ include: typeof consultationInclude }>;
+
+export interface NewSurgeryData {
+  patientId: string;
+  veterinarianId: string;
+  procedure: string;
+  performedAt: Date;
+  notes?: string;
+}
+
+export interface NewHospitalizationData {
+  patientId: string;
+  veterinarianId: string;
+  reason: string;
+  admittedAt: Date;
+}
+
+export interface NewLabExamData {
+  patientId: string;
+  veterinarianId: string;
+  examType: string;
+  performedAt: Date;
+  results: string;
+}
+
+export interface HospitalizationListFilters {
+  status?: "ADMITTED" | "DISCHARGED";
+  patientId?: string;
+  skip: number;
+  take: number;
+}
 
 export interface AppointmentForConsultation {
   id: string;
@@ -55,8 +90,10 @@ export interface HistoryFilters {
   to?: Date; // exclusivo
 }
 
-const rangeOf = (field: "createdAt" | "appliedAt", { from, to }: HistoryFilters) =>
-  from || to ? { [field]: { ...(from && { gte: from }), ...(to && { lt: to }) } } : {};
+const rangeOf = (
+  field: "createdAt" | "appliedAt" | "performedAt" | "admittedAt",
+  { from, to }: HistoryFilters,
+) => (from || to ? { [field]: { ...(from && { gte: from }), ...(to && { lt: to }) } } : {});
 
 export class ClinicalRepository {
   findAppointment(id: string): Promise<AppointmentForConsultation | null> {
@@ -158,6 +195,97 @@ export class ClinicalRepository {
         throw new ConflictError("Solo se registra una vacunacion sobre una cita confirmada");
       }
       return tx.vaccination.create({ data, include: vaccinationInclude });
+    });
+  }
+
+  createSurgery(data: NewSurgeryData): Promise<SurgeryRecord> {
+    return prisma.surgery.create({ data, include: consultationInclude });
+  }
+
+  createLabExam(data: NewLabExamData): Promise<LabExamRecord> {
+    return prisma.labExam.create({ data, include: consultationInclude });
+  }
+
+  // RN-50: el índice único parcial de la migración impide dos internaciones abiertas de la misma mascota.
+  async createHospitalization(data: NewHospitalizationData): Promise<HospitalizationRecord> {
+    try {
+      return await prisma.hospitalization.create({ data, include: consultationInclude });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === UNIQUE_VIOLATION
+      ) {
+        throw new ConflictError("La mascota ya tiene una internacion abierta");
+      }
+      throw error;
+    }
+  }
+
+  findHospitalization(id: string): Promise<HospitalizationRecord | null> {
+    return prisma.hospitalization.findUnique({ where: { id }, include: consultationInclude });
+  }
+
+  // Solo cierra una internación abierta: si otra petición ya dio el egreso, no hay nada que actualizar.
+  async dischargeHospitalization(
+    id: string,
+    dischargedAt: Date,
+    dischargeNotes?: string,
+  ): Promise<HospitalizationRecord> {
+    const closed = await prisma.hospitalization.updateMany({
+      where: { id, dischargedAt: null },
+      data: { dischargedAt, dischargeNotes },
+    });
+    if (closed.count === 0) throw new ConflictError("La internacion ya tiene egreso");
+    return prisma.hospitalization.findUniqueOrThrow({
+      where: { id },
+      include: consultationInclude,
+    });
+  }
+
+  async listHospitalizations(
+    filters: HospitalizationListFilters,
+  ): Promise<{ items: HospitalizationRecord[]; total: number }> {
+    const where: Prisma.HospitalizationWhereInput = {
+      ...(filters.patientId && { patientId: filters.patientId }),
+      ...(filters.status && { dischargedAt: filters.status === "ADMITTED" ? null : { not: null } }),
+    };
+    const [items, total] = await prisma.$transaction([
+      prisma.hospitalization.findMany({
+        where,
+        orderBy: { admittedAt: "desc" },
+        skip: filters.skip,
+        take: filters.take,
+        include: consultationInclude,
+      }),
+      prisma.hospitalization.count({ where }),
+    ]);
+    return { items, total };
+  }
+
+  listSurgeries(patientId: string, filters: HistoryFilters): Promise<SurgeryRecord[]> {
+    return prisma.surgery.findMany({
+      where: { patientId, ...rangeOf("performedAt", filters) },
+      orderBy: [{ performedAt: "desc" }, { createdAt: "desc" }],
+      include: consultationInclude,
+    });
+  }
+
+  listPatientHospitalizations(
+    patientId: string,
+    filters: HistoryFilters,
+  ): Promise<HospitalizationRecord[]> {
+    return prisma.hospitalization.findMany({
+      where: { patientId, ...rangeOf("admittedAt", filters) },
+      orderBy: { admittedAt: "desc" },
+      include: consultationInclude,
+    });
+  }
+
+  listLabExams(patientId: string, filters: HistoryFilters): Promise<LabExamRecord[]> {
+    return prisma.labExam.findMany({
+      where: { patientId, ...rangeOf("performedAt", filters) },
+      orderBy: [{ performedAt: "desc" }, { createdAt: "desc" }],
+      include: consultationInclude,
     });
   }
 

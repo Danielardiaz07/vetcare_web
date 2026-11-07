@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { ClinicalLimit, FieldLimit } from "@/config/constants";
 import { moneyField } from "@/shared/schemas/fields";
-import { isValidClinicDate } from "@/shared/utils/clinic-time";
+import { clinicDateOf, isValidClinicDate } from "@/shared/utils/clinic-time";
+import { paginationQuerySchema } from "@/shared/utils/pagination";
 
 const dateField = z.string().refine(isValidClinicDate, "Fecha invalida, usa AAAA-MM-DD");
 
@@ -46,7 +47,50 @@ export const createVaccineRequestSchema = z.object({
   price: moneyField,
 });
 
-export const HISTORY_TYPES = ["CONSULTATION", "VACCINATION"] as const;
+// Un procedimiento o examen ya realizado no puede tener fecha futura.
+const pastOrTodayDateField = dateField.refine(
+  (value) => value <= clinicDateOf(new Date()),
+  "La fecha no puede ser futura",
+);
+
+export const createSurgeryRequestSchema = z.object({
+  patientId: z.uuid("Identificador invalido"),
+  procedure: requiredText("El procedimiento", ClinicalLimit.PROCEDURE_MAX),
+  performedAt: pastOrTodayDateField,
+  notes: optionalText("Las notas", ClinicalLimit.LONG_TEXT_MAX),
+});
+
+// El ingreso y el egreso toman la hora del servidor.
+export const createHospitalizationRequestSchema = z.object({
+  patientId: z.uuid("Identificador invalido"),
+  reason: requiredText("El motivo", ClinicalLimit.CLINICAL_TEXT_MAX),
+});
+
+export const dischargeHospitalizationRequestSchema = z.object({
+  notes: optionalText("Las notas de egreso", ClinicalLimit.CLINICAL_TEXT_MAX),
+});
+
+export const HOSPITALIZATION_STATUSES = ["ADMITTED", "DISCHARGED"] as const;
+
+export const listHospitalizationsQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(HOSPITALIZATION_STATUSES).optional(),
+  patientId: z.uuid("Identificador invalido").optional(),
+});
+
+export const createLabExamRequestSchema = z.object({
+  patientId: z.uuid("Identificador invalido"),
+  examType: requiredText("El tipo de examen", ClinicalLimit.EXAM_TYPE_MAX),
+  performedAt: pastOrTodayDateField,
+  results: requiredText("Los resultados", ClinicalLimit.LONG_TEXT_MAX),
+});
+
+export const HISTORY_TYPES = [
+  "CONSULTATION",
+  "VACCINATION",
+  "SURGERY",
+  "HOSPITALIZATION",
+  "LAB_EXAM",
+] as const;
 
 export const historyQuerySchema = z
   .object({
@@ -63,6 +107,13 @@ export type CreateConsultationRequestDto = z.infer<typeof createConsultationRequ
 export type CreateVaccinationRequestDto = z.infer<typeof createVaccinationRequestSchema>;
 export type CreateVaccineRequestDto = z.infer<typeof createVaccineRequestSchema>;
 export type HistoryQueryDto = z.infer<typeof historyQuerySchema>;
+export type CreateSurgeryRequestDto = z.infer<typeof createSurgeryRequestSchema>;
+export type CreateHospitalizationRequestDto = z.infer<typeof createHospitalizationRequestSchema>;
+export type DischargeHospitalizationRequestDto = z.infer<
+  typeof dischargeHospitalizationRequestSchema
+>;
+export type ListHospitalizationsQueryDto = z.infer<typeof listHospitalizationsQuerySchema>;
+export type CreateLabExamRequestDto = z.infer<typeof createLabExamRequestSchema>;
 
 export type VaccineStatus = "UP_TO_DATE" | "DUE_SOON" | "OVERDUE"; // RN-49
 
@@ -101,9 +152,46 @@ export interface VaccineResponseDto {
   active: boolean;
 }
 
+export interface SurgeryResponseDto {
+  id: string;
+  patientId: string;
+  veterinarian: { id: string; firstNames: string; lastNames: string };
+  procedure: string;
+  performedAt: string;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export type HospitalizationStatus = (typeof HOSPITALIZATION_STATUSES)[number];
+
+export interface HospitalizationResponseDto {
+  id: string;
+  patientId: string;
+  veterinarian: { id: string; firstNames: string; lastNames: string };
+  reason: string;
+  status: HospitalizationStatus;
+  admittedAt: Date;
+  dischargedAt: Date | null;
+  dischargeNotes: string | null;
+  createdAt: Date;
+}
+
+export interface LabExamResponseDto {
+  id: string;
+  patientId: string;
+  veterinarian: { id: string; firstNames: string; lastNames: string };
+  examType: string;
+  performedAt: string;
+  results: string;
+  createdAt: Date;
+}
+
 export type HistoryEntryDto =
   | { kind: "CONSULTATION"; date: Date; consultation: ConsultationResponseDto }
-  | { kind: "VACCINATION"; date: Date; vaccination: VaccinationResponseDto };
+  | { kind: "VACCINATION"; date: Date; vaccination: VaccinationResponseDto }
+  | { kind: "SURGERY"; date: Date; surgery: SurgeryResponseDto }
+  | { kind: "HOSPITALIZATION"; date: Date; hospitalization: HospitalizationResponseDto }
+  | { kind: "LAB_EXAM"; date: Date; labExam: LabExamResponseDto };
 
 export interface VaccinationCardEntryDto extends VaccinationResponseDto {
   status: VaccineStatus;

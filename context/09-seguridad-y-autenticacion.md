@@ -73,7 +73,7 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 | Gestionar agenda (RF-16) | | ✔ | consulta de la suya | consulta de la suya | |
 | Consultar mis facturas (RF-14) | ✔ (solo las suyas) | | | | |
 | Perfil (RF-15) | ✔ | | | | |
-| Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (citas asignadas) | | |
+| Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (consulta: cita asignada; cirugía, internación y examen sin cita obligatoria, D-34) | | |
 | Registrar servicio estético (RF-21) | | | | ✔ | |
 | Ver los servicios estéticos de una mascota (D-33) | ✔ (solo las suyas) | ✔ | ✔ | ✔ | |
 | Gestionar inventario (RF-22) | | | | | ✔ |

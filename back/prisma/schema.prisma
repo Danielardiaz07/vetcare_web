@@ -130,11 +130,14 @@ model Patient {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  owner         Owner          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  appointments  Appointment[]
-  consultations Consultation[]
-  vaccinations  Vaccination[]
-  groomings     GroomingService[]
+  owner            Owner             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  appointments     Appointment[]
+  consultations    Consultation[]
+  vaccinations     Vaccination[]
+  groomings        GroomingService[]
+  surgeries        Surgery[]
+  hospitalizations Hospitalization[]
+  labExams         LabExam[]
 
   @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
 }
@@ -151,11 +154,14 @@ model Veterinarian {
   createdAt      DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
 
-  user          User?
-  schedules     Schedule[]
-  appointments  Appointment[]
-  consultations Consultation[]
-  vaccinations  Vaccination[]
+  user             User?
+  schedules        Schedule[]
+  appointments     Appointment[]
+  consultations    Consultation[]
+  vaccinations     Vaccination[]
+  surgeries        Surgery[]
+  hospitalizations Hospitalization[]
+  labExams         LabExam[]
 }
 
 model Groomer {
@@ -217,9 +223,9 @@ model Appointment {
   createdAt      DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
 
-  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  veterinarian Veterinarian? @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
-  groomer      Groomer?      @relation(fields: [groomerId], references: [id], onDelete: Restrict)
+  patient      Patient          @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian?    @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+  groomer      Groomer?         @relation(fields: [groomerId], references: [id], onDelete: Restrict)
   consultation Consultation?
   grooming     GroomingService?
 
@@ -253,6 +259,56 @@ model Consultation {
   groomerId    String?      @db.Uuid
 
   @@index([patientId, createdAt]) // historial (RN-41)
+}
+
+// RN-50, D-34: procedimiento quirúrgico hecho por un veterinario; sin cita obligatoria ni costo (RF-20 no lo pide).
+model Surgery {
+  id             String   @id @default(uuid()) @db.Uuid
+  patientId      String   @db.Uuid
+  veterinarianId String   @db.Uuid
+  procedure      String   @db.VarChar(120) // nombre del procedimiento, texto libre
+  performedAt    DateTime @db.Date
+  notes          String?  @db.VarChar(1000) // mismo tope que la fórmula y las notas de la consulta
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, performedAt]) // historial (RN-41)
+}
+
+// RN-50, D-34: ingreso y egreso con la hora del servidor. Una sola internación abierta por mascota
+// (índice único parcial en la migración) y egreso posterior al ingreso (CHECK).
+model Hospitalization {
+  id             String    @id @default(uuid()) @db.Uuid
+  patientId      String    @db.Uuid
+  veterinarianId String    @db.Uuid
+  reason         String    @db.VarChar(500) // mismo tope que los textos clínicos
+  admittedAt     DateTime  @db.Timestamptz(3)
+  dischargedAt   DateTime? @db.Timestamptz(3) // null mientras siga internada
+  dischargeNotes String?   @db.VarChar(500)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, admittedAt]) // historial (RN-41)
+}
+
+// RN-50, D-34: examen de laboratorio con sus resultados en texto libre (sin archivos adjuntos).
+model LabExam {
+  id             String   @id @default(uuid()) @db.Uuid
+  patientId      String   @db.Uuid
+  veterinarianId String   @db.Uuid
+  examType       String   @db.VarChar(80) // p. ej. "Hemograma"
+  performedAt    DateTime @db.Date
+  results        String   @db.VarChar(1000)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, performedAt]) // historial (RN-41)
 }
 
 // RN-51, D-33: baño, corte o peluquería hecho por un estilista. La cita de estética es opcional (servicio sin cita);
