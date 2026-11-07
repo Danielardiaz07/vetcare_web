@@ -28,7 +28,8 @@ export type IconName =
   | "flask"
   | "shield"
   | "arrow-right"
-  | "log-in";
+  | "log-in"
+  | "chart";
 
 const ICON_SIZE = 24;
 
@@ -173,6 +174,12 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M14 4h5v16h-5" />
       <path d="M3 12h11M10 8l4 4-4 4" />
+    </>
+  ),
+  chart: (
+    <>
+      <path d="M4 4v16h16" />
+      <path d="M8 16v-4M12 16V8M16 16v-6" />
     </>
   ),
 };

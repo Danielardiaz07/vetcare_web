@@ -38,7 +38,7 @@ Fuente para los textos y flujos de pantalla. La interfaz va en español (RN-61) 
 | Recepcionista | Agenda · Propietarios · Pacientes · Facturación | Ver la agenda del día por veterinario; crear citas para clientes presenciales o telefónicos; “Registrar llegada” o “No asistió” pasados 15 min; registrar propietarios y mascotas; Facturación > Nueva factura (buscar propietario por cédula) |
 | Veterinario | Mi agenda · Pacientes · Atención | Abrir una cita confirmada; revisar historial y vacunas; diligenciar el formulario de atención (síntomas, peso, temperatura, diagnóstico, tratamiento); “+ Medicamento”; registrar vacunas, cirugías, internaciones o exámenes desde las pestañas del formulario; “Guardar atención” |
 | Estilista | Mi agenda · Servicios | Abrir la cita de estética y registrar servicio, observaciones y costo |
-| Administrador | Usuarios · Personal y horarios · Inventario · Reportes | Crear usuarios y asignar rol; registrar veterinarios y estilistas con sus horarios; gestionar medicamentos y vacunas (stock crítico o por vencer resaltados); tablero de indicadores; anular facturas con motivo |
+| Administrador | Usuarios · Personal y horarios · Inventario · Indicadores | Crear usuarios y asignar rol; registrar veterinarios y estilistas con sus horarios; gestionar medicamentos y vacunas (stock crítico o por vencer resaltados); tablero de indicadores; anular facturas con motivo |
 
 El calendario de recepción muestra vista diaria y semanal por veterinario con **colores por estado** de cita.
 

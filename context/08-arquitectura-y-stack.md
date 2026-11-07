@@ -262,6 +262,7 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `/panel/invoices` | Recepcionista | Facturación |
 | `/panel/users` | Administrador | Usuarios |
 | `/panel/staff` | Administrador | Personal y horarios |
+| `/panel/reports` | Administrador | Indicadores: citas por estado, inasistencias, servicios más solicitados e ingresos del periodo elegido (por defecto el mes actual), con barras en CSS sin librería de gráficas (RN-80, D-35) |
 
 ## 8. Principios de diseño
 
