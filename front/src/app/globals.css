@@ -70,3 +70,36 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Al imprimir una factura abierta en su ventana, solo sale la factura. */
+@media print {
+  body:has(dialog[open] .invoice-print) * {
+    visibility: hidden;
+  }
+
+  body:has(dialog[open] .invoice-print) .invoice-print,
+  body:has(dialog[open] .invoice-print) .invoice-print * {
+    visibility: visible;
+  }
+
+  dialog[open]:has(.invoice-print) {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  dialog[open]:has(.invoice-print)::backdrop {
+    background: transparent;
+  }
+
+  .invoice-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}

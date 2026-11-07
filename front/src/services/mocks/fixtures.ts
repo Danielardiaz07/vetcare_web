@@ -432,3 +432,39 @@ export const mockInvoices: Invoice[] = (
     createdAt,
   };
 });
+
+// Factura pagada de la cuenta de prueba, para ver "Mis facturas" en el portal (consulta y vacuna de Luna).
+const mockLunaConsultation = mockConsultations[5];
+const mockLunaVaccination = mockVaccinations[3];
+const mockLunaItems = [
+  {
+    id: "7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b10",
+    description: "Consulta - Luna",
+    amount: mockLunaConsultation?.cost ?? 0,
+    consultationId: mockLunaConsultation?.id ?? null,
+    vaccinationId: null,
+  },
+  {
+    id: "7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b11",
+    description: `Vacuna ${mockLunaVaccination?.vaccine.name ?? ""} - Luna`,
+    amount: mockLunaVaccination?.price ?? 0,
+    consultationId: null,
+    vaccinationId: mockLunaVaccination?.id ?? null,
+  },
+].map((item) => ({ ...item, taxed: true, tax: (item.amount * IVA_RATE_PERCENT) / 100 }));
+const mockLunaSubtotal = mockLunaItems.reduce((sum, item) => sum + item.amount, 0);
+const mockLunaTax = mockLunaItems.reduce((sum, item) => sum + item.tax, 0);
+
+mockInvoices.push({
+  id: "6e7f8a9b-0c1d-4e2f-8a3b-4c5d6e7f8a10",
+  number: `FAC-${String(mockInvoices.length + 1).padStart(6, "0")}`,
+  status: "PAID",
+  paymentMethod: "TRANSFER",
+  owner: ownerSummary(mockOwner),
+  subtotal: mockLunaSubtotal,
+  tax: mockLunaTax,
+  total: mockLunaSubtotal + mockLunaTax,
+  voidReason: null,
+  items: mockLunaItems,
+  createdAt: "2026-03-14T16:00:00.000Z",
+});

@@ -4,6 +4,7 @@ import {
   mockClinicPatients,
   mockConsultations,
   mockInvoices,
+  mockOwner,
   mockOwners,
   mockVaccinations,
 } from "@/services/mocks/fixtures";
@@ -140,6 +141,18 @@ function mockList({ page, status }: ListInvoicesParams): Promise<Paginated<Invoi
   });
 }
 
+// D-27: el propietario solo ve sus facturas pagadas (RN-76).
+function mockListMine(page: number): Promise<Paginated<Invoice>> {
+  const matches = mockInvoiceStore
+    .filter((invoice) => invoice.owner.id === mockOwner.id && invoice.status === "PAID")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const total = matches.length;
+  return mockResponse({
+    data: matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    meta: { page, limit: PAGE_SIZE, total, totalPages: Math.ceil(total / PAGE_SIZE) },
+  });
+}
+
 function mockVoid(id: string, reason: string): Promise<Invoice> {
   const invoice = mockInvoiceStore.find((item) => item.id === id);
   if (!invoice) return mockError(NOT_FOUND, "NOT_FOUND", "Factura no encontrada");
@@ -170,4 +183,9 @@ export function listInvoices(params: ListInvoicesParams): Promise<Paginated<Invo
 export function voidInvoice(id: string, reason: string): Promise<Invoice> {
   if (isMockEnabled) return mockVoid(id, reason);
   return request<Invoice>(`/invoices/${id}/void`, { method: "PUT", body: { reason } });
+}
+
+export function listMyInvoices(page: number): Promise<Paginated<Invoice>> {
+  if (isMockEnabled) return mockListMine(page);
+  return request<Paginated<Invoice>>("/me/invoices", { query: { page, limit: PAGE_SIZE } });
 }
