@@ -15,6 +15,7 @@ export const ROUTES = {
   panelOwners: "/panel/owners",
   panelOwner: (ownerId: string) => `/panel/owners/${ownerId}`,
   panelPatients: "/panel/patients",
+  panelPatient: (patientId: string) => `/panel/patients/${patientId}`,
   panelAttention: "/panel/attention",
   panelAppointmentAttention: (appointmentId: string) => `/panel/attention/${appointmentId}`,
   panelInvoices: "/panel/invoices",
@@ -54,6 +55,8 @@ export const FIELD_LIMITS = {
   VACCINE_LOT_MAX: 30,
   VOID_REASON_MAX: 200,
   GROOMING_OBSERVATIONS_MAX: 500,
+  PROCEDURE_MAX: 120,
+  EXAM_TYPE_MAX: 80,
 } as const;
 
 // Los mismos límites de agenda que la API (RN-21, RN-22).

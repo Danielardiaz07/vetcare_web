@@ -9,6 +9,8 @@ const {
   WEIGHT_KG_MAX,
   COST_MAX,
   VACCINE_LOT_MAX,
+  PROCEDURE_MAX,
+  EXAM_TYPE_MAX,
 } = FIELD_LIMITS;
 const ONE_DECIMAL = /^\d+(\.\d)?$/;
 
@@ -63,3 +65,37 @@ export const vaccinationSchema = z
   });
 
 export type VaccinationFormInput = z.infer<typeof vaccinationSchema>;
+
+// D-34: un procedimiento o examen ya realizado no puede tener fecha futura.
+const pastDate = (required: string) =>
+  z.iso
+    .date(required)
+    .refine((date) => date <= clinicDateOf(new Date()), "La fecha no puede ser futura");
+
+export const surgerySchema = z.object({
+  procedure: requiredText("El procedimiento", "Escribe el procedimiento", PROCEDURE_MAX),
+  performedAt: pastDate("Escribe la fecha de la cirugía"),
+  notes: optionalText("Las notas", LONG_TEXT_MAX),
+});
+
+export type SurgeryFormInput = z.infer<typeof surgerySchema>;
+
+export const labExamSchema = z.object({
+  examType: requiredText("El tipo de examen", "Escribe el tipo de examen", EXAM_TYPE_MAX),
+  performedAt: pastDate("Escribe la fecha del examen"),
+  results: requiredText("Los resultados", "Escribe los resultados", LONG_TEXT_MAX),
+});
+
+export type LabExamFormInput = z.infer<typeof labExamSchema>;
+
+export const admissionSchema = z.object({
+  reason: requiredText("El motivo", "Escribe el motivo de la internación", CLINICAL_TEXT_MAX),
+});
+
+export type AdmissionFormInput = z.infer<typeof admissionSchema>;
+
+export const dischargeSchema = z.object({
+  notes: optionalText("Las notas de egreso", CLINICAL_TEXT_MAX),
+});
+
+export type DischargeFormInput = z.infer<typeof dischargeSchema>;

@@ -5,11 +5,14 @@ import type {
   AppointmentTypeSetting,
   Consultation,
   GroomingService,
+  Hospitalization,
   Invoice,
+  LabExam,
   Owner,
   Patient,
   ScheduleBlock,
   StaffProfile,
+  Surgery,
   Vaccination,
   Vaccine,
 } from "@/types/domain";
@@ -392,6 +395,56 @@ export const mockVaccinations: Vaccination[] = (
     createdAt: `${appliedAt}T15:00:00.000Z`,
   };
 });
+
+// D-34: cirugías, exámenes e internaciones de prueba; ninguna internación queda abierta.
+export const mockSurgeries: Surgery[] = (
+  [
+    [LUNA_ID, "Esterilización", "2025-11-20", "Recuperación sin complicaciones"],
+    [ROCKY_ID, "Extracción de pieza dental", "2026-03-15", null],
+  ] as [string, string, string, string | null][]
+).map(([patientId, procedure, performedAt, notes], index) => ({
+  id: `8a9b0c1d-2e3f-4a4b-8c5d-6e7f8a9b0c${String(index).padStart(2, "0")}`,
+  patientId,
+  veterinarian: mockVetName,
+  procedure,
+  performedAt,
+  notes,
+  createdAt: `${performedAt}T17:00:00.000Z`,
+}));
+
+export const mockLabExams: LabExam[] = (
+  [
+    [LUNA_ID, "Hemograma", "2026-08-20", "Valores dentro de los rangos normales"],
+    [
+      ROCKY_ID,
+      "Química sanguínea",
+      "2026-03-10",
+      "Creatinina levemente elevada; repetir en 3 meses",
+    ],
+  ] as [string, string, string, string][]
+).map(([patientId, examType, performedAt, results], index) => ({
+  id: `9b0c1d2e-3f4a-4b5c-9d6e-7f8a9b0c1d${String(index).padStart(2, "0")}`,
+  patientId,
+  veterinarian: mockVetName,
+  examType,
+  performedAt,
+  results,
+  createdAt: `${performedAt}T18:00:00.000Z`,
+}));
+
+export const mockHospitalizations: Hospitalization[] = [
+  {
+    id: "0c1d2e3f-4a5b-4c6d-8e7f-8a9b0c1d2e00",
+    patientId: ROCKY_ID,
+    veterinarian: mockVetName,
+    reason: "Observación después de la extracción dental",
+    status: "DISCHARGED",
+    admittedAt: "2026-03-15T19:00:00.000Z",
+    dischargedAt: "2026-03-16T15:00:00.000Z",
+    dischargeNotes: "Come bien; control en una semana",
+    createdAt: "2026-03-15T19:00:00.000Z",
+  },
+];
 
 // Servicios estéticos de prueba (D-33): Milo y Rocky quedan pendientes de facturar.
 const mockGroomerName = (() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
@@ -16,6 +17,7 @@ import { ownerFullName } from "@/features/owners/labels";
 import { PatientAvatar } from "@/features/patients/components/patient-avatar";
 import { PatientFormModal } from "@/features/patients/components/patient-form";
 import { SPECIES_LABELS } from "@/features/patients/labels";
+import { ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { ApiError } from "@/services/http-client";
@@ -86,10 +88,13 @@ export function PatientsList() {
       key: "name",
       header: "Nombre",
       render: (pet) => (
-        <span className="flex items-center gap-3">
+        <Link
+          href={ROUTES.panelPatient(pet.id)}
+          className="flex min-h-11 items-center gap-3 font-semibold text-brand-700 underline underline-offset-2"
+        >
           <PatientAvatar name={pet.name} />
-          <span className="font-semibold">{pet.name}</span>
-        </span>
+          {pet.name}
+        </Link>
       ),
     },
     { key: "species", header: "Especie", render: (pet) => SPECIES_LABELS[pet.species] },

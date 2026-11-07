@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-07 · 08 · Ruta `/panel/patients/[id]`: ficha del paciente con historial completo, carné y registro de cirugías, exámenes e internaciones por el veterinario; el portal suma las pestañas Cirugías, Internaciones y Exámenes (HU-20, RN-41, RN-50, D-34, §7.2).
 - 2026-11-07 · 08 · El estilista entra a Atención para registrar el servicio estético de su cita confirmada; la portada de Atención lista las citas confirmadas de hoy (HU-23, RN-51, D-33, §7.2).
 - 2026-11-07 · 02, 04, 08, 10, 12 · Tablero de indicadores del administrador (HU-24, RF-24, RN-80): `GET /reports/dashboard` con citas por estado, inasistencias, servicios más solicitados, ingresos y estado actual; HU-24 pasa de Reserva al Sprint 3 (D-35).
 - 2026-11-07 · 02, 04, 08, 09, 10, 12 · Cirugías, internaciones y exámenes de laboratorio (HU-20, RF-20, RN-50, RN-41): tablas `Surgery`, `Hospitalization` y `LabExam` con su migración, endpoints del veterinario y entradas nuevas en el historial; HU-20 pasa de Reserva al Sprint 3 (D-34).
