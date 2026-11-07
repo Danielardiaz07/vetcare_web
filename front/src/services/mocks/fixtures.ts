@@ -4,6 +4,7 @@ import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
 import type {
   AppointmentTypeSetting,
   Consultation,
+  GroomingService,
   Invoice,
   Owner,
   Patient,
@@ -392,6 +393,32 @@ export const mockVaccinations: Vaccination[] = (
   };
 });
 
+// Servicios estéticos de prueba (D-33): Milo y Rocky quedan pendientes de facturar.
+const mockGroomerName = (() => {
+  const [groomer] = mockGroomers;
+  return {
+    id: groomer?.id ?? "",
+    firstNames: groomer?.firstNames ?? "",
+    lastNames: groomer?.lastNames ?? "",
+  };
+})();
+export const mockGroomingServices: GroomingService[] = (
+  [
+    [MILO_ID, "BATH", "2026-09-05", "Baño con champú hipoalergénico", 45000],
+    [MILO_ID, "HAIRCUT", "2026-06-18", null, 35000],
+    [ROCKY_ID, "STYLING", "2026-10-02", "Corte de uñas incluido", 70000],
+  ] as [string, GroomingService["type"], string, string | null, number][]
+).map(([patientId, type, date, observations, cost], index) => ({
+  id: `6e7f8a9b-0c1d-4e2f-9a3b-4c5d6e7f8a${String(index).padStart(2, "0")}`,
+  appointmentId: null,
+  patientId,
+  type,
+  observations,
+  cost,
+  groomer: mockGroomerName,
+  createdAt: `${date}T16:00:00.000Z`,
+}));
+
 // Facturas de prueba: una pagada y una anulada, cuya consulta vuelve a quedar pendiente (RN-73).
 const [, mockRockyOwner] = mockOwners;
 export const mockInvoices: Invoice[] = (
@@ -427,6 +454,7 @@ export const mockInvoices: Invoice[] = (
         tax,
         consultationId: consultation?.id ?? null,
         vaccinationId: null,
+        groomingServiceId: null,
       },
     ],
     createdAt,
@@ -443,6 +471,7 @@ const mockLunaItems = [
     amount: mockLunaConsultation?.cost ?? 0,
     consultationId: mockLunaConsultation?.id ?? null,
     vaccinationId: null,
+    groomingServiceId: null,
   },
   {
     id: "7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b11",
@@ -450,6 +479,7 @@ const mockLunaItems = [
     amount: mockLunaVaccination?.price ?? 0,
     consultationId: null,
     vaccinationId: mockLunaVaccination?.id ?? null,
+    groomingServiceId: null,
   },
 ].map((item) => ({ ...item, taxed: true, tax: (item.amount * IVA_RATE_PERCENT) / 100 }));
 const mockLunaSubtotal = mockLunaItems.reduce((sum, item) => sum + item.amount, 0);

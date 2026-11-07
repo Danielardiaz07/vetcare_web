@@ -40,6 +40,9 @@ const conceptLabel = (concept: PendingConcept) => {
     : concept.description;
 };
 
+const idsOf = (concepts: PendingConcept[], kind: PendingConcept["kind"]) =>
+  concepts.filter((item) => item.kind === kind).map((item) => item.id);
+
 const conceptDate = (concept: PendingConcept) => formatDate(clinicDateOf(new Date(concept.date)));
 
 export function NewInvoice() {
@@ -185,10 +188,9 @@ function OwnerBilling({ owner, onChangeOwner, onCreated }: OwnerBillingProps) {
       const invoice = await createInvoice({
         ownerId: owner.id,
         paymentMethod,
-        consultationIds: chosen
-          .filter((item) => item.kind === "CONSULTATION")
-          .map((item) => item.id),
-        vaccinationIds: chosen.filter((item) => item.kind === "VACCINATION").map((item) => item.id),
+        consultationIds: idsOf(chosen, "CONSULTATION"),
+        vaccinationIds: idsOf(chosen, "VACCINATION"),
+        groomingServiceIds: idsOf(chosen, "GROOMING"),
       });
       show(`Factura ${invoice.number} generada`, "success");
       onCreated(invoice);

@@ -30,7 +30,10 @@ export const PANEL_MENU: Record<StaffRole, PanelMenuItem[]> = {
     { href: ROUTES.panelPatients, label: "Pacientes", icon: "paw" },
     { href: ROUTES.panelAttention, label: "Atención", icon: "file-medical" },
   ],
-  GROOMER: [{ href: ROUTES.panelAgenda, label: "Mi agenda", icon: "calendar" }],
+  GROOMER: [
+    { href: ROUTES.panelAgenda, label: "Mi agenda", icon: "calendar" },
+    { href: ROUTES.panelAttention, label: "Atención", icon: "scissors" },
+  ],
   ADMIN: [
     { href: ROUTES.panelUsers, label: "Usuarios", icon: "users" },
     { href: ROUTES.panelStaff, label: "Personal y horarios", icon: "clock" },

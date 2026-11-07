@@ -249,6 +249,13 @@ CLINIC_SEEDS.push({
   when: { minutesFromNow: -10 },
   reason: "Cojea de la pata trasera derecha",
 });
+// RN-51: Nala ya llegó a su baño con Valentina, lista para registrar el servicio.
+CLINIC_SEEDS.push({
+  petIndex: 1,
+  type: "GROOMING",
+  status: "CONFIRMED",
+  when: { minutesFromNow: -5 },
+});
 
 function seedStart(when: MockSeed["when"], today: string): string {
   if ("minutesFromNow" in when) {

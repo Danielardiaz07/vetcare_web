@@ -256,8 +256,8 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `/panel/owners` | Recepcionista | Propietarios |
 | `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas y desactivar |
 | `/panel/patients` | Recepcionista, veterinario | Pacientes |
-| `/panel/attention` | Veterinario | Atención: elegir la cita por atender (destino del menú) |
-| `/panel/attention/[appointmentId]` | Veterinario | Atención de la cita |
+| `/panel/attention` | Veterinario, estilista | Atención: citas confirmadas de hoy por atender (destino del menú) |
+| `/panel/attention/[appointmentId]` | Veterinario, estilista | Atención de la cita: consulta o vacuna (veterinario) o servicio estético (estilista, D-33) |
 | `/panel/invoices` | Recepcionista | Facturación |
 | `/panel/users` | Administrador | Usuarios |
 | `/panel/staff` | Administrador | Personal y horarios |
