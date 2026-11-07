@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import { HttpStatus } from "@/config/constants";
 import type {
+  CreateMyPatientRequestDto,
   CreatePatientRequestDto,
   ListMyPatientsQueryDto,
   ListPatientsQueryDto,
@@ -37,6 +38,14 @@ export class PatientsController {
     res.json(
       await this.service.listMine(req.user!.id, req.query as unknown as ListMyPatientsQueryDto),
     );
+  };
+
+  createMine: RequestHandler = async (req, res) => {
+    const patient = await this.service.createMine(
+      req.user!.id,
+      req.body as CreateMyPatientRequestDto,
+    );
+    res.status(HttpStatus.CREATED).json(patient);
   };
 
   getMine: RequestHandler = async (req, res) => {

@@ -109,7 +109,7 @@ Flujo central: **cuenta → cita → atención → factura**.
 | RF-12 | HU-09 | CU-11, CU-12 | 2 |
 | RF-13 | HU-10 | CU-13 | 2 |
 | RF-14 | HU-17 | CU-14 | Reserva |
-| RF-15 | HU-22 | CU-15 | Reserva |
+| RF-15 | HU-22 | CU-15 | 3 |
 | RF-16 | HU-11 | CU-19, CU-10 | 2 |
 | RF-17 | HU-19 | CU-20 | Reserva |
 | RF-18 | HU-12 | CU-21 | 3 |

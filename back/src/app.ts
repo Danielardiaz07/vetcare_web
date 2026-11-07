@@ -87,7 +87,7 @@ export function createApp() {
     env.OTP_TTL_MINUTES,
     frontendUrl,
   );
-  const usersService = new UsersService(new UsersRepository(), hasher);
+  const usersService = new UsersService(new UsersRepository(), hasher, tokens);
 
   const ownersService = new OwnersService(new OwnersRepository());
   const patientsController = new PatientsController(new PatientsService(new PatientsRepository()));

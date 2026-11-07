@@ -135,6 +135,7 @@ Las funciones PL/SQL de la versión de escritorio (`fn_vet_disponible`, `fn_calc
 | `POST /auth/login` | 5 intentos / 15 min por IP + email |
 | `POST /auth/register`, `/auth/otp/*`, `/auth/password/reset` | 3–5 / 10 min por IP + email |
 | `POST /auth/password/forgot` | 5 / 10 min por IP + correo o cédula |
+| `PUT /users/me/password` | 5 / 15 min por usuario (D-32) |
 
 `429 Too Many Requests` con `Retry-After`. En producción, store compartido (p. ej. Redis) si hay más de una instancia.
 
@@ -157,8 +158,8 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | Módulo | Recursos |
 |--------|----------|
 | auth | `POST /auth/register`, `/auth/otp/verify`, `/auth/otp/resend`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `POST /auth/password/forgot` (correo o cédula) y `POST /auth/password/reset` (D-31) |
-| users | `GET /users/me`; personal, solo ADMIN: `POST /users`, `GET /users`, `GET /users/{id}`, `PATCH /users/{id}` (rol, estado y contraseña; no se elimina) |
-| owners / patients | `/owners`, `/patients`, `/me/patients` (portal). Cada paciente trae `owner: { id, firstNames, lastNames, documentNumber }` y `GET /patients` filtra por `?ownerDocument=` (cédula exacta) además de `ownerId`, `species`, `q` y `active`, para que el veterinario no dependa de `/owners` (D-28). `GET /users/me` incluye `owner.address` |
+| users | `GET /users/me`; propietario: `PATCH /users/me` (`phone` y `address`, con las reglas del registro; responde el mismo perfil que `GET`; correo y cédula no se editan, D-18) y, para cualquier sesión, `PUT /users/me/password` (`currentPassword`, `password`, `confirmPassword`; `204`; D-32); personal, solo ADMIN: `POST /users`, `GET /users`, `GET /users/{id}`, `PATCH /users/{id}` (rol, estado y contraseña; no se elimina) |
+| owners / patients | `/owners`, `/patients`, `/me/patients` (portal: `GET` y `POST`; el `POST` registra una mascota propia con los campos de `POST /patients` sin `ownerId`, que sale de la sesión; RN-18, D-32). Cada paciente trae `owner: { id, firstNames, lastNames, documentNumber }` y `GET /patients` filtra por `?ownerDocument=` (cédula exacta) además de `ownerId`, `species`, `q` y `active`, para que el veterinario no dependa de `/owners` (D-28). `GET /users/me` incluye `owner.address` |
 | staff | `/veterinarians`, `/groomers` (alta y edición solo ADMIN; lectura para cualquier sesión, con vista reducida para el propietario) y `/veterinarians/{id}/schedules`, `/groomers/{id}/schedules` (`GET` y `PUT` que reemplaza el horario semanal completo) |
 | appointment-types | `GET /appointment-types`, `PATCH /appointment-types/{type}` (duración, solo ADMIN) |
 | appointments | `GET /appointments/availability?type=&date=&professionalId=` (franjas libres y, si no hay, tres fechas sugeridas; RN-33); `POST /appointments` (propietario o recepción; sin `professionalId` = cualquiera disponible); `GET /appointments?from=&to=` (agenda, máx. 7 días: recepción ve todo, veterinario y estilista solo lo suyo); `PUT /appointments/{id}/reschedule`, `/cancel` (propietario las suyas, recepción cualquiera); `PUT /appointments/{id}/arrival`, `/no-show`, `/reassign` (solo recepción); `GET /me/appointments?when=upcoming\|past` (portal). Detalle en D-26 |

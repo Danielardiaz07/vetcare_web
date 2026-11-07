@@ -37,6 +37,7 @@ El registro del propietario recoge además los campos de negocio (RN-01) y la ac
 - Cookie `refresh_token` con `path=/` (el `proxy.ts` del front debe poder verla), `SameSite=Lax` y `Secure` en producción.
 - `POST /auth/refresh` **rota** el token: revoca el anterior y emite uno nuevo; presentar un token ya revocado (reutilización) revoca todas las sesiones del usuario.
 - Cerrar sesión revoca el refresh token y limpia la cookie.
+- Cambiar la contraseña con la sesión abierta (`PUT /users/me/password`, RN-02) exige la contraseña actual, que la nueva sea distinta, y revoca las **demás** sesiones del usuario; la sesión desde la que se cambia (la de la cookie) se conserva. Si la actual no coincide responde un error de validación (no `401`, para que el cliente no intente refrescar la sesión) y el endpoint tiene rate limit de 5 intentos por 15 min por usuario (D-32).
 - *(alineación)* `specs.pdf` pedía un JWT de 8 h; se sustituye por access corto + refresh (D-01).
 
 ## 4. Bloqueo por intentos fallidos (RN-08)

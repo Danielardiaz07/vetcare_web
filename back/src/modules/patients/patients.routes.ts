@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import { Router, type RequestHandler } from "express";
 import {
+  createMyPatientRequestSchema,
   createPatientRequestSchema,
   listMyPatientsQuerySchema,
   listPatientsQuerySchema,
@@ -39,6 +40,12 @@ export function createMyPatientsRouter(
   const router = Router();
   const owner = [authenticate, authorize(Role.OWNER)];
 
+  router.post(
+    "/",
+    ...owner,
+    validate({ body: createMyPatientRequestSchema }),
+    controller.createMine,
+  );
   router.get("/", ...owner, validate({ query: listMyPatientsQuerySchema }), controller.listMine);
   router.get("/:id", ...owner, validate({ params: uuidParamSchema }), controller.getMine);
 
