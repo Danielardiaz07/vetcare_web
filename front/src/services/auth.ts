@@ -1,5 +1,5 @@
 import { API_REFRESH_PATH } from "@/lib/constants";
-import type { LoginInput, RegisterInput } from "@/features/auth/schemas";
+import type { LoginInput, RegisterInput, ResetPasswordInput } from "@/features/auth/schemas";
 import { request, setAccessToken } from "@/services/http-client";
 import { isMockEnabled, mockDelay, mockError, mockResponse } from "@/services/mocks";
 import {
@@ -107,6 +107,40 @@ export function resendOtp(email: string): Promise<void> {
   return request<void>("/auth/otp/resend", {
     method: "POST",
     body: { email },
+    skipAuthRefresh: true,
+  });
+}
+
+// D-31: la API responde lo mismo exista o no la cuenta, para no revelar quién está registrado.
+export type ForgotPasswordRequest = { email: string } | { documentNumber: string };
+
+const MOCK_INVALID_RESET_TOKEN = "invalido";
+
+export function forgotPassword(input: ForgotPasswordRequest): Promise<{ message: string }> {
+  if (isMockEnabled) {
+    return mockResponse({ message: "Si los datos estan registrados, te enviamos un enlace" });
+  }
+  return request<{ message: string }>("/auth/password/forgot", {
+    method: "POST",
+    body: input,
+    skipAuthRefresh: true,
+  });
+}
+
+// La API cierra todas las sesiones del usuario al cambiar la contraseña.
+export function resetPassword(token: string, input: ResetPasswordInput): Promise<void> {
+  if (isMockEnabled) {
+    return token === MOCK_INVALID_RESET_TOKEN
+      ? mockError(
+          UNPROCESSABLE_ENTITY,
+          "VALIDATION_ERROR",
+          "El enlace es invalido o ya expiro. Solicita uno nuevo",
+        )
+      : mockResponse(undefined);
+  }
+  return request<void>("/auth/password/reset", {
+    method: "POST",
+    body: { token, ...input },
     skipAuthRefresh: true,
   });
 }

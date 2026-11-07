@@ -12,12 +12,18 @@ type Credentials = { email: string; password: string };
 
 type RegisterFlowProps = {
   onGoToLogin?: () => void;
+  onForgotPassword?: () => void;
   onDone?: () => void;
   // Si está, la persona sigue en la página donde abrió la ventana en lugar de ir al portal.
   onSignedIn?: (user: SessionUser) => void;
 };
 
-export function RegisterFlow({ onGoToLogin, onDone, onSignedIn }: RegisterFlowProps) {
+export function RegisterFlow({
+  onGoToLogin,
+  onForgotPassword,
+  onDone,
+  onSignedIn,
+}: RegisterFlowProps) {
   const router = useRouter();
   const { signIn } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
@@ -44,5 +50,11 @@ export function RegisterFlow({ onGoToLogin, onDone, onSignedIn }: RegisterFlowPr
   }
 
   if (email) return <OtpForm email={email} onVerified={handleVerified} />;
-  return <RegisterForm onRegistered={handleRegistered} onGoToLogin={onGoToLogin} />;
+  return (
+    <RegisterForm
+      onRegistered={handleRegistered}
+      onGoToLogin={onGoToLogin}
+      onForgotPassword={onForgotPassword}
+    />
+  );
 }
