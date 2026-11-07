@@ -68,11 +68,19 @@ function changesOf(patient: Patient, input: PatientFormInput): UpdatePatientInpu
 type PatientFormProps = {
   patient?: Patient;
   owner?: Owner;
+  // Portal (RN-18): registra una mascota propia; el propietario es el de la sesión.
+  createMine?: (input: PatientFormInput) => Promise<Patient>;
   onCancel: () => void;
   onSaved: (patient: Patient) => void;
 };
 
-function PatientForm({ patient, owner: presetOwner, onCancel, onSaved }: PatientFormProps) {
+export function PatientForm({
+  patient,
+  owner: presetOwner,
+  createMine,
+  onCancel,
+  onSaved,
+}: PatientFormProps) {
   const [owner, setOwner] = useState<Owner | undefined>(presetOwner);
   const [ownerDocument, setOwnerDocument] = useState("");
   const [ownerError, setOwnerError] = useState<string | null>(null);
@@ -95,7 +103,7 @@ function PatientForm({ patient, owner: presetOwner, onCancel, onSaved }: Patient
         }
       : undefined,
   });
-  const needsOwner = !patient && !presetOwner;
+  const needsOwner = !patient && !presetOwner && !createMine;
 
   async function findOwner() {
     const documentNumber = ownerDocument.trim();
@@ -120,6 +128,14 @@ function PatientForm({ patient, owner: presetOwner, onCancel, onSaved }: Patient
 
   const onSubmit = handleSubmit(async (input) => {
     setFormError(null);
+    if (createMine) {
+      try {
+        onSaved(await createMine(input));
+      } catch (error) {
+        setFormError(errorMessage(error));
+      }
+      return;
+    }
     if (!patient && !owner) {
       setOwnerError("Busca y elige el propietario");
       return;

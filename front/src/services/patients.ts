@@ -151,6 +151,12 @@ export async function getMyPatients(): Promise<Patient[]> {
   return data;
 }
 
+// RN-18, D-32: el propietario sale de la sesión; la API ignora cualquier ownerId.
+export function createMyPatient(input: PatientInput): Promise<Patient> {
+  if (isMockEnabled) return createPatient({ ...input, ownerId: mockOwner.id });
+  return request<Patient>("/me/patients", { method: "POST", body: input });
+}
+
 // RN-40: una mascota de otro propietario responde 403.
 export function getMyPatient(id: string): Promise<Patient> {
   if (isMockEnabled) {

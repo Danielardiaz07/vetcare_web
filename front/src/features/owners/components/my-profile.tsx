@@ -1,13 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Icon } from "@/components/ui/icon";
 import { LoadingState } from "@/components/ui/loading-state";
+import { useToast } from "@/components/ui/toast";
+import { ChangePasswordDialog } from "@/features/owners/components/change-password-dialog";
+import { EditContactDialog } from "@/features/owners/components/edit-contact-dialog";
 import { ownerDocument, ownerFullName } from "@/features/owners/labels";
 import { PetCard } from "@/features/patients/components/pet-card";
+import { ROUTES } from "@/lib/constants";
 import { getMe } from "@/services/auth";
 import { localPhone } from "@/services/owners";
 import { getMyPatients } from "@/services/patients";
@@ -33,23 +38,16 @@ function addressLabel(address: string | null | undefined): string {
   return address ?? "Sin dirección";
 }
 
-// Se activan en la rama 32 (RF-15: editar contacto y registrar mascota).
-function ComingSoonButton({ id, children }: { id: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col items-start gap-1">
-      <Button variant="secondary" disabled aria-describedby={id}>
-        {children}
-      </Button>
-      <span id={id} className="text-sm text-muted">
-        Disponible pronto
-      </span>
-    </div>
-  );
-}
+type OpenDialog = "contact" | "password" | null;
+
+const ADD_PET_CLASSES =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-control border border-field-border bg-surface px-5 font-medium text-ink transition-colors duration-150 ease-out hover:bg-brand-50";
 
 export function MyProfile() {
   const [state, setState] = useState<ProfileState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
+  const [dialog, setDialog] = useState<OpenDialog>(null);
+  const { show } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -104,7 +102,14 @@ export function MyProfile() {
             </div>
           ))}
         </dl>
-        <ComingSoonButton id="edit-profile-soon">Editar datos</ComingSoonButton>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button variant="secondary" onClick={() => setDialog("contact")}>
+            Editar datos
+          </Button>
+          <Button variant="secondary" onClick={() => setDialog("password")}>
+            Cambiar contraseña
+          </Button>
+        </div>
       </section>
 
       <section aria-labelledby="profile-pets-title" className="flex flex-col gap-4">
@@ -112,15 +117,15 @@ export function MyProfile() {
           <h2 id="profile-pets-title" className="text-xl font-semibold text-ink">
             Mis mascotas
           </h2>
-          <ComingSoonButton id="add-pet-soon">
+          <Link href={ROUTES.portalNewPet} className={ADD_PET_CLASSES}>
             <Icon name="paw" className="size-5" />
             Agregar mascota
-          </ComingSoonButton>
+          </Link>
         </div>
         {pets.length === 0 ? (
           <EmptyState
             title="Aún no tienes mascotas registradas"
-            description="Pídele a recepción que las registre en tu próxima visita."
+            description="Agrégala aquí para poder agendarle citas y ver su historial."
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -132,6 +137,25 @@ export function MyProfile() {
           </ul>
         )}
       </section>
+
+      <EditContactDialog
+        open={dialog === "contact"}
+        owner={owner}
+        onClose={() => setDialog(null)}
+        onSaved={() => {
+          setDialog(null);
+          show("Datos actualizados", "success");
+          reload();
+        }}
+      />
+      <ChangePasswordDialog
+        open={dialog === "password"}
+        onClose={() => setDialog(null)}
+        onChanged={() => {
+          setDialog(null);
+          show("Contraseña actualizada", "success");
+        }}
+      />
     </div>
   );
 }

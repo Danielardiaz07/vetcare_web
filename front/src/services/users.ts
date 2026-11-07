@@ -1,11 +1,13 @@
 import { request } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
-import { mockStaffAccounts } from "@/services/mocks/fixtures";
+import { MOCK_PASSWORD, mockProfile, mockStaffAccounts } from "@/services/mocks/fixtures";
 import type { Paginated } from "@/types/api";
-import type { StaffUser, UserStatus } from "@/types/auth";
+import type { ChangePasswordInput } from "@/features/owners/schemas";
+import type { StaffUser, UserProfile, UserStatus } from "@/types/auth";
 
 const NOT_FOUND = 404;
 const CONFLICT = 409;
+const UNPROCESSABLE_ENTITY = 422;
 
 type StaffRole = StaffUser["role"];
 type ManageableStatus = Exclude<UserStatus, "PENDING">;
@@ -99,4 +101,35 @@ export function getUser(id: string): Promise<StaffUser> {
 export function updateUser(id: string, input: UpdateUserInput): Promise<StaffUser> {
   if (isMockEnabled) return mockUpdate(id, input);
   return request<StaffUser>(`/users/${id}`, { method: "PATCH", body: input });
+}
+
+// D-32: el teléfono va sin prefijo, como en el registro; una dirección vacía se guarda como null.
+export interface MyContactUpdate {
+  phone: string;
+  address: string | null;
+}
+
+export const CURRENT_PASSWORD_INCORRECT = "La contrasena actual es incorrecta";
+
+function mockUpdateMyContact(input: MyContactUpdate): Promise<UserProfile> {
+  if (mockProfile.owner) Object.assign(mockProfile.owner, input);
+  return mockResponse(structuredClone(mockProfile));
+}
+
+function mockChangeMyPassword({ currentPassword }: ChangePasswordInput): Promise<void> {
+  if (currentPassword !== MOCK_PASSWORD) {
+    return mockError(UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", CURRENT_PASSWORD_INCORRECT);
+  }
+  return mockResponse(undefined);
+}
+
+export function updateMyContact(input: MyContactUpdate): Promise<UserProfile> {
+  if (isMockEnabled) return mockUpdateMyContact(input);
+  return request<UserProfile>("/users/me", { method: "PATCH", body: input });
+}
+
+// La API cierra las demás sesiones y conserva la actual.
+export function changeMyPassword(input: ChangePasswordInput): Promise<void> {
+  if (isMockEnabled) return mockChangeMyPassword(input);
+  return request<void>("/users/me/password", { method: "PUT", body: input });
 }
