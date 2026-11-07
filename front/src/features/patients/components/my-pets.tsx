@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -7,6 +8,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { NextAppointment } from "@/features/appointments/components/next-appointment";
 import { VaccineAlerts, type PetVaccines } from "@/features/clinical/components/vaccine-alerts";
 import { PetCard } from "@/features/patients/components/pet-card";
+import { ROUTES } from "@/lib/constants";
 import { getMyAppointments } from "@/services/appointments";
 import { getMe } from "@/services/auth";
 import { getMyVaccinationCard } from "@/services/clinical";
@@ -75,7 +77,15 @@ export function MyPets() {
         {pets.length === 0 ? (
           <EmptyState
             title="Aún no tienes mascotas registradas"
-            description="Pídele a recepción que las registre en tu próxima visita."
+            description="Agrégala para poder agendarle citas y ver su historial."
+            action={
+              <Link
+                href={ROUTES.portalNewPet}
+                className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
+              >
+                Agregar mascota
+              </Link>
+            }
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
