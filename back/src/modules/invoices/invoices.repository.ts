@@ -18,14 +18,20 @@ const pendingVaccinationArgs = {
   include: { patient: { select: { name: true } }, vaccine: { select: { name: true } } },
 } satisfies Prisma.VaccinationDefaultArgs;
 
+const pendingGroomingArgs = {
+  include: { patient: { select: { name: true } } },
+} satisfies Prisma.GroomingServiceDefaultArgs;
+
 export type PendingConsultationRecord = Prisma.ConsultationGetPayload<
   typeof pendingConsultationArgs
 >;
 export type PendingVaccinationRecord = Prisma.VaccinationGetPayload<typeof pendingVaccinationArgs>;
+export type PendingGroomingRecord = Prisma.GroomingServiceGetPayload<typeof pendingGroomingArgs>;
 
 export interface NewInvoiceItemData {
   consultationId?: string;
   vaccinationId?: string;
+  groomingServiceId?: string;
   description: string;
   amount: Prisma.Decimal;
   taxed: boolean;
@@ -79,6 +85,14 @@ export class InvoicesRepository {
     });
   }
 
+  pendingGroomingServices(ownerId: string, ids?: string[]): Promise<PendingGroomingRecord[]> {
+    return prisma.groomingService.findMany({
+      where: pendingOf(ownerId, ids),
+      orderBy: { createdAt: "asc" },
+      ...pendingGroomingArgs,
+    });
+  }
+
   // RN-75: factura y detalles se crean en una sola escritura anidada; si algo falla, no queda nada.
   async create(data: NewInvoiceData): Promise<InvoiceRecord> {
     const { items, ...invoice } = data;
@@ -125,7 +139,7 @@ export class InvoicesRepository {
     return prisma.$transaction(async (tx) => {
       await tx.invoiceItem.updateMany({
         where: { invoiceId: id },
-        data: { consultationId: null, vaccinationId: null },
+        data: { consultationId: null, vaccinationId: null, groomingServiceId: null },
       });
       return tx.invoice.update({
         where: { id },

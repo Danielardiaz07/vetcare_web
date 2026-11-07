@@ -80,7 +80,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-48 | Vacunación: registra vacuna, lote, fecha de aplicación y fecha de próxima dosis; descuenta el stock de la vacuna | RF-19 |
 | RN-49 | Estado de vacuna en el carné: `AL_DIA`, `PROXIMA_A_VENCER` (vence en los próximos 7 días) o `VENCIDA` | RF-10 |
 | RN-50 | Cirugía, internación (con ingreso y egreso) y examen de laboratorio (con resultados) se asocian al paciente | RF-20 |
-| RN-51 | Servicio estético: tipo (baño, corte, peluquería), estilista, observaciones y costo | RF-21 |
+| RN-51 | Servicio estético: tipo (baño, corte, peluquería), estilista, observaciones y costo. Lo registra solo el estilista; la cita de estética es opcional y, si se indica, debe ser una cita de estética confirmada, asignada a ese estilista y de esa mascota, y pasa a `ATENDIDA` en la misma transacción. Queda como concepto pendiente de facturar (D-33) | RF-21 |
 | RN-52 | Tipos de cita: consulta general, vacunación, control, estética | RF-11 |
 | RN-53 | Una cita puede cerrarse con la **vacunación**, sin consulta: si `POST /vaccinations` recibe el `appointmentId`, exige las mismas condiciones que la consulta (veterinario asignado, RN-44; cita `CONFIRMADA`, RN-43; mascota de la cita) y, en la misma transacción, guarda la vacunación y pasa la cita a `ATENDIDA` (D-28) | RF-19 |
 

@@ -9,11 +9,16 @@ export const createInvoiceRequestSchema = z
     paymentMethod: z.enum(PaymentMethod),
     consultationIds: z.array(z.uuid("Identificador invalido")).default([]),
     vaccinationIds: z.array(z.uuid("Identificador invalido")).default([]),
+    groomingServiceIds: z.array(z.uuid("Identificador invalido")).default([]),
   })
-  .refine((dto) => dto.consultationIds.length + dto.vaccinationIds.length > 0, {
-    message: "Selecciona al menos un concepto para facturar",
-    path: ["consultationIds"],
-  });
+  .refine(
+    (dto) =>
+      dto.consultationIds.length + dto.vaccinationIds.length + dto.groomingServiceIds.length > 0,
+    {
+      message: "Selecciona al menos un concepto para facturar",
+      path: ["consultationIds"],
+    },
+  );
 
 export const voidInvoiceRequestSchema = z.object({
   reason: z
@@ -49,6 +54,7 @@ export interface InvoiceItemResponseDto {
   tax: number;
   consultationId: string | null;
   vaccinationId: string | null;
+  groomingServiceId: string | null;
 }
 
 export interface InvoiceResponseDto {
@@ -66,7 +72,7 @@ export interface InvoiceResponseDto {
 }
 
 export interface PendingConceptDto {
-  kind: "CONSULTATION" | "VACCINATION";
+  kind: "CONSULTATION" | "VACCINATION" | "GROOMING";
   id: string;
   description: string;
   patientName: string;

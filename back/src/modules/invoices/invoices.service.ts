@@ -1,4 +1,4 @@
-import { InvoiceStatus, Prisma, Role } from "@prisma/client";
+import { InvoiceStatus, Prisma, Role, type GroomingType } from "@prisma/client";
 import { IVA_RATE_PERCENT, MONEY_DECIMALS } from "@/config/constants";
 import type {
   CreateInvoiceRequestDto,
@@ -20,6 +20,15 @@ export interface Actor {
   id: string;
   role: Role;
 }
+
+const GROOMING_LABEL: Record<GroomingType, string> = {
+  BATH: "Bano",
+  HAIRCUT: "Corte",
+  STYLING: "Peluqueria",
+};
+
+const groomingDescription = (type: GroomingType, patientName: string): string =>
+  `Estetica ${GROOMING_LABEL[type]} - ${patientName}`;
 
 const INVOICE_NUMBER_DIGITS = 6;
 const PERCENT = 100;
@@ -55,6 +64,7 @@ function toResponse(record: InvoiceRecord): InvoiceResponseDto {
       tax: taxOf(item.amount, item.taxed).toNumber(),
       consultationId: item.consultationId,
       vaccinationId: item.vaccinationId,
+      groomingServiceId: item.groomingServiceId,
     })),
     createdAt: record.createdAt,
   };
@@ -66,9 +76,10 @@ export class InvoicesService {
   // RN-70: conceptos del propietario aún sin facturar.
   async pending(ownerId: string): Promise<PendingConceptDto[]> {
     await this.assertOwner(ownerId);
-    const [consultations, vaccinations] = await Promise.all([
+    const [consultations, vaccinations, groomings] = await Promise.all([
       this.repository.pendingConsultations(ownerId),
       this.repository.pendingVaccinations(ownerId),
+      this.repository.pendingGroomingServices(ownerId),
     ]);
     const concepts: PendingConceptDto[] = [
       ...consultations.map((item) => ({
@@ -87,18 +98,30 @@ export class InvoicesService {
         amount: item.price.toNumber(),
         date: item.createdAt,
       })),
+      ...groomings.map((item) => ({
+        kind: "GROOMING" as const,
+        id: item.id,
+        description: groomingDescription(item.type, item.patient.name),
+        patientName: item.patient.name,
+        amount: item.cost.toNumber(),
+        date: item.createdAt,
+      })),
     ];
     return concepts.sort((a, b) => a.date.getTime() - b.date.getTime());
   }
 
   async create(dto: CreateInvoiceRequestDto): Promise<InvoiceResponseDto> {
     await this.assertOwner(dto.ownerId);
-    const [consultations, vaccinations] = await Promise.all([
+    const [consultations, vaccinations, groomings] = await Promise.all([
       this.repository.pendingConsultations(dto.ownerId, dto.consultationIds),
       this.repository.pendingVaccinations(dto.ownerId, dto.vaccinationIds),
+      this.repository.pendingGroomingServices(dto.ownerId, dto.groomingServiceIds),
     ]);
-    const expected = new Set(dto.consultationIds).size + new Set(dto.vaccinationIds).size;
-    if (consultations.length + vaccinations.length !== expected) {
+    const expected =
+      new Set(dto.consultationIds).size +
+      new Set(dto.vaccinationIds).size +
+      new Set(dto.groomingServiceIds).size;
+    if (consultations.length + vaccinations.length + groomings.length !== expected) {
       throw new ConflictError("Algun concepto no es del propietario o ya fue facturado");
     }
 
@@ -113,6 +136,12 @@ export class InvoicesService {
         vaccinationId: item.id,
         description: `Vacuna ${item.vaccine.name} - ${item.patient.name}`,
         amount: item.price,
+        taxed: true,
+      })),
+      ...groomings.map((item) => ({
+        groomingServiceId: item.id,
+        description: groomingDescription(item.type, item.patient.name),
+        amount: item.cost,
         taxed: true,
       })),
     ];
