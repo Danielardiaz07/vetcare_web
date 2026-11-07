@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { FieldLimit, MONEY_DECIMALS, MONEY_MAX } from "@/config/constants";
+import { isValidClinicDate } from "@/shared/utils/clinic-time";
+
+// Fecha de calendario de la clínica, "AAAA-MM-DD".
+export const dateField = z.string().refine(isValidClinicDate, "Fecha invalida, usa AAAA-MM-DD");
 
 // COP con hasta MONEY_DECIMALS decimales; mismo tope que DECIMAL(12,2).
 export const moneyField = z

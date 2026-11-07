@@ -167,7 +167,7 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | grooming | Implementados (D-33): `POST /grooming-services` (solo el estilista; con `appointmentId` opcional que cierra la cita de estética), `GET /patients/{id}/grooming-services` (recepción, veterinario y estilista) y `GET /me/patients/{id}/grooming-services` (portal, solo las suyas) |
 | inventory | `/medications`, `/vaccines` |
 | invoices | Implementados (D-27): `GET /invoices/pending?ownerId=` (conceptos sin facturar: consultas, vacunaciones y, desde D-33, servicios de estética con `kind: "GROOMING"`), `POST /invoices` (acepta `consultationIds`, `vaccinationIds` y `groomingServiceIds`), `GET /invoices` y `GET /invoices/{id}` (recepción y administrador; el propietario solo las suyas), `PUT /invoices/{id}/void` (solo ADMIN, con motivo), `GET /me/invoices` (portal). Pendiente: `/invoices/{id}/pdf` (P-02) |
-| reports | `/reports/...` |
+| reports | Implementado (D-35): `GET /reports/dashboard?from=&to=` (solo ADMIN; `AAAA-MM-DD`, por defecto los últimos 30 días, máximo 366): citas por estado y tasa de inasistencia, servicios más solicitados, ingresos (total, IVA, por método de pago y por día), mascotas y propietarios nuevos, internaciones abiertas y vacunas vencidas o por vencer |
 | uploads | `POST /uploads/...` (multipart) |
 
 ## 5. Subida de imágenes (Supabase Storage)
