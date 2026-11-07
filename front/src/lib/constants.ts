@@ -22,6 +22,7 @@ export const ROUTES = {
   panelNewInvoice: "/panel/invoices/new",
   panelUsers: "/panel/users",
   panelStaff: "/panel/staff",
+  panelReports: "/panel/reports",
   // El texto de la Ley 1581 va en el pie de la portada.
   dataPolicy: "/#tratamiento-de-datos",
 } as const;
@@ -74,3 +75,6 @@ export const OTP_RESEND_SECONDS = 60;
 
 // RN-71 y D-27: todo lo facturado lleva IVA del 19 %.
 export const IVA_RATE_PERCENT = 19;
+
+// D-35: el mismo rango máximo del tablero que la API.
+export const REPORT_MAX_RANGE_DAYS = 366;

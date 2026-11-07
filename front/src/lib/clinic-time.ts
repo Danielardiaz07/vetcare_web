@@ -11,6 +11,8 @@ const MS_PER_DAY = 24 * MS_PER_HOUR;
 // D-26: Colombia no cambia de horario, siempre es UTC−5.
 const CLINIC_UTC_OFFSET = "-05:00";
 const SUNDAY = 0;
+const DATE_LENGTH = "AAAA-MM-DD".length;
+const YEAR_MONTH_LENGTH = "AAAA-MM".length;
 
 // en-CA escribe las fechas como AAAA-MM-DD, el formato de la API.
 const clinicDateFormatter = new Intl.DateTimeFormat("en-CA", {
@@ -50,6 +52,17 @@ export const clinicDateOf = (instant: Date) => clinicDateFormatter.format(instan
 
 export const addDays = (date: string, days: number) =>
   new Date(dateAtNoon(date).getTime() + days * MS_PER_DAY).toISOString().slice(0, 10);
+
+export const daysBetween = (from: string, to: string) =>
+  Math.round((dateAtNoon(to).getTime() - dateAtNoon(from).getTime()) / MS_PER_DAY);
+
+// Del primer al último día del mes de esa fecha.
+export function monthRange(date: string): { from: string; to: string } {
+  const from = `${date.slice(0, YEAR_MONTH_LENGTH)}-01`;
+  const nextMonth = new Date(dateAtNoon(from));
+  nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+  return { from, to: addDays(nextMonth.toISOString().slice(0, DATE_LENGTH), -1) };
+}
 
 export const isSunday = (date: string) => dateAtNoon(date).getUTCDay() === SUNDAY;
 

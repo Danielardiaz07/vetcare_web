@@ -248,3 +248,29 @@ export interface Invoice {
   items: InvoiceItem[];
   createdAt: string;
 }
+
+// D-35 y RN-80: tablero del administrador para un rango de fechas de la clínica.
+export interface DashboardReport {
+  range: { from: string; to: string };
+  appointments: {
+    total: number;
+    byStatus: Record<AppointmentStatus, number>;
+    // NO_SHOW / (ATTENDED + NO_SHOW) en %; null si no hay citas atendidas ni inasistidas.
+    noShowRate: number | null;
+  };
+  // Citas por tipo sin las canceladas, de mayor a menor.
+  services: { type: AppointmentType; count: number }[];
+  // Solo facturas pagadas; las anuladas no suman.
+  revenue: {
+    invoices: number;
+    subtotal: number;
+    tax: number;
+    total: number;
+    byPaymentMethod: { method: PaymentMethod; invoices: number; total: number }[];
+    byDay: { date: string; total: number }[];
+  };
+  newPatients: number;
+  newOwners: number;
+  openHospitalizations: number;
+  vaccines: { overdue: number; dueSoon: number };
+}
