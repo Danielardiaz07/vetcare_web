@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-07 · 02, 04, 08, 10, 12 · Tablero de indicadores del administrador (HU-24, RF-24, RN-80): `GET /reports/dashboard` con citas por estado, inasistencias, servicios más solicitados, ingresos y estado actual; HU-24 pasa de Reserva al Sprint 3 (D-35).
 - 2026-11-07 · 02, 04, 08, 09, 10, 12 · Cirugías, internaciones y exámenes de laboratorio (HU-20, RF-20, RN-50, RN-41): tablas `Surgery`, `Hospitalization` y `LabExam` con su migración, endpoints del veterinario y entradas nuevas en el historial; HU-20 pasa de Reserva al Sprint 3 (D-34).
 - 2026-11-07 · 02, 04, 08, 09, 10, 12 · Servicios de estética (HU-23, RF-21, RN-51): tabla `GroomingService` con su migración, endpoints `/grooming-services` y listados por mascota, y concepto facturable `GROOMING` en las facturas; HU-23 pasa de Reserva al Sprint 3 (D-33).
 - 2026-11-07 · 02, 08, 09, 10, 12 · Mi perfil del propietario (HU-22, RF-15, RN-02, RN-18): `PATCH /users/me`, `PUT /users/me/password` (cierra las demás sesiones) y `POST /me/patients`; HU-22 pasa de Reserva al Sprint 3 (D-32).

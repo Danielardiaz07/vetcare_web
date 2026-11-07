@@ -115,4 +115,4 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 
 | ID | Regla | RF |
 |----|-------|----|
-| RN-80 | El tablero del Administrador muestra citas por estado, inasistencias, servicios más solicitados e ingresos por periodo | RF-24 |
+| RN-80 | El tablero del Administrador muestra citas por estado, inasistencias, servicios más solicitados e ingresos por periodo. La tasa de inasistencia es `NO_SHOW / (ATTENDED + NO_SHOW)`; los servicios más solicitados son las citas por tipo sin contar las canceladas; los ingresos solo suman facturas pagadas (las anuladas no) y se agrupan por día de la clínica; sin fechas muestra los últimos 30 días y el rango máximo es de 366 días (D-35) | RF-24 |

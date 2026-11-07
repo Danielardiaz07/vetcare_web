@@ -17,6 +17,7 @@ interface V1Modules {
   myInvoices: Router;
   grooming: Router;
   myGrooming: Router;
+  reports: Router;
 }
 
 export function createV1Router({
@@ -36,6 +37,7 @@ export function createV1Router({
   myInvoices,
   grooming,
   myGrooming,
+  reports,
 }: V1Modules): Router {
   const router = Router();
 
@@ -56,6 +58,7 @@ export function createV1Router({
   router.use("/me/patients", myGrooming);
   router.use("/me/invoices", myInvoices);
   router.use("/invoices", invoices);
+  router.use("/reports", reports);
   router.use(clinical);
   router.use(grooming);
 

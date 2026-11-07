@@ -101,6 +101,9 @@ export const ClinicalLimit = {
   EXAM_TYPE_MAX: 80, // tipo de examen de laboratorio
 } as const;
 
+export const REPORT_DEFAULT_RANGE_DAYS = 30; // RF-24: el tablero abre con el último mes
+export const REPORT_MAX_RANGE_DAYS = 366;
+
 export const GROOMING_OBSERVATIONS_MAX = 500; // mismo tope que la columna de GroomingService
 
 export const DEFAULT_PAGE = 1;

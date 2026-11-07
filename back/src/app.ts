@@ -32,6 +32,10 @@ import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
+import { ReportsController } from "@/modules/reports/reports.controller";
+import { ReportsRepository } from "@/modules/reports/reports.repository";
+import { createReportsRouter } from "@/modules/reports/reports.routes";
+import { ReportsService } from "@/modules/reports/reports.service";
 import { OwnersController } from "@/modules/owners/owners.controller";
 import { OwnersRepository } from "@/modules/owners/owners.repository";
 import { createOwnersRouter } from "@/modules/owners/owners.routes";
@@ -111,6 +115,7 @@ export function createApp() {
   );
   const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
   const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
+  const reportsController = new ReportsController(new ReportsService(new ReportsRepository()));
   const groomingController = new GroomingController(new GroomingService(new GroomingRepository()));
 
   const v1Router = createV1Router({
@@ -143,6 +148,7 @@ export function createApp() {
     myInvoices: createMyInvoicesRouter(invoicesController, requireAuth),
     grooming: createGroomingRouter(groomingController, requireAuth),
     myGrooming: createMyGroomingRouter(groomingController, requireAuth),
+    reports: createReportsRouter(reportsController, requireAuth),
   });
 
   const app = express();

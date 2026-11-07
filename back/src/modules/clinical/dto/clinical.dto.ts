@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { ClinicalLimit, FieldLimit } from "@/config/constants";
-import { moneyField } from "@/shared/schemas/fields";
-import { clinicDateOf, isValidClinicDate } from "@/shared/utils/clinic-time";
+import { dateField, moneyField } from "@/shared/schemas/fields";
+import { clinicDateOf } from "@/shared/utils/clinic-time";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
-
-const dateField = z.string().refine(isValidClinicDate, "Fecha invalida, usa AAAA-MM-DD");
 
 const requiredText = (label: string, max: number) =>
   z
