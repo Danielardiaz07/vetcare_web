@@ -4,12 +4,15 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { RegisterFlow } from "@/features/auth/components/register-flow";
 import { homeRouteFor } from "@/features/auth/redirects";
 import type { SessionUser } from "@/types/auth";
 
 export type AuthTab = "login" | "register";
+// Recuperar la contraseña se abre desde las pestañas, no es una pestaña más.
+type DialogView = AuthTab | "forgot";
 
 // Quien abre la ventana para seguir con una tarea (agendar desde la portada) se queda en la página.
 export type SignedInHandler = (user: SessionUser) => void;
@@ -18,6 +21,12 @@ type AuthDialogContextValue = {
   isOpen: boolean;
   open: (reason?: string, tab?: AuthTab, onSignedIn?: SignedInHandler) => void;
   close: () => void;
+};
+
+const TITLES: Record<DialogView, string> = {
+  login: "Inicia sesión",
+  register: "Crea tu cuenta",
+  forgot: "Recupera tu contraseña",
 };
 
 const DEFAULT_REASON = "Entra a tu portal: citas, historial clínico de tus mascotas y facturas.";
@@ -30,7 +39,7 @@ const TABS: { value: AuthTab; label: string }[] = [
 type DialogState = {
   open: boolean;
   reason: string;
-  tab: AuthTab;
+  tab: DialogView;
   onSignedIn?: SignedInHandler;
 };
 
@@ -39,8 +48,8 @@ const AuthDialogContext = createContext<AuthDialogContextValue | null>(null);
 type AuthDialogProps = {
   open: boolean;
   reason: string;
-  tab: AuthTab;
-  onTabChange: (tab: AuthTab) => void;
+  tab: DialogView;
+  onTabChange: (tab: DialogView) => void;
   onClose: () => void;
   onSignedIn?: SignedInHandler;
 };
@@ -69,13 +78,11 @@ export function AuthDialog({
   }
 
   return (
-    <Modal
-      open={open}
-      title={tab === "login" ? "Inicia sesión" : "Crea tu cuenta"}
-      onClose={onClose}
-    >
-      <p className="-mt-2 text-sm text-muted">{reason}</p>
+    <Modal open={open} title={TITLES[tab]} onClose={onClose}>
+      {open && tab === "forgot" && <ForgotPasswordForm onBack={() => onTabChange("login")} />}
+      {tab !== "forgot" && <p className="-mt-2 text-sm text-muted">{reason}</p>}
       <div
+        hidden={tab === "forgot"}
         role="group"
         aria-label="Tipo de acceso"
         className="grid grid-cols-2 gap-1 rounded-control bg-canvas p-1"
@@ -94,10 +101,13 @@ export function AuthDialog({
           </button>
         ))}
       </div>
-      {open && tab === "login" && <LoginForm onSuccess={handleLogin} />}
+      {open && tab === "login" && (
+        <LoginForm onSuccess={handleLogin} onForgotPassword={() => onTabChange("forgot")} />
+      )}
       {open && tab === "register" && (
         <RegisterFlow
           onGoToLogin={() => onTabChange("login")}
+          onForgotPassword={() => onTabChange("forgot")}
           onDone={onClose}
           onSignedIn={onSignedIn}
         />

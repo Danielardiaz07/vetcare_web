@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
-import { useToast } from "@/components/ui/toast";
 import { PasswordField } from "@/features/auth/components/password-field";
 import { isNetworkError, NETWORK_ERROR_MESSAGE } from "@/features/auth/errors";
+import { RECOVER_PASSWORD_HREF } from "@/features/auth/redirects";
 import {
   DOCUMENT_TYPE_LABELS,
   REGISTER_DOCUMENT_TYPES,
@@ -60,10 +60,10 @@ function registerError(error: unknown): RegisterError {
 type RegisterFormProps = {
   onRegistered: (email: string, password: string) => void;
   onGoToLogin?: () => void;
+  onForgotPassword?: () => void;
 };
 
-export function RegisterForm({ onRegistered, onGoToLogin }: RegisterFormProps) {
-  const { show } = useToast();
+export function RegisterForm({ onRegistered, onGoToLogin, onForgotPassword }: RegisterFormProps) {
   const [formError, setFormError] = useState<RegisterError | null>(null);
   const {
     register,
@@ -84,8 +84,6 @@ export function RegisterForm({ onRegistered, onGoToLogin }: RegisterFormProps) {
     }
   });
 
-  const showRecoverNotice = () => show("Recuperar la contraseña estará disponible pronto.");
-
   const loginLink = onGoToLogin ? (
     <button type="button" onClick={onGoToLogin} className="font-semibold underline">
       Iniciar sesión
@@ -93,6 +91,16 @@ export function RegisterForm({ onRegistered, onGoToLogin }: RegisterFormProps) {
   ) : (
     <Link href={ROUTES.login} className="font-semibold underline">
       Iniciar sesión
+    </Link>
+  );
+
+  const recoverLink = onForgotPassword ? (
+    <button type="button" onClick={onForgotPassword} className="font-semibold underline">
+      Recuperar contraseña
+    </button>
+  ) : (
+    <Link href={RECOVER_PASSWORD_HREF} className="font-semibold underline">
+      Recuperar contraseña
     </Link>
   );
 
@@ -108,13 +116,7 @@ export function RegisterForm({ onRegistered, onGoToLogin }: RegisterFormProps) {
               <p>El correo ya está registrado</p>
               <p className="flex flex-wrap gap-x-4 gap-y-1">
                 {loginLink}
-                <button
-                  type="button"
-                  onClick={showRecoverNotice}
-                  className="font-semibold underline"
-                >
-                  Recuperar contraseña
-                </button>
+                {recoverLink}
               </p>
             </>
           ) : (

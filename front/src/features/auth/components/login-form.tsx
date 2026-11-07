@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/features/auth/auth-provider";
 import { PasswordField } from "@/features/auth/components/password-field";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas";
@@ -31,11 +30,11 @@ function loginErrorMessage(error: unknown): string {
 
 type LoginFormProps = {
   onSuccess?: (user: SessionUser) => void;
+  onForgotPassword: () => void;
 };
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
+export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
   const { signIn } = useAuth();
-  const { show } = useToast();
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -79,7 +78,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       />
       <button
         type="button"
-        onClick={() => show("Recuperar la contraseña estará disponible pronto.")}
+        onClick={onForgotPassword}
         className="min-h-11 self-start font-semibold text-brand-700 underline underline-offset-2"
       >
         ¿Olvidaste tu contraseña?

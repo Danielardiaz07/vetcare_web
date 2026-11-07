@@ -43,6 +43,14 @@ export const passwordField = z
   .regex(/[A-Z]/, "La contraseña debe tener al menos una mayúscula")
   .regex(/\d/, "La contraseña debe tener al menos un número");
 
+export const documentNumberField = z
+  .string()
+  .trim()
+  .regex(
+    new RegExp(`^\\d{${DOCUMENT_NUMBER_MIN},${DOCUMENT_NUMBER_MAX}}$`),
+    `El documento debe tener entre ${DOCUMENT_NUMBER_MIN} y ${DOCUMENT_NUMBER_MAX} dígitos`,
+  );
+
 const nameField = (label: string) =>
   z
     .string()
@@ -61,13 +69,7 @@ export const loginSchema = z.object({
 // RN-01, RN-02 y RN-60. Sin el .refine para que recepción lo reutilice con .omit.
 export const registerFieldsSchema = z.object({
   documentType: z.enum(REGISTER_DOCUMENT_TYPES, "Selecciona el tipo de documento"),
-  documentNumber: z
-    .string()
-    .trim()
-    .regex(
-      new RegExp(`^\\d{${DOCUMENT_NUMBER_MIN},${DOCUMENT_NUMBER_MAX}}$`),
-      `El documento debe tener entre ${DOCUMENT_NUMBER_MIN} y ${DOCUMENT_NUMBER_MAX} dígitos`,
-    ),
+  documentNumber: documentNumberField,
   firstNames: nameField("Los nombres"),
   lastNames: nameField("Los apellidos"),
   email: emailField,
@@ -101,6 +103,35 @@ export const otpSchema = z.object({
     .regex(new RegExp(`^\\d{${OTP_LENGTH}}$`), `El código tiene ${OTP_LENGTH} dígitos`),
 });
 
+// RN-11, D-18: la cuenta se recupera con el correo o con la cédula, nunca con los dos.
+export const RECOVERY_METHODS = ["email", "document"] as const;
+export type RecoveryMethod = (typeof RECOVERY_METHODS)[number];
+
+export const forgotPasswordSchema = z
+  .object({ method: z.enum(RECOVERY_METHODS), value: z.string() })
+  .superRefine(({ method, value }, context) => {
+    const result = (method === "email" ? emailField : documentNumberField).safeParse(value);
+    if (!result.success) {
+      context.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: result.error.issues[0]?.message ?? "Revisa este dato",
+      });
+    }
+  });
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordField,
+    confirmPassword: z.string().min(1, "Confirma tu contraseña"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Las contraseñas no coinciden",
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type OtpInput = z.infer<typeof otpSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
