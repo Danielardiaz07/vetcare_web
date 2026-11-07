@@ -151,10 +151,49 @@ export interface VaccinationCardEntry extends Vaccination {
   status: VaccineStatus;
 }
 
+// D-34: cirugía y examen ya realizados (fecha AAAA-MM-DD, nunca futura).
+export interface Surgery {
+  id: string;
+  patientId: string;
+  veterinarian: StaffName;
+  procedure: string;
+  performedAt: string;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface LabExam {
+  id: string;
+  patientId: string;
+  veterinarian: StaffName;
+  examType: string;
+  performedAt: string;
+  results: string;
+  createdAt: string;
+}
+
+export type HospitalizationStatus = "ADMITTED" | "DISCHARGED";
+
+// D-34: el ingreso y el egreso los pone el servidor.
+export interface Hospitalization {
+  id: string;
+  patientId: string;
+  veterinarian: StaffName;
+  reason: string;
+  status: HospitalizationStatus;
+  admittedAt: string;
+  dischargedAt: string | null;
+  dischargeNotes: string | null;
+  createdAt: string;
+}
+
 // RN-41: el historial llega del más reciente al más antiguo.
 export type HistoryEntry =
   | { kind: "CONSULTATION"; date: string; consultation: Consultation }
-  | { kind: "VACCINATION"; date: string; vaccination: Vaccination };
+  | { kind: "VACCINATION"; date: string; vaccination: Vaccination }
+  | { kind: "SURGERY"; date: string; surgery: Surgery }
+  | { kind: "HOSPITALIZATION"; date: string; hospitalization: Hospitalization }
+  | { kind: "LAB_EXAM"; date: string; labExam: LabExam };
 
 // D-33: servicio estético que registra el estilista (RN-51).
 export type GroomingType = "BATH" | "HAIRCUT" | "STYLING";
