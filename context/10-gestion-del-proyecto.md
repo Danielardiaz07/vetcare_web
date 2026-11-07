@@ -32,7 +32,7 @@ Una historia está **hecha** cuando:
 
 ## 4. Product Backlog
 
-24 historias de usuario (una por RF), **116 puntos**. Comprometidas: HU-01 a HU-16 (todas Must, **84 pts**) y HU-21 (Should, 3 pts, tomada de la Reserva, D-31). Reserva: HU-17 a HU-20 y HU-22 a HU-24 (Should y Could, 29 pts). La velocidad de referencia del plan original era ≈ 19 pts por sprint de 2 semanas; aún no hay velocidad medida.
+24 historias de usuario (una por RF), **116 puntos**. Comprometidas: HU-01 a HU-16 (todas Must, **84 pts**) y HU-21 y HU-22 (Should, 3 pts cada una, tomadas de la Reserva, D-31 y D-32). Reserva: HU-17 a HU-20, HU-23 y HU-24 (Should y Could, 26 pts). La velocidad de referencia del plan original era ≈ 19 pts por sprint de 2 semanas; aún no hay velocidad medida.
 
 | HU | Historia | RF | Prio | Pts | Sprint |
 |----|----------|----|------|-----|--------|
@@ -57,7 +57,7 @@ Una historia está **hecha** cuando:
 | HU-19 | Como propietario, quiero recibir correos de confirmación y recordatorio de mis citas y vacunas | RF-17 | S | 5 | Reserva |
 | HU-20 | Como veterinario, quiero registrar cirugías, internaciones y exámenes | RF-20 | S | 5 | Reserva |
 | HU-21 | Como usuario, quiero recuperar mi contraseña por correo | RF-03 | S | 3 | 3 |
-| HU-22 | Como propietario, quiero actualizar mi perfil y registrar una nueva mascota | RF-15 | S | 3 | Reserva |
+| HU-22 | Como propietario, quiero actualizar mi perfil y registrar una nueva mascota | RF-15 | S | 3 | 3 |
 | HU-23 | Como estilista, quiero registrar los servicios estéticos realizados | RF-21 | C | 3 | Reserva |
 | HU-24 | Como administrador, quiero un tablero de indicadores para tomar decisiones | RF-24 | C | 5 | Reserva |
 
@@ -70,9 +70,9 @@ Responsables: **D** = Daniela (backend, `back/`), **K** = Kenys (frontend, `fron
 | 0 (cerrado) | 18 ago – 16 oct | Preparar proyecto y arquitectura: repositorio y ramas (D); base del backend con config, errores y rate limit (D); modelo de datos base de autenticación en Prisma (D); base del frontend con Next.js, Tailwind y cliente HTTP (K); requerimientos y backlog (D, K). Proyecto Supabase creado y primera migración `init` aplicada el 17 oct (D) | — | — |
 | 1 | 19 oct – 1 nov | Acceso y datos maestros del portal: registro con OTP, login, usuarios y roles (D); CRUD de propietarios y pacientes (D); pantallas de registro, login, gestión de usuarios, propietarios y mascotas, “Mis mascotas” y ficha (K) | HU-01, 02, 03, 04, 05, 07 | 26 |
 | 2 | 2 nov – 15 nov | Personal y agenda: veterinarios, estilistas y horarios (D); disponibilidad, bloqueo transaccional de franja y endpoints de citas (D); asistente de agendamiento, “Mis citas” y calendario de recepción (K) | HU-06, 08, 09, 10, 11 | 29 |
-| 3 | 16 nov – 23 nov | Atención clínica, facturación y cierre: consulta, vacunación con catálogo mínimo de vacunas, historial y carné (D, K); facturación con IVA en pantalla, sin PDF hasta resolver P-02 (D, K); recuperación de contraseña por correo o cédula, HU-21 (D, K); pruebas de aceptación, manual, despliegue y sustentación (D, K) | HU-12, 13, 14, 15, 16, 21 | 32 |
+| 3 | 16 nov – 23 nov | Atención clínica, facturación y cierre: consulta, vacunación con catálogo mínimo de vacunas, historial y carné (D, K); facturación con IVA en pantalla, sin PDF hasta resolver P-02 (D, K); recuperación de contraseña por correo o cédula, HU-21 (D, K); mi perfil: contacto, contraseña y nueva mascota, HU-22 (D, K); pruebas de aceptación, manual, despliegue y sustentación (D, K) | HU-12, 13, 14, 15, 16, 21, 22 | 35 |
 
-**Reserva (fuera del alcance comprometido):** HU-17 a HU-20 y HU-22 a HU-24 (29 pts; HU-21 ya se tomó, D-31). Se toman solo si algún sprint termina antes; el orden sugerido es HU-17 (facturas del propietario y PDF), HU-18 (inventario con alertas), HU-19 (correos), HU-22, HU-20, HU-23 y HU-24.
+**Reserva (fuera del alcance comprometido):** HU-17 a HU-20, HU-23 y HU-24 (26 pts; HU-21 y HU-22 ya se tomaron, D-31 y D-32). Se toman solo si algún sprint termina antes; el orden sugerido es HU-17 (facturas del propietario y PDF), HU-18 (inventario con alertas), HU-19 (correos), HU-20, HU-23 y HU-24.
 
 ## 6. Incrementos
 

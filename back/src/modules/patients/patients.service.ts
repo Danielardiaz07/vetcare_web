@@ -1,4 +1,5 @@
 import type {
+  CreateMyPatientRequestDto,
   CreatePatientRequestDto,
   ListMyPatientsQueryDto,
   ListPatientsQueryDto,
@@ -82,6 +83,11 @@ export class PatientsService {
       take: query.limit,
     });
     return paginate(items.map(toPatientResponse), total, query.page, query.limit);
+  }
+
+  // RN-18
+  async createMine(userId: string, dto: CreateMyPatientRequestDto): Promise<PatientResponseDto> {
+    return this.create({ ...dto, ownerId: await this.ownerIdOf(userId) });
   }
 
   async getMine(userId: string, id: string): Promise<PatientResponseDto> {

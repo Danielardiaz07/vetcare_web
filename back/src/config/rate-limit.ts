@@ -50,6 +50,14 @@ export const registerRateLimiter = rateLimit({
   keyGenerator: ipAndEmailKey,
 });
 
+// Va después de authenticate: limita por usuario para frenar el adivinar la contraseña actual.
+export const changePasswordRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  limit: LOGIN_RATE_LIMIT_MAX,
+  keyGenerator: (req: Request) => req.user?.id ?? ipKeyGenerator(req.ip ?? ""),
+});
+
 export const passwordRecoveryRateLimiter = rateLimit({
   ...baseOptions,
   windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,

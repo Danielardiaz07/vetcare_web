@@ -41,6 +41,9 @@ export const createPatientRequestSchema = z.object({
   weightKg: weightKgField,
 });
 
+// RN-18: el propietario registra su mascota; el dueño sale de la sesión, no del cuerpo.
+export const createMyPatientRequestSchema = createPatientRequestSchema.omit({ ownerId: true });
+
 // El paciente no cambia de propietario: el vínculo es parte de su historial (RN-16).
 export const updatePatientRequestSchema = z
   .object({
@@ -76,6 +79,7 @@ export const listPatientsQuerySchema = paginationQuerySchema.extend({
 export const listMyPatientsQuerySchema = paginationQuerySchema;
 
 export type CreatePatientRequestDto = z.infer<typeof createPatientRequestSchema>;
+export type CreateMyPatientRequestDto = z.infer<typeof createMyPatientRequestSchema>;
 export type UpdatePatientRequestDto = z.infer<typeof updatePatientRequestSchema>;
 export type ListPatientsQueryDto = z.infer<typeof listPatientsQuerySchema>;
 export type ListMyPatientsQueryDto = z.infer<typeof listMyPatientsQuerySchema>;

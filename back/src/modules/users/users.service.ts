@@ -1,14 +1,17 @@
 import type { User } from "@prisma/client";
+import { COLOMBIA_PHONE_PREFIX } from "@/config/constants";
 import type {
+  ChangePasswordRequestDto,
   CreateStaffUserRequestDto,
   ListStaffUsersQueryDto,
   StaffUserResponseDto,
+  UpdateMyContactRequestDto,
   UpdateStaffUserRequestDto,
   UserProfileResponseDto,
 } from "@/modules/users/dto/users.dto";
 import type { UsersRepository } from "@/modules/users/users.repository";
-import { ConflictError, NotFoundError } from "@/shared/errors";
-import type { IHasher } from "@/shared/providers/hasher.interface";
+import { ConflictError, NotFoundError, UnauthorizedError, ValidationError } from "@/shared/errors";
+import type { IHasher, ITokenService } from "@/shared/providers";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
 
 function toStaffResponse(user: User): StaffUserResponseDto {
@@ -25,6 +28,7 @@ export class UsersService {
   constructor(
     private readonly repository: UsersRepository,
     private readonly hasher: IHasher,
+    private readonly tokens: ITokenService,
   ) {}
 
   async getProfile(userId: string): Promise<UserProfileResponseDto> {
@@ -47,6 +51,44 @@ export class UsersService {
         address: owner.address,
       },
     };
+  }
+
+  // RF-15: el propietario edita su contacto; el correo y la cédula solo cambian en la clínica (D-18).
+  async updateMyContact(
+    userId: string,
+    { phone, address }: UpdateMyContactRequestDto,
+  ): Promise<UserProfileResponseDto> {
+    const user = await this.repository.findByIdWithOwner(userId);
+    if (!user?.ownerId) throw new NotFoundError("Propietario no encontrado");
+
+    await this.repository.updateOwnerContact(user.ownerId, {
+      ...(phone && { phone: `${COLOMBIA_PHONE_PREFIX}${phone}` }),
+      ...(address !== undefined && { address: address || null }),
+    });
+    return this.getProfile(userId);
+  }
+
+  // RN-02, RF-15. Un error de validación y no 401: un 401 haría que el cliente intente refrescar la sesión.
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordRequestDto,
+    refreshToken: string | undefined,
+  ): Promise<void> {
+    const user = await this.repository.findById(userId);
+    if (!user) throw new NotFoundError("Usuario no encontrado");
+
+    if (!(await this.hasher.compare(dto.currentPassword, user.passwordHash))) {
+      throw new ValidationError("La contrasena actual es incorrecta");
+    }
+    if (await this.hasher.compare(dto.password, user.passwordHash)) {
+      throw new ValidationError("La contrasena nueva debe ser distinta de la actual");
+    }
+
+    await this.repository.changePassword(
+      userId,
+      await this.hasher.hash(dto.password),
+      this.currentSessionId(userId, refreshToken),
+    );
   }
 
   // RN-12: el administrador crea las cuentas del personal y asigna el rol; nacen activas.
@@ -97,6 +139,17 @@ export class UsersService {
       losesAccess || password !== undefined,
     );
     return toStaffResponse(updated);
+  }
+
+  private currentSessionId(userId: string, refreshToken: string | undefined): string | undefined {
+    if (!refreshToken) return undefined;
+    try {
+      const { sub, jti } = this.tokens.verifyRefresh(refreshToken);
+      return sub === userId ? jti : undefined;
+    } catch (error) {
+      if (error instanceof UnauthorizedError) return undefined;
+      throw error;
+    }
   }
 
   private async findStaffOrFail(id: string): Promise<User> {

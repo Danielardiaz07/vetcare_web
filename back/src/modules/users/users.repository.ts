@@ -60,6 +60,32 @@ export class UsersRepository {
     });
   }
 
+  updateOwnerContact(
+    ownerId: string,
+    data: { phone?: string; address?: string | null },
+  ): Promise<Owner> {
+    return prisma.owner.update({ where: { id: ownerId }, data });
+  }
+
+  // Cierra las demás sesiones (RN-10); la actual sigue válida para no sacar al usuario de donde está.
+  async changePassword(
+    userId: string,
+    passwordHash: string,
+    keepRefreshTokenId?: string,
+  ): Promise<void> {
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+      prisma.refreshToken.updateMany({
+        where: {
+          userId,
+          revokedAt: null,
+          ...(keepRefreshTokenId && { id: { not: keepRefreshTokenId } }),
+        },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+  }
+
   private staffWhereOf({ role, status, q }: StaffListFilters): Prisma.UserWhereInput {
     return {
       role: role ?? { not: "OWNER" },

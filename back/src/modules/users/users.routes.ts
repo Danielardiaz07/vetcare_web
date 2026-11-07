@@ -1,8 +1,11 @@
 import { Role } from "@prisma/client";
 import { Router, type RequestHandler } from "express";
+import { changePasswordRateLimiter } from "@/config/rate-limit";
 import {
+  changePasswordRequestSchema,
   createStaffUserRequestSchema,
   listStaffUsersQuerySchema,
+  updateMyContactRequestSchema,
   updateStaffUserRequestSchema,
 } from "@/modules/users/dto/users.dto";
 import type { UsersController } from "@/modules/users/users.controller";
@@ -18,6 +21,21 @@ export function createUsersRouter(
   const admin = [authenticate, authorize(Role.ADMIN)];
 
   router.get("/me", authenticate, controller.me);
+  // /me va antes que /:id para que no se interprete como un identificador.
+  router.patch(
+    "/me",
+    authenticate,
+    authorize(Role.OWNER),
+    validate({ body: updateMyContactRequestSchema }),
+    controller.updateMe,
+  );
+  router.put(
+    "/me/password",
+    authenticate,
+    changePasswordRateLimiter,
+    validate({ body: changePasswordRequestSchema }),
+    controller.changePassword,
+  );
 
   router.post(
     "/",
