@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ClinicalLimit, FieldLimit, MONEY_DECIMALS, MONEY_MAX } from "@/config/constants";
+import { ClinicalLimit, FieldLimit } from "@/config/constants";
+import { moneyField } from "@/shared/schemas/fields";
 import { isValidClinicDate } from "@/shared/utils/clinic-time";
 
 const dateField = z.string().refine(isValidClinicDate, "Fecha invalida, usa AAAA-MM-DD");
@@ -13,15 +14,6 @@ const requiredText = (label: string, max: number) =>
 
 const optionalText = (label: string, max: number) =>
   z.string().trim().max(max, `${label} admite maximo ${max} caracteres`).optional();
-
-export const moneyField = z
-  .number()
-  .min(0, "El valor no puede ser negativo")
-  .max(MONEY_MAX)
-  .refine(
-    (value) => Math.round(value * 10 ** MONEY_DECIMALS) / 10 ** MONEY_DECIMALS === value,
-    `Maximo ${MONEY_DECIMALS} decimales`,
-  );
 
 export const createConsultationRequestSchema = z.object({
   appointmentId: z.uuid("Identificador invalido"),

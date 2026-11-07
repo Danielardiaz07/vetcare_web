@@ -1,5 +1,15 @@
 import { z } from "zod";
-import { FieldLimit } from "@/config/constants";
+import { FieldLimit, MONEY_DECIMALS, MONEY_MAX } from "@/config/constants";
+
+// COP con hasta MONEY_DECIMALS decimales; mismo tope que DECIMAL(12,2).
+export const moneyField = z
+  .number()
+  .min(0, "El valor no puede ser negativo")
+  .max(MONEY_MAX)
+  .refine(
+    (value) => Math.round(value * 10 ** MONEY_DECIMALS) / 10 ** MONEY_DECIMALS === value,
+    `Maximo ${MONEY_DECIMALS} decimales`,
+  );
 
 export const emailField = z
   .string()

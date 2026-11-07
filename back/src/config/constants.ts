@@ -99,6 +99,8 @@ export const ClinicalLimit = {
   VOID_REASON_MAX: 200,
 } as const;
 
+export const GROOMING_OBSERVATIONS_MAX = 500; // mismo tope que la columna de GroomingService
+
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;

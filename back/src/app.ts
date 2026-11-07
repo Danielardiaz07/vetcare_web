@@ -19,6 +19,10 @@ import { ClinicalController } from "@/modules/clinical/clinical.controller";
 import { ClinicalRepository } from "@/modules/clinical/clinical.repository";
 import { createClinicalRouter, createMyClinicalRouter } from "@/modules/clinical/clinical.routes";
 import { ClinicalService } from "@/modules/clinical/clinical.service";
+import { GroomingController } from "@/modules/grooming/grooming.controller";
+import { GroomingRepository } from "@/modules/grooming/grooming.repository";
+import { createGroomingRouter, createMyGroomingRouter } from "@/modules/grooming/grooming.routes";
+import { GroomingService } from "@/modules/grooming/grooming.service";
 import { InvoicesController } from "@/modules/invoices/invoices.controller";
 import { InvoicesRepository } from "@/modules/invoices/invoices.repository";
 import { createInvoicesRouter, createMyInvoicesRouter } from "@/modules/invoices/invoices.routes";
@@ -107,6 +111,7 @@ export function createApp() {
   );
   const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
   const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
+  const groomingController = new GroomingController(new GroomingService(new GroomingRepository()));
 
   const v1Router = createV1Router({
     auth: createAuthRouter(new AuthController(authService)),
@@ -136,6 +141,8 @@ export function createApp() {
     myClinical: createMyClinicalRouter(clinicalController, requireAuth),
     invoices: createInvoicesRouter(invoicesController, requireAuth),
     myInvoices: createMyInvoicesRouter(invoicesController, requireAuth),
+    grooming: createGroomingRouter(groomingController, requireAuth),
+    myGrooming: createMyGroomingRouter(groomingController, requireAuth),
   });
 
   const app = express();

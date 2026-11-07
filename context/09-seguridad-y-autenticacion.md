@@ -75,6 +75,7 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 | Perfil (RF-15) | ✔ | | | | |
 | Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (citas asignadas) | | |
 | Registrar servicio estético (RF-21) | | | | ✔ | |
+| Ver los servicios estéticos de una mascota (D-33) | ✔ (solo las suyas) | ✔ | ✔ | ✔ | |
 | Gestionar inventario (RF-22) | | | | | ✔ |
 | Generar factura (RF-23) | | ✔ | | | |
 | Anular factura (RN-74) | | | | | ✔ |

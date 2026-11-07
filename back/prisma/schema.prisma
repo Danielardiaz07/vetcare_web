@@ -58,6 +58,12 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
+enum GroomingType {
+  BATH
+  HAIRCUT
+  STYLING
+}
+
 enum PaymentMethod {
   CASH
   CARD
@@ -128,6 +134,7 @@ model Patient {
   appointments  Appointment[]
   consultations Consultation[]
   vaccinations  Vaccination[]
+  groomings     GroomingService[]
 
   @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
 }
@@ -167,6 +174,7 @@ model Groomer {
   appointments  Appointment[]
   consultations Consultation[]
   vaccinations  Vaccination[]
+  groomings     GroomingService[]
 }
 
 // Bloque de atención semanal (RN-19). Exactamente uno de veterinarianId o groomerId (CHECK en la migración).
@@ -213,6 +221,7 @@ model Appointment {
   veterinarian Veterinarian? @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
   groomer      Groomer?      @relation(fields: [groomerId], references: [id], onDelete: Restrict)
   consultation Consultation?
+  grooming     GroomingService?
 
   @@index([patientId, startsAt]) // "mis citas" y límite de citas activas por mascota (RN-24)
   @@index([veterinarianId, startsAt]) // agenda por veterinario (RF-16)
@@ -244,6 +253,26 @@ model Consultation {
   groomerId    String?      @db.Uuid
 
   @@index([patientId, createdAt]) // historial (RN-41)
+}
+
+// RN-51, D-33: baño, corte o peluquería hecho por un estilista. La cita de estética es opcional (servicio sin cita);
+// si viene, es única por cita y la cierra como ATENDIDA.
+model GroomingService {
+  id            String       @id @default(uuid()) @db.Uuid
+  appointmentId String?      @unique @db.Uuid
+  patientId     String       @db.Uuid
+  groomerId     String       @db.Uuid
+  type          GroomingType
+  observations  String?      @db.VarChar(500) // mismo tope que los textos clínicos cortos
+  cost          Decimal      @db.Decimal(12, 2) // COP
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  groomer     Groomer      @relation(fields: [groomerId], references: [id], onDelete: Restrict)
+  invoiceItem InvoiceItem?
+
+  @@index([patientId, createdAt]) // historial de estética por mascota
 }
 
 // Catálogo mínimo de vacunas con precio de venta (D-27); sin stock hasta HU-18.
@@ -296,19 +325,21 @@ model Invoice {
   @@index([ownerId, createdAt])
 }
 
-// RN-73: cada detalle referencia su concepto de origen (una consulta o una vacunación).
+// RN-73: cada detalle referencia su concepto de origen (una consulta, una vacunación o un servicio de estética).
 model InvoiceItem {
-  id             String  @id @default(uuid()) @db.Uuid
-  invoiceId      String  @db.Uuid
-  consultationId String? @unique @db.Uuid
-  vaccinationId  String? @unique @db.Uuid
-  description    String  @db.VarChar(120)
-  amount         Decimal @db.Decimal(12, 2)
-  taxed          Boolean @default(true) // RN-71, D-27
+  id                String  @id @default(uuid()) @db.Uuid
+  invoiceId         String  @db.Uuid
+  consultationId    String? @unique @db.Uuid
+  vaccinationId     String? @unique @db.Uuid
+  groomingServiceId String? @unique @db.Uuid
+  description       String  @db.VarChar(120)
+  amount            Decimal @db.Decimal(12, 2)
+  taxed             Boolean @default(true) // RN-71, D-27
 
-  invoice      Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  consultation Consultation? @relation(fields: [consultationId], references: [id], onDelete: Restrict)
-  vaccination  Vaccination?  @relation(fields: [vaccinationId], references: [id], onDelete: Restrict)
+  invoice         Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  consultation    Consultation?    @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  vaccination     Vaccination?     @relation(fields: [vaccinationId], references: [id], onDelete: Restrict)
+  groomingService GroomingService? @relation(fields: [groomingServiceId], references: [id], onDelete: Restrict)
 
   @@index([invoiceId])
 }
