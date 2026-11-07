@@ -156,13 +156,27 @@ export type HistoryEntry =
   | { kind: "CONSULTATION"; date: string; consultation: Consultation }
   | { kind: "VACCINATION"; date: string; vaccination: Vaccination };
 
+// D-33: servicio estético que registra el estilista (RN-51).
+export type GroomingType = "BATH" | "HAIRCUT" | "STYLING";
+
+export interface GroomingService {
+  id: string;
+  appointmentId: string | null;
+  patientId: string;
+  type: GroomingType;
+  observations: string | null;
+  cost: number;
+  groomer: StaffName;
+  createdAt: string;
+}
+
 export type PaymentMethod = "CASH" | "CARD" | "TRANSFER";
 
 export type InvoiceStatus = "PAID" | "VOIDED";
 
-// RN-70: consulta o vacunación atendida que aún no se ha facturado.
+// RN-70: consulta, vacunación o servicio estético que aún no se ha facturado (D-33).
 export interface PendingConcept {
-  kind: "CONSULTATION" | "VACCINATION";
+  kind: "CONSULTATION" | "VACCINATION" | "GROOMING";
   id: string;
   description: string;
   patientName: string;
@@ -178,6 +192,7 @@ export interface InvoiceItem {
   tax: number;
   consultationId: string | null;
   vaccinationId: string | null;
+  groomingServiceId: string | null;
 }
 
 // D-27: nace Pagada; solo el ADMIN la anula con motivo (RN-74).

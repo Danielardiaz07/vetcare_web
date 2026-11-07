@@ -8,20 +8,57 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { HistoryEntry } from "@/features/clinical/components/history-entry";
+import { GroomingCard } from "@/features/grooming/components/grooming-card";
+import { clinicDateOf } from "@/lib/clinic-time";
 import { getMyPatientHistory, type HistoryFilters, type HistoryType } from "@/services/clinical";
-import type { HistoryEntry as Entry, Patient, VaccinationCardEntry } from "@/types/domain";
+import { getMyPetGroomingServices } from "@/services/grooming";
+import type {
+  HistoryEntry as Entry,
+  GroomingService,
+  Patient,
+  VaccinationCardEntry,
+} from "@/types/domain";
+
+// D-33: los servicios estéticos llegan por su propio endpoint, no por el historial.
+type Tab = HistoryType | "GROOMING";
+type Item = Entry | { kind: "GROOMING"; date: string; service: GroomingService };
 
 // Solo las pestañas que la API devuelve hoy; cirugías, internaciones y laboratorio llegan después.
-const TABS: { type: HistoryType; label: string }[] = [
+const TABS: { type: Tab; label: string }[] = [
   { type: "CONSULTATION", label: "Consultas" },
   { type: "VACCINATION", label: "Vacunaciones" },
+  { type: "GROOMING", label: "Estética" },
 ];
 
-const tabId = (type: HistoryType) => `history-tab-${type}`;
-const panelId = (type: HistoryType) => `history-panel-${type}`;
+const tabId = (type: Tab) => `history-tab-${type}`;
+const panelId = (type: Tab) => `history-panel-${type}`;
 
-type LoadState =
-  { status: "loading" } | { status: "error" } | { status: "ready"; entries: Entry[] };
+const itemKey = (item: Item) =>
+  item.kind === "CONSULTATION"
+    ? item.consultation.id
+    : item.kind === "VACCINATION"
+      ? item.vaccination.id
+      : item.service.id;
+
+// La API de estética no filtra por fecha: el rango se aplica aquí, igual que en el historial.
+function groomingItems(services: GroomingService[], { from, to }: HistoryFilters): Item[] {
+  return services
+    .filter((service) => {
+      const date = clinicDateOf(new Date(service.createdAt));
+      return (!from || date >= from) && (!to || date <= to);
+    })
+    .map((service) => ({ kind: "GROOMING", date: service.createdAt, service }));
+}
+
+async function loadItems(petId: string, filters: HistoryFilters): Promise<Item[]> {
+  const [entries, services] = await Promise.all([
+    getMyPatientHistory(petId, filters),
+    getMyPetGroomingServices(petId),
+  ]);
+  return [...entries, ...groomingItems(services, filters)];
+}
+
+type LoadState = { status: "loading" } | { status: "error" } | { status: "ready"; entries: Item[] };
 
 type ClinicalHistoryProps = {
   pet: Patient;
@@ -33,7 +70,7 @@ export function ClinicalHistory({ pet, card }: ClinicalHistoryProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [filters, setFilters] = useState<HistoryFilters>({});
-  const [tab, setTab] = useState<HistoryType>("CONSULTATION");
+  const [tab, setTab] = useState<Tab>("CONSULTATION");
   const rangeError =
     filters.from && filters.to && filters.to < filters.from
       ? "La fecha final no puede ser anterior a la inicial"
@@ -43,7 +80,7 @@ export function ClinicalHistory({ pet, card }: ClinicalHistoryProps) {
     if (rangeError) return;
     let active = true;
     setState({ status: "loading" });
-    getMyPatientHistory(pet.id, filters)
+    loadItems(pet.id, filters)
       .then((entries) => {
         if (active) setState({ status: "ready", entries });
       })
@@ -68,12 +105,12 @@ export function ClinicalHistory({ pet, card }: ClinicalHistoryProps) {
   }
 
   const entries = state.status === "ready" ? state.entries : [];
-  const countOf = (type: HistoryType) => entries.filter((entry) => entry.kind === type).length;
+  const countOf = (type: Tab) => entries.filter((entry) => entry.kind === type).length;
   // Si la pestaña elegida queda vacía con el filtro, se muestra la primera que tenga registros.
   const current =
     countOf(tab) > 0 ? tab : (TABS.find((item) => countOf(item.type) > 0)?.type ?? tab);
   const visible = entries.filter((entry) => entry.kind === current);
-  const statusOf = (entry: Entry) =>
+  const statusOf = (entry: Item) =>
     entry.kind === "VACCINATION"
       ? card.find((item) => item.id === entry.vaccination.id)?.status
       : undefined;
@@ -164,10 +201,12 @@ export function ClinicalHistory({ pet, card }: ClinicalHistoryProps) {
               className="flex flex-col gap-3"
             >
               {visible.map((entry) => (
-                <li
-                  key={entry.kind === "CONSULTATION" ? entry.consultation.id : entry.vaccination.id}
-                >
-                  <HistoryEntry entry={entry} vaccineStatus={statusOf(entry)} />
+                <li key={itemKey(entry)}>
+                  {entry.kind === "GROOMING" ? (
+                    <GroomingCard service={entry.service} />
+                  ) : (
+                    <HistoryEntry entry={entry} vaccineStatus={statusOf(entry)} />
+                  )}
                 </li>
               ))}
             </ol>

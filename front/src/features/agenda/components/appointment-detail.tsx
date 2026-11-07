@@ -30,7 +30,7 @@ type AppointmentDetailProps = {
   appointment: Appointment | null;
   // Registrar llegada, No asistió y Reasignar son de recepción (RF-16).
   canManage: boolean;
-  // El veterinario abre la atención de su cita Confirmada (RN-43).
+  // El veterinario o el estilista abre la atención de su cita Confirmada (RN-43, RN-51).
   canAttend: boolean;
   onClose: () => void;
   onChanged: (appointment: Appointment, message: string) => void;

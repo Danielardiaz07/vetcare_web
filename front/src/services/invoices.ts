@@ -1,3 +1,5 @@
+import { GROOMING_TYPE_LABELS } from "@/features/grooming/labels";
+import { mockGroomingStore } from "@/services/grooming";
 import { request } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
 import {
@@ -10,7 +12,13 @@ import {
 } from "@/services/mocks/fixtures";
 import { IVA_RATE_PERCENT } from "@/lib/constants";
 import type { Paginated } from "@/types/api";
-import type { Invoice, InvoiceStatus, PaymentMethod, PendingConcept } from "@/types/domain";
+import type {
+  Invoice,
+  InvoiceItem,
+  InvoiceStatus,
+  PaymentMethod,
+  PendingConcept,
+} from "@/types/domain";
 
 const NOT_FOUND = 404;
 const CONFLICT = 409;
@@ -28,6 +36,7 @@ export interface CreateInvoiceInput {
   paymentMethod: PaymentMethod;
   consultationIds: string[];
   vaccinationIds: string[];
+  groomingServiceIds: string[];
 }
 
 // RN-71: IVA por concepto, redondeado al centavo, igual que la API.
@@ -38,14 +47,17 @@ const mockInvoiceStore = structuredClone(mockInvoices);
 
 const patientOf = (patientId: string) => mockClinicPatients.find((item) => item.id === patientId);
 
+const ITEM_SOURCE = {
+  CONSULTATION: "consultationId",
+  VACCINATION: "vaccinationId",
+  GROOMING: "groomingServiceId",
+} as const satisfies Record<PendingConcept["kind"], keyof InvoiceItem>;
+
 // RN-73: un concepto de una factura anulada vuelve a quedar pendiente.
 function isInvoiced(kind: PendingConcept["kind"], id: string): boolean {
   return mockInvoiceStore.some(
     (invoice) =>
-      invoice.status === "PAID" &&
-      invoice.items.some((item) =>
-        kind === "CONSULTATION" ? item.consultationId === id : item.vaccinationId === id,
-      ),
+      invoice.status === "PAID" && invoice.items.some((item) => item[ITEM_SOURCE[kind]] === id),
   );
 }
 
@@ -78,19 +90,36 @@ function mockConcepts(ownerId: string): PendingConcept[] {
       },
     ];
   });
-  return [...consultations, ...vaccinations].sort((a, b) => a.date.localeCompare(b.date));
+  const groomings = mockGroomingStore.flatMap((item) => {
+    const patient = patientOf(item.patientId);
+    if (patient?.ownerId !== ownerId || isInvoiced("GROOMING", item.id)) return [];
+    return [
+      {
+        kind: "GROOMING" as const,
+        id: item.id,
+        description: `Estética ${GROOMING_TYPE_LABELS[item.type]} - ${patient.name}`,
+        patientName: patient.name,
+        amount: item.cost,
+        date: item.createdAt,
+      },
+    ];
+  });
+  return [...consultations, ...vaccinations, ...groomings].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
 }
 
 function mockCreate(input: CreateInvoiceInput): Promise<Invoice> {
   const owner = mockOwners.find((item) => item.id === input.ownerId);
   if (!owner) return mockError(NOT_FOUND, "NOT_FOUND", "Propietario no encontrado");
   const pending = mockConcepts(input.ownerId);
-  const chosen = pending.filter((concept) =>
-    (concept.kind === "CONSULTATION" ? input.consultationIds : input.vaccinationIds).includes(
-      concept.id,
-    ),
-  );
-  if (chosen.length !== input.consultationIds.length + input.vaccinationIds.length) {
+  const idsOf: Record<PendingConcept["kind"], string[]> = {
+    CONSULTATION: input.consultationIds,
+    VACCINATION: input.vaccinationIds,
+    GROOMING: input.groomingServiceIds,
+  };
+  const chosen = pending.filter((concept) => idsOf[concept.kind].includes(concept.id));
+  if (chosen.length !== Object.values(idsOf).flat().length) {
     return mockError(
       CONFLICT,
       "CONFLICT",
@@ -105,6 +134,7 @@ function mockCreate(input: CreateInvoiceInput): Promise<Invoice> {
     tax: taxOf(concept.amount),
     consultationId: concept.kind === "CONSULTATION" ? concept.id : null,
     vaccinationId: concept.kind === "VACCINATION" ? concept.id : null,
+    groomingServiceId: concept.kind === "GROOMING" ? concept.id : null,
   }));
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
   const tax = items.reduce((sum, item) => sum + item.tax, 0);

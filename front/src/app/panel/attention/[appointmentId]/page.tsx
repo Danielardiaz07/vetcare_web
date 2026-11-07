@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PanelPage } from "@/components/layout/panel-page";
-import { AttentionView } from "@/features/clinical/components/attention-view";
+import { AttentionByRole } from "@/features/clinical/components/attention-by-role";
 import { clinicDateOf } from "@/lib/clinic-time";
 
 export const metadata: Metadata = { title: "Atención" };
@@ -12,7 +12,7 @@ type AppointmentAttentionPageProps = {
   searchParams: Promise<{ date?: string }>;
 };
 
-// RN-43 y RN-44: la vista comprueba que la cita sea del veterinario y esté Confirmada.
+// RN-43, RN-44 y RN-51: la vista comprueba que la cita sea del profesional y esté Confirmada.
 export default async function AppointmentAttentionPage({
   params,
   searchParams,
@@ -20,7 +20,7 @@ export default async function AppointmentAttentionPage({
   const [{ appointmentId }, { date }] = await Promise.all([params, searchParams]);
   return (
     <PanelPage>
-      <AttentionView
+      <AttentionByRole
         appointmentId={appointmentId}
         date={date && CLINIC_DATE.test(date) ? date : clinicDateOf(new Date())}
       />
