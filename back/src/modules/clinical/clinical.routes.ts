@@ -2,9 +2,14 @@ import { Role } from "@prisma/client";
 import { Router, type RequestHandler } from "express";
 import {
   createConsultationRequestSchema,
+  createHospitalizationRequestSchema,
+  createLabExamRequestSchema,
+  createSurgeryRequestSchema,
   createVaccinationRequestSchema,
   createVaccineRequestSchema,
+  dischargeHospitalizationRequestSchema,
   historyQuerySchema,
+  listHospitalizationsQuerySchema,
 } from "@/modules/clinical/dto/clinical.dto";
 import type { ClinicalController } from "@/modules/clinical/clinical.controller";
 import { authorize } from "@/shared/middlewares/authorize";
@@ -39,6 +44,36 @@ export function createClinicalRouter(
     ...veterinarian,
     validate({ body: createVaccinationRequestSchema }),
     controller.createVaccination,
+  );
+  router.post(
+    "/surgeries",
+    ...veterinarian,
+    validate({ body: createSurgeryRequestSchema }),
+    controller.createSurgery,
+  );
+  router.post(
+    "/lab-exams",
+    ...veterinarian,
+    validate({ body: createLabExamRequestSchema }),
+    controller.createLabExam,
+  );
+  router.post(
+    "/hospitalizations",
+    ...veterinarian,
+    validate({ body: createHospitalizationRequestSchema }),
+    controller.admit,
+  );
+  router.get(
+    "/hospitalizations",
+    ...clinicStaff,
+    validate({ query: listHospitalizationsQuerySchema }),
+    controller.listHospitalizations,
+  );
+  router.put(
+    "/hospitalizations/:id/discharge",
+    ...veterinarian,
+    validate({ params: uuidParamSchema, body: dischargeHospitalizationRequestSchema }),
+    controller.discharge,
   );
   router.get(
     "/patients/:id/history",

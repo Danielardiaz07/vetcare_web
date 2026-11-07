@@ -97,6 +97,8 @@ export const ClinicalLimit = {
   LOT_MAX: 30,
   VACCINE_NAME_MAX: 60,
   VOID_REASON_MAX: 200,
+  PROCEDURE_MAX: 120, // nombre de la cirugía
+  EXAM_TYPE_MAX: 80, // tipo de examen de laboratorio
 } as const;
 
 export const GROOMING_OBSERVATIONS_MAX = 500; // mismo tope que la columna de GroomingService
