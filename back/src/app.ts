@@ -19,6 +19,10 @@ import { ClinicalController } from "@/modules/clinical/clinical.controller";
 import { ClinicalRepository } from "@/modules/clinical/clinical.repository";
 import { createClinicalRouter, createMyClinicalRouter } from "@/modules/clinical/clinical.routes";
 import { ClinicalService } from "@/modules/clinical/clinical.service";
+import { HealthController } from "@/modules/health/health.controller";
+import { HealthRepository } from "@/modules/health/health.repository";
+import { createHealthRouter } from "@/modules/health/health.routes";
+import { HealthService } from "@/modules/health/health.service";
 import { GroomingController } from "@/modules/grooming/grooming.controller";
 import { GroomingRepository } from "@/modules/grooming/grooming.repository";
 import { createGroomingRouter, createMyGroomingRouter } from "@/modules/grooming/grooming.routes";
@@ -179,6 +183,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     myGrooming: createMyGroomingRouter(groomingController, requireAuth),
     reports: createReportsRouter(reportsController, requireAuth),
     inventory: createInventoryRouter(inventoryController, requireAuth),
+    health: createHealthRouter(new HealthController(new HealthService(new HealthRepository()))),
     notifications: createNotificationsRouter(
       new NotificationsController(notificationsService),
       requireAuth,
