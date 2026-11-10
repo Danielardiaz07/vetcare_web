@@ -13,7 +13,7 @@ Clasificados según ISO/IEC 25010. La columna **Implementación en el stack** ad
 | RNF-07 | Usabilidad | Interfaz responsiva, usable en celulares desde 360 px de ancho | Chrome DevTools y celular Android | Tailwind CSS v4, diseño mobile-first |
 | RNF-08 | Usabilidad | Interfaz en español; los mensajes de error indican cómo corregir | Revisión de todos los formularios | Mensajes de Zod y de la API en español |
 | RNF-09 | Compatibilidad | Funciona en las dos últimas versiones de Chrome, Edge y Firefox | Prueba en cada navegador | Next.js con soporte de navegadores modernos |
-| RNF-10 | Fiabilidad | Disponibilidad del 99 % en horario de atención; respaldo diario de la BD | Monitoreo del servidor y registro de respaldos | Supabase gestiona respaldos; endpoint de salud para monitoreo |
+| RNF-10 | Fiabilidad | Disponibilidad del 99 % en horario de atención; respaldo diario de la BD | Monitoreo del servidor y registro de respaldos | Supabase gestiona respaldos; endpoints de salud para monitoreo, `/health` y `/health/db` (D-39) |
 | RNF-11 | Fiabilidad | Operaciones que afectan agenda, stock y facturas se ejecutan en transacciones | Prueba de concurrencia sobre una misma franja | `prisma.$transaction` + restricción única/bloqueo de franja (RN-27, RN-46, RN-75) |
 | RNF-12 | Mantenibilidad | Arquitectura en capas con código versionado en Git y revisión por pull request | Estructura del repo e historial de PR | Route → Controller → Service → Repository; Git Flow ([11](11-flujo-git.md)) |
 | RNF-13 | Mantenibilidad | API documentada con OpenAPI/Swagger | Swagger UI accesible en desarrollo | OpenAPI/Swagger sobre `/api/v1` (paso 9 del orden de construcción) |

@@ -10,6 +10,7 @@ export const HttpStatus = {
   UNPROCESSABLE_ENTITY: 422,
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
 } as const;
 
 export const ErrorCode = {
@@ -46,6 +47,8 @@ export const PASSWORD_RESET_TTL_MS = 30 * MINUTE_MS; // RN-11
 export const PASSWORD_RESET_TOKEN_BYTES = 32;
 export const PASSWORD_RESET_TOKEN_MAX = 128;
 export const PASSWORD_RESET_PATH = "/reset-password";
+
+export const HEALTH_DB_TIMEOUT_MS = 8_000; // D-39: tiempo máximo de espera de la base de datos en el chequeo de salud
 
 // RN-35 a RN-39, D-38: notificaciones por correo.
 export const NOTIFICATION_INTERVAL_MS = 15 * MINUTE_MS; // cada cuánto corre el programador
