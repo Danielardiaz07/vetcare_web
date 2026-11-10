@@ -167,6 +167,7 @@ Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada mó
 | grooming | Implementados (D-33): `POST /grooming-services` (solo el estilista; con `appointmentId` opcional que cierra la cita de estética), `GET /patients/{id}/grooming-services` (recepción, veterinario y estilista) y `GET /me/patients/{id}/grooming-services` (portal, solo las suyas) |
 | inventory | Implementados (D-36, solo ADMIN): `GET /inventory/medications` y `GET /inventory/vaccines` (paginados; `?q=&active=&alert=LOW_STOCK\|EXPIRING`), `POST /inventory/medications`, `PATCH /inventory/medications/{id}` y `PATCH /inventory/vaccines/{id}` (nombre, precio, stock, mínimo, vencimiento y estado; `expiresAt: null` lo borra) y `GET /inventory/alerts` (productos activos con stock crítico, por vencer o vencidos). El stock no se descuenta solo; el catálogo de vacunas para vacunar sigue en `GET /vaccines` |
 | invoices | Implementados (D-27): `GET /invoices/pending?ownerId=` (conceptos sin facturar: consultas, vacunaciones y, desde D-33, servicios de estética con `kind: "GROOMING"`), `POST /invoices` (acepta `consultationIds`, `vaccinationIds` y `groomingServiceIds`), `GET /invoices` y `GET /invoices/{id}` (recepción y administrador; el propietario solo las suyas), `PUT /invoices/{id}/void` (solo ADMIN, con motivo), `GET /me/invoices` (portal). Sin PDF en el servidor: el front usa “Imprimir / guardar como PDF” del navegador (D-37) |
+| notifications | Implementados (D-38, solo ADMIN): `GET /notifications?status=&kind=` (registro paginado de los correos, RN-39) y `POST /notifications/run` (ejecuta a mano lo mismo que el programador: encola recordatorios y avisos de vacuna y entrega los pendientes). Los correos de cita (agendar, cambiar, cancelar) los dispara `appointments`; el programador corre solo con `SCHEDULER_ENABLED=true` |
 | reports | Implementado (D-35): `GET /reports/dashboard?from=&to=` (solo ADMIN; `AAAA-MM-DD`, por defecto los últimos 30 días, máximo 366): citas por estado y tasa de inasistencia, servicios más solicitados, ingresos (total, IVA, por método de pago y por día), mascotas y propietarios nuevos, internaciones abiertas y vacunas vencidas o por vencer |
 | uploads | `POST /uploads/...` (multipart) |
 
@@ -323,6 +324,7 @@ MAIL_FROM_EMAIL=
 MAIL_FROM_NAME=
 CORS_ORIGINS=
 FRONTEND_URL=                   # opcional; dominio del front para el enlace de recuperación (D-31); si se omite, el primer origen de CORS_ORIGINS
+SCHEDULER_ENABLED=false         # true solo en el servidor desplegado: activa el programador de recordatorios por correo (D-38)
 SEED_ADMIN_EMAIL=               # solo para `npm run db:seed` (primer administrador)
 SEED_ADMIN_PASSWORD=
 SEED_DEMO_PASSWORD=             # solo para `npm run db:seed:demo` (datos de demostración, D-29)
@@ -339,7 +341,7 @@ Validación de variables al arrancar con Zod (falla rápido si falta alguna).
 | Pieza | Plataforma | Configuración |
 |-------|------------|---------------|
 | Base de datos | Supabase (la misma de desarrollo, ya migrada) | Migraciones nuevas con `npm run db:migrate:deploy -w back` |
-| API (`back/`) | Render, servicio web (`render.yaml`) | Build `NODE_ENV=development npm ci && npm run db:generate -w back` (con `production` npm omite `husky` y falla el script `prepare`); start `npm run start -w back`; `NODE_ENV=production`, `TRUST_PROXY_HOPS=2`, `HUSKY=0`; secretos en el panel |
+| API (`back/`) | Render, servicio web (`render.yaml`) | Build `NODE_ENV=development npm ci && npm run db:generate -w back` (con `production` npm omite `husky` y falla el script `prepare`); start `npm run start -w back`; `NODE_ENV=production`, `TRUST_PROXY_HOPS=2`, `SCHEDULER_ENABLED=true`, `HUSKY=0`; secretos en el panel |
 | Front (`front/`) | Vercel, con *Root Directory* `front` | `NEXT_PUBLIC_API_URL` y `API_PROXY_TARGET` (arriba) |
 
 - El navegador solo habla con el dominio del front; Next reenvía `/api/v1/*` a la API (*rewrites*, D-25). Así la cookie `refresh_token` queda en el dominio del front y `proxy.ts` la puede leer.

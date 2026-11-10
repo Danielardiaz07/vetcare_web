@@ -77,6 +77,7 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 | Registrar servicio estético (RF-21) | | | | ✔ | |
 | Ver los servicios estéticos de una mascota (D-33) | ✔ (solo las suyas) | ✔ | ✔ | ✔ | |
 | Gestionar inventario (RF-22) | | | | | ✔ |
+| Ver el registro de correos y ejecutar el envío a mano (D-38) | | | | | ✔ |
 | Generar factura (RF-23) | | ✔ | | | |
 | Anular factura (RN-74) | | | | | ✔ |
 | Reportes (RF-24) | | | | | ✔ |

@@ -47,6 +47,14 @@ export const PASSWORD_RESET_TOKEN_BYTES = 32;
 export const PASSWORD_RESET_TOKEN_MAX = 128;
 export const PASSWORD_RESET_PATH = "/reset-password";
 
+// RN-35 a RN-39, D-38: notificaciones por correo.
+export const NOTIFICATION_INTERVAL_MS = 15 * MINUTE_MS; // cada cuánto corre el programador
+export const NOTIFICATION_MAX_ATTEMPTS = 3; // RN-38: un correo fallido se reintenta hasta 3 veces
+export const NOTIFICATION_BATCH_SIZE = 50;
+export const NOTIFICATION_ERROR_MAX = 300; // mismo tope que la columna lastError
+export const REMINDER_LEAD_HOURS = 24; // RN-36
+export const VACCINE_NOTICE_DAYS = 7; // RN-37
+
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * MINUTE_MS;
 
@@ -75,6 +83,7 @@ export const WEEKDAY_MAX = 7;
 
 // Colombia no tiene horario de verano: America/Bogota es UTC−5 todo el año (07 §fechas).
 export const CLINIC_UTC_OFFSET_MINUTES = -5 * 60;
+export const CLINIC_TIME_ZONE = "America/Bogota"; // mismo huso, con nombre, para formatear fechas en los correos
 
 export const MIN_APPOINTMENT_LEAD_HOURS = 2; // RN-21, RN-28
 export const MAX_APPOINTMENT_ADVANCE_DAYS = 30; // RN-22

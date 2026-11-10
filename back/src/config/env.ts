@@ -20,6 +20,8 @@ const envSchema = z.object({
   MAIL_FROM_EMAIL: z.email(),
   MAIL_FROM_NAME: z.string().min(1),
   FRONTEND_URL: z.url().optional(),
+  // Solo la API desplegada corre el programador de recordatorios; en local queda apagado para no enviar correos con los datos compartidos.
+  SCHEDULER_ENABLED: z.stringbool().default(false),
   CORS_ORIGINS: z
     .string()
     .min(1)

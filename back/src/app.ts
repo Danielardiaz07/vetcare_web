@@ -36,6 +36,10 @@ import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
+import { NotificationsController } from "@/modules/notifications/notifications.controller";
+import { NotificationsRepository } from "@/modules/notifications/notifications.repository";
+import { createNotificationsRouter } from "@/modules/notifications/notifications.routes";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
 import { ReportsController } from "@/modules/reports/reports.controller";
 import { ReportsRepository } from "@/modules/reports/reports.repository";
 import { createReportsRouter } from "@/modules/reports/reports.routes";
@@ -68,10 +72,17 @@ import { createV1Router } from "@/routes/v1";
 import { errorHandler, notFoundHandler } from "@/shared/middlewares/error-handler";
 import { authenticate } from "@/shared/middlewares/authenticate";
 import { BcryptHasher } from "@/shared/providers/bcrypt-hasher";
+import type { IMailProvider } from "@/shared/providers";
 import { BrevoMailProvider } from "@/shared/providers/brevo-mail.provider";
 import { JwtTokenService } from "@/shared/providers/jwt-token.service";
 
-export function createApp() {
+// Dependencias que se pueden sustituir al armar la app; en las pruebas, el correo y el reloj de las notificaciones.
+export interface AppOverrides {
+  mail?: IMailProvider;
+  clock?: () => Date;
+}
+
+export function buildApp(overrides: AppOverrides = {}) {
   const hasher = new BcryptHasher(env.BCRYPT_COST);
   const tokens = new JwtTokenService({
     accessSecret: env.JWT_ACCESS_SECRET,
@@ -79,10 +90,17 @@ export function createApp() {
     accessTtl: env.JWT_ACCESS_TTL,
     refreshTtl: env.JWT_REFRESH_TTL,
   });
-  const mail = new BrevoMailProvider(env.BREVO_API_KEY, {
-    email: env.MAIL_FROM_EMAIL,
-    name: env.MAIL_FROM_NAME,
-  });
+  const mail =
+    overrides.mail ??
+    new BrevoMailProvider(env.BREVO_API_KEY, {
+      email: env.MAIL_FROM_EMAIL,
+      name: env.MAIL_FROM_NAME,
+    });
+  const notificationsService = new NotificationsService(
+    new NotificationsRepository(),
+    mail,
+    overrides.clock,
+  );
 
   // Sin FRONTEND_URL se usa el primer origen permitido; CORS_ORIGINS exige al menos uno.
   const [firstCorsOrigin = ""] = env.CORS_ORIGINS;
@@ -115,7 +133,11 @@ export function createApp() {
   const appointmentTypesRepository = new AppointmentTypesRepository();
   const appointmentTypesService = new AppointmentTypesService(appointmentTypesRepository);
   const appointmentsController = new AppointmentsController(
-    new AppointmentsService(new AppointmentsRepository(), appointmentTypesRepository),
+    new AppointmentsService(
+      new AppointmentsRepository(),
+      appointmentTypesRepository,
+      notificationsService,
+    ),
   );
   const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
   const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
@@ -157,6 +179,10 @@ export function createApp() {
     myGrooming: createMyGroomingRouter(groomingController, requireAuth),
     reports: createReportsRouter(reportsController, requireAuth),
     inventory: createInventoryRouter(inventoryController, requireAuth),
+    notifications: createNotificationsRouter(
+      new NotificationsController(notificationsService),
+      requireAuth,
+    ),
   });
 
   const app = express();
@@ -171,5 +197,7 @@ export function createApp() {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  return app;
+  return { app, notifications: notificationsService };
 }
+
+export const createApp = (overrides: AppOverrides = {}) => buildApp(overrides).app;
