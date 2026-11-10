@@ -59,11 +59,11 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 
 | ID | Regla | RF |
 |----|-------|----|
-| RN-35 | Se envía correo al **confirmar, cambiar o cancelar** una cita; debe llegar en menos de 1 minuto | RF-17, RF-11 |
-| RN-36 | Recordatorio automático **24 horas antes** de la cita | RF-17 |
-| RN-37 | Aviso de vacuna próxima a vencer **7 días antes** | RF-17 |
-| RN-38 | Si falla el envío de un correo, la operación de negocio **se conserva** y el envío se reintenta | RF-11 |
-| RN-39 | Cada correo programado/enviado se registra como Notificación asociada a su cita (o vacunación) | RF-17 |
+| RN-35 | Se envía correo al **confirmar, cambiar o cancelar** una cita; debe llegar en menos de 1 minuto. El aviso se registra en el acto y el envío sale en segundo plano; reprogramar y reasignar al profesional cuentan como cambio (D-38) | RF-17, RF-11 |
+| RN-36 | Recordatorio automático **24 horas antes** de la cita: se envía una vez, cuando la cita entra en las próximas 24 horas; si se reprograma, se avisa de nuevo para la hora nueva (D-38) | RF-17 |
+| RN-37 | Aviso de vacuna próxima a vencer **7 días antes**: una sola vez por vacunación, sobre la última dosis aplicada de cada vacuna de las mascotas activas (D-38) | RF-17 |
+| RN-38 | Si falla el envío de un correo, la operación de negocio **se conserva** y el envío se reintenta (hasta 3 intentos en total, D-38) | RF-11 |
+| RN-39 | Cada correo programado/enviado se registra como Notificación asociada a su cita (o vacunación); la tabla `Notification` hace de cola de envío (D-38) | RF-17 |
 
 ## Atención clínica
 

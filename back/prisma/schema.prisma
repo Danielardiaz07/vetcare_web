@@ -223,11 +223,12 @@ model Appointment {
   createdAt      DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
 
-  patient      Patient          @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  veterinarian Veterinarian?    @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
-  groomer      Groomer?         @relation(fields: [groomerId], references: [id], onDelete: Restrict)
-  consultation Consultation?
-  grooming     GroomingService?
+  patient       Patient          @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian  Veterinarian?    @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+  groomer       Groomer?         @relation(fields: [groomerId], references: [id], onDelete: Restrict)
+  consultation  Consultation?
+  grooming      GroomingService?
+  notifications Notification[]
 
   @@index([patientId, startsAt]) // "mis citas" y límite de citas activas por mascota (RN-24)
   @@index([veterinarianId, startsAt]) // agenda por veterinario (RF-16)
@@ -368,14 +369,55 @@ model Vaccination {
   price          Decimal   @db.Decimal(12, 2) // precio del catálogo al aplicar
   createdAt      DateTime  @default(now()) @db.Timestamptz(3)
 
-  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
-  vaccine      Vaccine      @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
-  invoiceItem  InvoiceItem?
-  groomer      Groomer?     @relation(fields: [groomerId], references: [id])
-  groomerId    String?      @db.Uuid
+  patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  veterinarian  Veterinarian   @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
+  vaccine       Vaccine        @relation(fields: [vaccineId], references: [id], onDelete: Restrict)
+  invoiceItem   InvoiceItem?
+  groomer       Groomer?       @relation(fields: [groomerId], references: [id])
+  groomerId     String?        @db.Uuid
+  notifications Notification[]
 
   @@index([patientId, appliedAt])
+}
+
+enum NotificationKind {
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CHANGED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_REMINDER
+  VACCINE_DUE
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// RN-35 a RN-39, D-38: cada correo queda registrado y se entrega desde esta tabla, que hace de cola. Si el envío falla
+// la operación de negocio se conserva y se reintenta hasta NOTIFICATION_MAX_ATTEMPTS veces. Apunta a una cita o a una vacunación.
+model Notification {
+  id            String             @id @default(uuid()) @db.Uuid
+  kind          NotificationKind
+  status        NotificationStatus @default(PENDING)
+  appointmentId String?            @db.Uuid
+  vaccinationId String?            @db.Uuid
+  toEmail       String             @db.VarChar(254) // mismo tope que User.email
+  subject       String             @db.VarChar(150)
+  body          String             @db.VarChar(4000) // HTML de las plantillas propias, siempre muy por debajo del tope
+  scheduledFor  DateTime           @db.Timestamptz(3) // desde cuándo puede enviarse
+  forStartsAt   DateTime?          @db.Timestamptz(3) // inicio de la cita al crear el aviso; evita repetir el recordatorio de una misma hora
+  attempts      Int                @default(0) @db.SmallInt
+  lastError     String?            @db.VarChar(300)
+  sentAt        DateTime?          @db.Timestamptz(3)
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  vaccination Vaccination? @relation(fields: [vaccinationId], references: [id], onDelete: Restrict)
+
+  @@index([status, scheduledFor]) // cola de pendientes
+  @@index([appointmentId])
+  @@index([vaccinationId])
 }
 
 // RN-70 a RN-76. El número es consecutivo y se muestra como FAC-000001 (D-27).

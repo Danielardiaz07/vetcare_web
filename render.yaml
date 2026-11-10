@@ -15,6 +15,8 @@ services:
         value: "0"
       - key: TRUST_PROXY_HOPS
         value: "2"
+      - key: SCHEDULER_ENABLED
+        value: "true"
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL

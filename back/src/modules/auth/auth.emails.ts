@@ -1,9 +1,6 @@
 import type { MailMessage } from "@/shared/providers";
-
-const CLINIC_NAME = "VetCare";
-
-const layout = (title: string, body: string) =>
-  `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto"><h2>${title}</h2>${body}<p style="color:#666;font-size:12px">${CLINIC_NAME}</p></div>`;
+import { escapeHtml } from "@/shared/utils/html";
+import { CLINIC_NAME, emailLayout as layout } from "@/shared/utils/email-layout";
 
 export const buildOtpEmail = (to: string, code: string, ttlMinutes: number): MailMessage => ({
   to,
@@ -35,8 +32,6 @@ export const buildPasswordChangedEmail = (to: string): MailMessage => ({
     "<p>Cambiaste tu contrasena y cerramos tus sesiones abiertas. Si no fuiste tu, comunicate con la clinica de inmediato.</p>",
   ),
 });
-
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 
 export const buildWelcomeEmail = (to: string, firstNames: string): MailMessage => ({
   to,

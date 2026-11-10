@@ -18,6 +18,7 @@ import type {
   ReassignAppointmentRequestDto,
   RescheduleAppointmentRequestDto,
 } from "@/modules/appointments/dto/appointments.dto";
+import type { IAppointmentNotifier } from "@/modules/appointments/appointment-notifier.interface";
 import {
   ACTIVE_STATUSES,
   SlotTakenError,
@@ -79,6 +80,7 @@ export class AppointmentsService {
   constructor(
     private readonly repository: AppointmentsRepository,
     private readonly types: AppointmentTypesRepository,
+    private readonly notifier: IAppointmentNotifier,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -155,6 +157,7 @@ export class AppointmentsService {
           endsAt,
           reason: dto.reason,
         });
+        await this.notifier.appointmentEvent("CONFIRMED", created.id); // RN-35
         return toResponse(created, actor.role !== Role.OWNER);
       } catch (error) {
         this.rethrowUnlessProfessionalTaken(error);
@@ -192,6 +195,7 @@ export class AppointmentsService {
           endsAt,
           professionalId: candidate.id,
         });
+        await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
         return toResponse(updated, actor.role !== Role.OWNER);
       } catch (error) {
         this.rethrowUnlessProfessionalTaken(error);
@@ -210,6 +214,7 @@ export class AppointmentsService {
       status: AppointmentStatus.CANCELLED,
       cancelReason: dto.reason,
     });
+    await this.notifier.appointmentEvent("CANCELLED", updated.id); // RN-35
     return toResponse(updated, actor.role !== Role.OWNER);
   }
 
@@ -258,6 +263,7 @@ export class AppointmentsService {
 
     try {
       const updated = await this.repository.update(id, kind, { professionalId: candidate.id });
+      await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
       return toResponse(updated, true);
     } catch (error) {
       this.rethrowUnlessProfessionalTaken(error);
