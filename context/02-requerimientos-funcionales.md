@@ -108,7 +108,7 @@ Flujo central: **cuenta → cita → atención → factura**.
 | RF-11 | HU-08 | CU-09, CU-10 | 2 |
 | RF-12 | HU-09 | CU-11, CU-12 | 2 |
 | RF-13 | HU-10 | CU-13 | 2 |
-| RF-14 | HU-17 | CU-14 | Reserva |
+| RF-14 | HU-17 | CU-14 | 3 |
 | RF-15 | HU-22 | CU-15 | 3 |
 | RF-16 | HU-11 | CU-19, CU-10 | 2 |
 | RF-17 | HU-19 | CU-20 | Reserva |
@@ -116,6 +116,6 @@ Flujo central: **cuenta → cita → atención → factura**.
 | RF-19 | HU-13 | CU-22 | 3 |
 | RF-20 | HU-20 | CU-23, CU-24, CU-25 | 3 |
 | RF-21 | HU-23 | CU-26 | 3 |
-| RF-22 | HU-18 | CU-27 | Reserva |
+| RF-22 | HU-18 | CU-27 | 3 |
 | RF-23 | HU-16 | CU-28 | 3 |
 | RF-24 | HU-24 | CU-29 | 3 |

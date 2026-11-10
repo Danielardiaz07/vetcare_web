@@ -75,9 +75,9 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-43 | Solo se registra una consulta sobre una cita `CONFIRMADA` | RF-18 |
 | RN-44 | Solo el veterinario asignado a la cita puede registrar la consulta | RF-18 |
 | RN-45 | Diagnóstico y tratamiento son obligatorios | RF-18 |
-| RN-46 | Al guardar la consulta, en **una sola transacción**: la cita pasa a `ATENDIDA`, se actualiza el peso del paciente, se descuenta el stock de los medicamentos entregados *(aplazado hasta HU-18, D-27)* y la consulta queda como concepto pendiente de facturar | RF-18, RNF-11 |
-| RN-47 | *(aplazada hasta HU-18, D-27)* Si un medicamento no tiene stock suficiente, el sistema advierte (“Stock insuficiente de [medicamento]”) y no permite entregarlo | RF-18 |
-| RN-48 | Vacunación: registra vacuna, lote, fecha de aplicación y fecha de próxima dosis; descuenta el stock de la vacuna | RF-19 |
+| RN-46 | Al guardar la consulta, en **una sola transacción**: la cita pasa a `ATENDIDA`, se actualiza el peso del paciente, se descuenta el stock de los medicamentos entregados *(aplazado, D-27 y D-36)* y la consulta queda como concepto pendiente de facturar | RF-18, RNF-11 |
+| RN-47 | *(aplazada, D-27 y D-36: la fórmula sigue siendo texto libre)* Si un medicamento no tiene stock suficiente, el sistema advierte (“Stock insuficiente de [medicamento]”) y no permite entregarlo | RF-18 |
+| RN-48 | Vacunación: registra vacuna, lote, fecha de aplicación y fecha de próxima dosis; descuenta el stock de la vacuna *(aplazado, D-36: el administrador ajusta el stock a mano)* | RF-19 |
 | RN-49 | Estado de vacuna en el carné: `AL_DIA`, `PROXIMA_A_VENCER` (vence en los próximos 7 días) o `VENCIDA` | RF-10 |
 | RN-50 | Cirugía, internación (con ingreso y egreso) y examen de laboratorio (con resultados) se asocian al paciente. Los registra solo el veterinario, sin cita obligatoria, y no se facturan en este alcance. Una mascota no puede tener dos internaciones abiertas y el egreso es posterior al ingreso; el ingreso y el egreso toman la hora del servidor (D-34) | RF-20 |
 | RN-51 | Servicio estético: tipo (baño, corte, peluquería), estilista, observaciones y costo. Lo registra solo el estilista; la cita de estética es opcional y, si se indica, debe ser una cita de estética confirmada, asignada a ese estilista y de esa mascota, y pasa a `ATENDIDA` en la misma transacción. Queda como concepto pendiente de facturar (D-33) | RF-21 |
@@ -88,8 +88,8 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 
 | ID | Regla | RF |
 |----|-------|----|
-| RN-55 | Medicamentos y vacunas se gestionan con stock, precio y fecha de vencimiento | RF-22 |
-| RN-56 | Se alerta el **stock crítico** y los productos **por vencer** (umbrales por definir, ver [12](12-decisiones-y-pendientes.md)); equivale a `fn_stock_critico` | RF-22 |
+| RN-55 | Medicamentos y vacunas se gestionan con stock, precio y fecha de vencimiento; solo el administrador los edita y el stock lo ajusta a mano (no se descuenta solo, D-36) | RF-22 |
+| RN-56 | Se alerta el **stock crítico** (stock menor o igual al mínimo de cada producto) y los productos **por vencer** (vencen en los próximos 30 días; los ya vencidos se marcan aparte); solo cuentan los productos activos; equivale a `fn_stock_critico` (D-36) | RF-22 |
 | RN-57 | El stock nunca queda negativo | RF-18, RF-19 |
 
 ## Datos personales y mensajes
@@ -109,7 +109,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-73 | Cada detalle referencia su concepto de origen; al facturar, esos conceptos quedan marcados como facturados | RF-23 |
 | RN-74 | Una factura `PAGADA` no se edita; solo puede **anularse con motivo**, y la anulación es exclusiva del Administrador | RF-23 |
 | RN-75 | Generar la factura es transaccional: ante un error no queda factura parcial | RF-23, RNF-11 |
-| RN-76 | La factura queda numerada, con PDF descargable, y visible de inmediato para el propietario | RF-23, RF-14 |
+| RN-76 | La factura queda numerada, con PDF descargable, y visible de inmediato para el propietario. El PDF se obtiene desde el navegador (“Imprimir / guardar como PDF”); el servidor no lo genera (D-37) | RF-23, RF-14 |
 
 ## Reportes
 

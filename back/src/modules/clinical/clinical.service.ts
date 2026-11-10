@@ -78,6 +78,21 @@ function toVaccinationResponse(record: VaccinationRecord): VaccinationResponseDt
   };
 }
 
+// Solo los campos del catálogo: el stock y el vencimiento son del inventario y los ve únicamente el administrador (D-36).
+function toVaccineResponse(record: {
+  id: string;
+  name: string;
+  price: { toNumber(): number };
+  active: boolean;
+}): VaccineResponseDto {
+  return {
+    id: record.id,
+    name: record.name,
+    price: record.price.toNumber(),
+    active: record.active,
+  };
+}
+
 function toSurgeryResponse(record: SurgeryRecord): SurgeryResponseDto {
   return {
     id: record.id,
@@ -149,15 +164,12 @@ export class ClinicalService {
     return toConsultationResponse(record, true);
   }
 
-  listVaccines(): Promise<VaccineResponseDto[]> {
-    return this.repository
-      .listVaccines()
-      .then((items) => items.map((item) => ({ ...item, price: item.price.toNumber() })));
+  async listVaccines(): Promise<VaccineResponseDto[]> {
+    return (await this.repository.listVaccines()).map(toVaccineResponse);
   }
 
   async createVaccine(dto: CreateVaccineRequestDto): Promise<VaccineResponseDto> {
-    const created = await this.repository.createVaccine(dto);
-    return { ...created, price: created.price.toNumber() };
+    return toVaccineResponse(await this.repository.createVaccine(dto));
   }
 
   async createVaccination(
