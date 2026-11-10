@@ -262,6 +262,7 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `/panel/invoices` | Recepcionista | Facturación |
 | `/panel/users` | Administrador | Usuarios |
 | `/panel/staff` | Administrador | Personal y horarios |
+| `/panel/inventory` | Administrador | Inventario: pestañas Medicamentos y Vacunas con nombre, stock, precio, vencimiento y estado (stock crítico, por vencer o vencido); conteo de alertas con filtro, buscador por nombre, paginación y modal para crear y editar. Los umbrales los da la API; una vacuna nueva se crea en `POST /vaccines` y luego se completa su stock (RN-55, RN-56, RN-57, D-36) |
 | `/panel/reports` | Administrador | Indicadores: citas por estado, inasistencias, servicios más solicitados e ingresos del periodo elegido (por defecto el mes actual), con barras en CSS sin librería de gráficas (RN-80, D-35) |
 
 ## 8. Principios de diseño

@@ -274,3 +274,39 @@ export interface DashboardReport {
   openHospitalizations: number;
   vaccines: { overdue: number; dueSoon: number };
 }
+
+// D-36: medicamentos y vacunas del inventario; el stock es informativo y lo ajusta el administrador.
+export type InventoryKind = "MEDICATION" | "VACCINE";
+
+export type ExpiryStatus = "NONE" | "OK" | "EXPIRING" | "EXPIRED";
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  minStock: number;
+  expiresAt: string | null;
+  active: boolean;
+  lowStock: boolean;
+  expiry: ExpiryStatus;
+}
+
+export type InventoryAlertReason = "LOW_STOCK" | "EXPIRING" | "EXPIRED";
+
+export interface InventoryAlert {
+  kind: InventoryKind;
+  id: string;
+  name: string;
+  stock: number;
+  minStock: number;
+  expiresAt: string | null;
+  reasons: InventoryAlertReason[];
+}
+
+// RN-56: los umbrales los define la API (P-03); el front solo los muestra.
+export interface InventoryAlerts {
+  expiringDays: number;
+  counts: { lowStock: number; expiring: number; expired: number };
+  items: InventoryAlert[];
+}

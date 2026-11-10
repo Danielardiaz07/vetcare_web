@@ -22,6 +22,7 @@ export const ROUTES = {
   panelNewInvoice: "/panel/invoices/new",
   panelUsers: "/panel/users",
   panelStaff: "/panel/staff",
+  panelInventory: "/panel/inventory",
   panelReports: "/panel/reports",
   // El texto de la Ley 1581 va en el pie de la portada.
   dataPolicy: "/#tratamiento-de-datos",
@@ -58,6 +59,12 @@ export const FIELD_LIMITS = {
   GROOMING_OBSERVATIONS_MAX: 500,
   PROCEDURE_MAX: 120,
   EXAM_TYPE_MAX: 80,
+  MEDICATION_NAME_MAX: 80,
+  VACCINE_NAME_MAX: 60,
+  // DECIMAL(12,2): el precio del inventario admite centavos.
+  PRICE_MAX: 9_999_999_999.99,
+  PRICE_DECIMALS: 2,
+  STOCK_MAX: 1_000_000,
 } as const;
 
 // Los mismos límites de agenda que la API (RN-21, RN-22).
