@@ -39,6 +39,8 @@ export const PANEL_MENU: Record<StaffRole, PanelMenuItem[]> = {
     { href: ROUTES.panelStaff, label: "Personal y horarios", icon: "clock" },
     // RN-74: el administrador entra para anular facturas.
     { href: ROUTES.panelInvoices, label: "Facturación", icon: "receipt" },
+    // RF-22: medicamentos y vacunas con alertas de stock (D-36).
+    { href: ROUTES.panelInventory, label: "Inventario", icon: "box" },
     // RF-24: el tablero de indicadores es solo del administrador.
     { href: ROUTES.panelReports, label: "Indicadores", icon: "chart" },
   ],

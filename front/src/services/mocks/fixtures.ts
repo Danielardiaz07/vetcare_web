@@ -6,6 +6,7 @@ import type {
   Consultation,
   GroomingService,
   Hospitalization,
+  InventoryItem,
   Invoice,
   LabExam,
   Owner,
@@ -550,4 +551,49 @@ mockInvoices.push({
   voidReason: null,
   items: mockLunaItems,
   createdAt: "2026-03-14T16:00:00.000Z",
+});
+
+// D-36: inventario de prueba; los vencimientos son relativos a hoy para ver cada alerta (RN-56).
+export type MockStockedProduct = Omit<InventoryItem, "lowStock" | "expiry">;
+
+export const mockMedications: MockStockedProduct[] = (
+  [
+    ["Amoxicilina 500 mg", 18000, 40, 10, 200],
+    ["Meloxicam 1,5 mg/ml", 32000, 4, 5, 120],
+    ["Ivermectina 1 %", 25000, 15, 5, 12],
+    ["Prednisolona 5 mg", 15000, 0, 8, -20],
+    ["Omeprazol 20 mg", 12000, 30, 10, null],
+    ["Metronidazol 250 mg", 14000, 22, 10, 400],
+    ["Tramadol 50 mg", 20000, 9, 6, 25],
+    ["Cefalexina 500 mg", 21000, 50, 15, 300],
+    ["Clorhexidina 2 %", 17500.5, 3, 4, 90],
+    ["Ketoprofeno 10 mg", 19000, 12, 4, 180],
+    ["Furosemida 40 mg", 11000, 25, 10, 500],
+    ["Enrofloxacina 50 mg", 23000, 2, 2, 60],
+  ] as [string, number, number, number, number | null][]
+).map(([name, price, stock, minStock, expiresInDays], index) => ({
+  id: `9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c${String(index).padStart(2, "0")}`,
+  name,
+  price,
+  stock,
+  minStock,
+  expiresAt: expiresInDays === null ? null : addDays(mockToday, expiresInDays),
+  active: index !== 10,
+}));
+
+const VACCINE_STOCK: [number, number, number | null][] = [
+  [12, 5, 180],
+  [3, 5, 20],
+  [8, 4, -3],
+  [0, 0, null],
+];
+
+export const mockInventoryVaccines: MockStockedProduct[] = mockVaccines.map((vaccine, index) => {
+  const [stock, minStock, expiresInDays] = VACCINE_STOCK[index] ?? [0, 0, null];
+  return {
+    ...vaccine,
+    stock,
+    minStock,
+    expiresAt: expiresInDays === null ? null : addDays(mockToday, expiresInDays),
+  };
 });
