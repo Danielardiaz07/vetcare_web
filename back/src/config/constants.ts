@@ -101,6 +101,13 @@ export const ClinicalLimit = {
   EXAM_TYPE_MAX: 80, // tipo de examen de laboratorio
 } as const;
 
+// Mismos topes que las columnas de Medication y Vaccine (D-36).
+export const InventoryLimit = {
+  MEDICATION_NAME_MAX: 80,
+  STOCK_MAX: 1_000_000, // unidades; muy por encima de cualquier inventario real de una clínica
+} as const;
+export const EXPIRING_SOON_DAYS = 30; // P-03: un producto está "por vencer" 30 días antes de su vencimiento
+
 export const REPORT_DEFAULT_RANGE_DAYS = 30; // RF-24: el tablero abre con el último mes
 export const REPORT_MAX_RANGE_DAYS = 366;
 

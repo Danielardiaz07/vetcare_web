@@ -32,7 +32,7 @@ Una historia está **hecha** cuando:
 
 ## 4. Product Backlog
 
-24 historias de usuario (una por RF), **116 puntos**. Comprometidas: HU-01 a HU-16 (todas Must, **84 pts**) y HU-20 a HU-24 (Should y Could, 19 pts, tomadas de la Reserva, D-31 a D-35). Reserva: HU-17, HU-18 y HU-19 (Should, 13 pts). La velocidad de referencia del plan original era ≈ 19 pts por sprint de 2 semanas; aún no hay velocidad medida.
+24 historias de usuario (una por RF), **116 puntos**. Comprometidas: HU-01 a HU-16 (todas Must, **84 pts**) y HU-17, HU-18 y HU-20 a HU-24 (Should y Could, 27 pts, tomadas de la Reserva, D-31 a D-37). Reserva: HU-19 (Should, 5 pts). La velocidad de referencia del plan original era ≈ 19 pts por sprint de 2 semanas; aún no hay velocidad medida.
 
 | HU | Historia | RF | Prio | Pts | Sprint |
 |----|----------|----|------|-----|--------|
@@ -52,8 +52,8 @@ Una historia está **hecha** cuando:
 | HU-14 | Como propietario, quiero ver el historial clínico de mi mascota | RF-09 | M | 5 | 3 |
 | HU-15 | Como propietario, quiero ver el carné de vacunación de mi mascota | RF-10 | M | 3 | 3 |
 | HU-16 | Como recepcionista, quiero generar facturas con IVA calculado automáticamente | RF-23 | M | 8 | 3 |
-| HU-17 | Como propietario, quiero ver y descargar mis facturas | RF-14 | S | 3 | Reserva |
-| HU-18 | Como administrador, quiero gestionar medicamentos y vacunas con alertas de stock | RF-22 | S | 5 | Reserva |
+| HU-17 | Como propietario, quiero ver y descargar mis facturas | RF-14 | S | 3 | 3 |
+| HU-18 | Como administrador, quiero gestionar medicamentos y vacunas con alertas de stock | RF-22 | S | 5 | 3 |
 | HU-19 | Como propietario, quiero recibir correos de confirmación y recordatorio de mis citas y vacunas | RF-17 | S | 5 | Reserva |
 | HU-20 | Como veterinario, quiero registrar cirugías, internaciones y exámenes | RF-20 | S | 5 | 3 |
 | HU-21 | Como usuario, quiero recuperar mi contraseña por correo | RF-03 | S | 3 | 3 |
@@ -70,9 +70,9 @@ Responsables: **D** = Daniela (backend, `back/`), **K** = Kenys (frontend, `fron
 | 0 (cerrado) | 18 ago – 16 oct | Preparar proyecto y arquitectura: repositorio y ramas (D); base del backend con config, errores y rate limit (D); modelo de datos base de autenticación en Prisma (D); base del frontend con Next.js, Tailwind y cliente HTTP (K); requerimientos y backlog (D, K). Proyecto Supabase creado y primera migración `init` aplicada el 17 oct (D) | — | — |
 | 1 | 19 oct – 1 nov | Acceso y datos maestros del portal: registro con OTP, login, usuarios y roles (D); CRUD de propietarios y pacientes (D); pantallas de registro, login, gestión de usuarios, propietarios y mascotas, “Mis mascotas” y ficha (K) | HU-01, 02, 03, 04, 05, 07 | 26 |
 | 2 | 2 nov – 15 nov | Personal y agenda: veterinarios, estilistas y horarios (D); disponibilidad, bloqueo transaccional de franja y endpoints de citas (D); asistente de agendamiento, “Mis citas” y calendario de recepción (K) | HU-06, 08, 09, 10, 11 | 29 |
-| 3 | 16 nov – 23 nov | Atención clínica, facturación y cierre: consulta, vacunación con catálogo mínimo de vacunas, historial y carné (D, K); facturación con IVA en pantalla, sin PDF hasta resolver P-02 (D, K); recuperación de contraseña por correo o cédula, HU-21 (D, K); mi perfil: contacto, contraseña y nueva mascota, HU-22 (D, K); servicios de estética, HU-23 (D, K); cirugías, internaciones y exámenes, HU-20 (D, K); tablero de indicadores, HU-24 (D, K); pruebas de aceptación, manual, despliegue y sustentación (D, K) | HU-12, 13, 14, 15, 16, 20, 21, 22, 23, 24 | 48 |
+| 3 | 16 nov – 23 nov | Atención clínica, facturación y cierre: consulta, vacunación con catálogo mínimo de vacunas, historial y carné (D, K); facturación con IVA en pantalla, sin PDF hasta resolver P-02 (D, K); recuperación de contraseña por correo o cédula, HU-21 (D, K); mi perfil: contacto, contraseña y nueva mascota, HU-22 (D, K); servicios de estética, HU-23 (D, K); cirugías, internaciones y exámenes, HU-20 (D, K); tablero de indicadores, HU-24 (D, K); facturas del propietario con impresión a PDF desde el navegador, HU-17 (K); inventario con alertas, HU-18 (D, K); pruebas de aceptación, manual, despliegue y sustentación (D, K) | HU-12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24 | 56 |
 
-**Reserva (fuera del alcance comprometido):** HU-17, HU-18 y HU-19 (13 pts; HU-20 a HU-24 ya se tomaron, D-31 a D-35). Se toman solo si algún sprint termina antes; el orden sugerido es HU-17 (facturas del propietario y PDF), HU-18 (inventario con alertas) y HU-19 (correos).
+**Reserva (fuera del alcance comprometido):** HU-19 (5 pts; el resto ya se tomó, D-31 a D-37). Se toma solo si el tiempo alcanza y antes se resuelve P-01 (programador de tareas).
 
 ## 6. Incrementos
 

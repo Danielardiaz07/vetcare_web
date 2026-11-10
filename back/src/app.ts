@@ -23,6 +23,10 @@ import { GroomingController } from "@/modules/grooming/grooming.controller";
 import { GroomingRepository } from "@/modules/grooming/grooming.repository";
 import { createGroomingRouter, createMyGroomingRouter } from "@/modules/grooming/grooming.routes";
 import { GroomingService } from "@/modules/grooming/grooming.service";
+import { InventoryController } from "@/modules/inventory/inventory.controller";
+import { InventoryRepository } from "@/modules/inventory/inventory.repository";
+import { createInventoryRouter } from "@/modules/inventory/inventory.routes";
+import { InventoryService } from "@/modules/inventory/inventory.service";
 import { InvoicesController } from "@/modules/invoices/invoices.controller";
 import { InvoicesRepository } from "@/modules/invoices/invoices.repository";
 import { createInvoicesRouter, createMyInvoicesRouter } from "@/modules/invoices/invoices.routes";
@@ -115,6 +119,9 @@ export function createApp() {
   );
   const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
   const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
+  const inventoryController = new InventoryController(
+    new InventoryService(new InventoryRepository()),
+  );
   const reportsController = new ReportsController(new ReportsService(new ReportsRepository()));
   const groomingController = new GroomingController(new GroomingService(new GroomingRepository()));
 
@@ -149,6 +156,7 @@ export function createApp() {
     grooming: createGroomingRouter(groomingController, requireAuth),
     myGrooming: createMyGroomingRouter(groomingController, requireAuth),
     reports: createReportsRouter(reportsController, requireAuth),
+    inventory: createInventoryRouter(inventoryController, requireAuth),
   });
 
   const app = express();

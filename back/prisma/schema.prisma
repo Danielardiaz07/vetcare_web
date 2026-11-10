@@ -331,13 +331,30 @@ model GroomingService {
   @@index([patientId, createdAt]) // historial de estética por mascota
 }
 
-// Catálogo mínimo de vacunas con precio de venta (D-27); sin stock hasta HU-18.
+// Catálogo mínimo de vacunas con precio de venta (D-27). Desde D-36 lleva inventario: el stock es informativo,
+// lo ajusta el administrador y no se descuenta solo al vacunar ni al facturar.
 model Vaccine {
   id           String        @id @default(uuid()) @db.Uuid
   name         String        @unique @db.VarChar(60)
   price        Decimal       @db.Decimal(12, 2)
+  stock        Int           @default(0) // unidades; RN-57: nunca negativo (CHECK)
+  minStock     Int           @default(0) // umbral de stock crítico de este producto (D-36)
+  expiresAt    DateTime?     @db.Date // vencimiento del lote en existencia; null = sin vencimiento
   active       Boolean       @default(true)
   vaccinations Vaccination[]
+}
+
+// RN-55, D-36: medicamento en inventario. Aún no se formula ni se factura desde aquí (RN-46, RN-47 aplazadas).
+model Medication {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique @db.VarChar(80) // nombre comercial o genérico con su presentación
+  price     Decimal   @db.Decimal(12, 2) // COP
+  stock     Int       @default(0) // unidades; RN-57: nunca negativo (CHECK)
+  minStock  Int       @default(0) // umbral de stock crítico de este producto (D-36)
+  expiresAt DateTime? @db.Date // vencimiento del lote en existencia; null = sin vencimiento
+  active    Boolean   @default(true) // eliminación lógica
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
 }
 
 model Vaccination {
