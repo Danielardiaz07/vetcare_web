@@ -73,6 +73,7 @@ import { UsersRepository } from "@/modules/users/users.repository";
 import { createUsersRouter } from "@/modules/users/users.routes";
 import { UsersService } from "@/modules/users/users.service";
 import { createV1Router } from "@/routes/v1";
+import { createDocsRouter } from "@/routes/v1/openapi/docs.router";
 import { errorHandler, notFoundHandler } from "@/shared/middlewares/error-handler";
 import { authenticate } from "@/shared/middlewares/authenticate";
 import { BcryptHasher } from "@/shared/providers/bcrypt-hasher";
@@ -183,6 +184,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     myGrooming: createMyGroomingRouter(groomingController, requireAuth),
     reports: createReportsRouter(reportsController, requireAuth),
     inventory: createInventoryRouter(inventoryController, requireAuth),
+    docs: createDocsRouter(),
     health: createHealthRouter(new HealthController(new HealthService(new HealthRepository()))),
     notifications: createNotificationsRouter(
       new NotificationsController(notificationsService),

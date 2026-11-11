@@ -21,6 +21,7 @@ interface V1Modules {
   inventory: Router;
   notifications: Router;
   health: Router;
+  docs: Router;
 }
 
 export function createV1Router({
@@ -44,6 +45,7 @@ export function createV1Router({
   inventory,
   notifications,
   health,
+  docs,
 }: V1Modules): Router {
   const router = Router();
 
@@ -51,6 +53,7 @@ export function createV1Router({
     res.json({ status: "ok" });
   });
   router.use("/health", health);
+  router.use(docs);
   router.use("/auth", auth);
   router.use("/users", users);
   router.use("/owners", owners);

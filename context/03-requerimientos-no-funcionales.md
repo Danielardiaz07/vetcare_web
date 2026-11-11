@@ -16,7 +16,7 @@ Clasificados según ISO/IEC 25010. La columna **Implementación en el stack** ad
 | RNF-10 | Fiabilidad | Disponibilidad del 99 % en horario de atención; respaldo diario de la BD | Monitoreo del servidor y registro de respaldos | Supabase gestiona respaldos; endpoints de salud para monitoreo, `/health` y `/health/db` (D-39) |
 | RNF-11 | Fiabilidad | Operaciones que afectan agenda, stock y facturas se ejecutan en transacciones | Prueba de concurrencia sobre una misma franja | `prisma.$transaction` + restricción única/bloqueo de franja (RN-27, RN-46, RN-75) |
 | RNF-12 | Mantenibilidad | Arquitectura en capas con código versionado en Git y revisión por pull request | Estructura del repo e historial de PR | Route → Controller → Service → Repository; Git Flow ([11](11-flujo-git.md)) |
-| RNF-13 | Mantenibilidad | API documentada con OpenAPI/Swagger | Swagger UI accesible en desarrollo | OpenAPI/Swagger sobre `/api/v1` (paso 9 del orden de construcción) |
+| RNF-13 | Mantenibilidad | API documentada con OpenAPI/Swagger | Swagger UI accesible en desarrollo y en producción | Swagger UI en `/api/v1/docs` y el documento OpenAPI 3.1 en `/api/v1/openapi.json`, con las 84 operaciones (D-40) |
 | RNF-14 | Portabilidad | Despliegue en dos entornos (desarrollo y producción) sin cambiar el código | Despliegue en ambos entornos | Configuración por variables de entorno (`NODE_ENV`, URLs, secretos) |
 
 ## Pruebas

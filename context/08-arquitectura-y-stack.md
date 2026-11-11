@@ -41,7 +41,7 @@
 | Correo | Brevo (API transaccional, `@getbrevo/brevo`) | OTP, confirmaciones, recordatorios, alertas |
 | Logging | `pino` | Logs estructurados |
 | Calidad | ESLint, Prettier, Husky, lint-staged | Estilo y control pre-commit |
-| Documentación de API | OpenAPI/Swagger | Documentar endpoints (RNF-13) |
+| Documentación de API | OpenAPI/Swagger: `swagger-ui-express` (D-40) | Documentar endpoints (RNF-13); el documento se arma con los esquemas Zod, sin otra librería |
 
 > Cualquier librería **no listada** (programador de tareas para recordatorios, generación de PDF de facturas, etc.) requiere decisión explícita antes de agregarse: ver [12](12-decisiones-y-pendientes.md).
 
@@ -153,7 +153,7 @@ JSON consistente; HTTP correctos (`201` creación, `204` sin contenido, `401`, `
 
 ### 4.6 Recursos de la API (provisional)
 
-Rutas bajo `/api/v1`, en inglés. Se detallan en OpenAPI al implementar cada módulo.
+Rutas bajo `/api/v1`, en inglés. Están documentadas en OpenAPI (D-40): la interfaz en `/api/v1/docs` y el documento en `/api/v1/openapi.json`, ambos públicos. El catálogo de las operaciones vive en `back/src/routes/v1/openapi/operations.ts`; **al agregar o cambiar un endpoint hay que actualizarlo en el mismo cambio**, para que la documentación no se quede atrás.
 
 | Módulo | Recursos |
 |--------|----------|
