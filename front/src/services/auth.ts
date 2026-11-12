@@ -5,13 +5,22 @@ import { isMockEnabled, mockDelay, mockError, mockResponse } from "@/services/mo
 import {
   MOCK_OTP_CODE,
   MOCK_PASSWORD,
+  mockGroomers,
   mockOwner,
   mockProfile,
   mockSessionUser,
   mockStaffUsers,
   mockUnlinkedOwner,
+  mockVeterinarians,
 } from "@/services/mocks/fixtures";
-import type { LoginResponse, RegisterResponse, SessionUser, UserProfile } from "@/types/auth";
+import type {
+  LoginResponse,
+  RegisterResponse,
+  SessionUser,
+  StaffProfileSummary,
+  UserProfile,
+} from "@/types/auth";
+import type { StaffProfile } from "@/types/domain";
 
 const UNAUTHORIZED = 401;
 const CONFLICT = 409;
@@ -198,9 +207,26 @@ export function restoreSession(): Promise<SessionUser | null> {
   return restoreInFlight;
 }
 
+function mockStaffProfileOf(profiles: StaffProfile[], userId: string): StaffProfileSummary | null {
+  const profile = profiles.find((item) => item.userId === userId);
+  if (!profile) return null;
+  const { id, documentType, documentNumber, firstNames, lastNames, phone, specialty, active } =
+    profile;
+  return { id, documentType, documentNumber, firstNames, lastNames, phone, specialty, active };
+}
+
+// Simula /users/me con el perfil del personal ya incluido (P-16).
 function mockProfileOf({ id, email, role }: SessionUser): UserProfile {
   if (role === "OWNER") return { ...mockProfile, id, email };
-  return { id, email, role, status: "ACTIVE", owner: null };
+  return {
+    id,
+    email,
+    role,
+    status: "ACTIVE",
+    owner: null,
+    veterinarian: role === "VETERINARIAN" ? mockStaffProfileOf(mockVeterinarians, id) : null,
+    groomer: role === "GROOMER" ? mockStaffProfileOf(mockGroomers, id) : null,
+  };
 }
 
 export function getMe(): Promise<UserProfile> {

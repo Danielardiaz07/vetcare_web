@@ -64,7 +64,8 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 | Capacidad | Propietario | Recepcionista | Veterinario | Estilista | Administrador |
 |-----------|:-----------:|:-------------:|:-----------:|:---------:|:-------------:|
 | Registrarse / iniciar sesión / recuperar contraseña | ✔ | ✔ | ✔ | ✔ | ✔ |
-| Cambiar mi contraseña (D-32, D-43) | ✔ (Mi perfil) | ✔ (barra del panel) | ✔ (barra del panel) | ✔ (barra del panel) | ✔ (barra del panel) |
+| Cambiar mi contraseña (D-32, D-44) | ✔ (Mi perfil) | ✔ (Mi cuenta) | ✔ (Mi cuenta) | ✔ (Mi cuenta) | ✔ (Mi cuenta) |
+| Ver mis datos y mi horario (D-44) | | correo y rol | ✔ | ✔ | correo y rol |
 | Gestionar usuarios del personal (RF-04) | | | | | ✔ |
 | Gestionar propietarios (RF-05) | | ✔ | | | |
 | Gestionar pacientes (RF-06) | propias (alta, RF-15) | ✔ | ✔ | | |

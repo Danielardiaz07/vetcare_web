@@ -2,11 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
-import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/features/auth/auth-provider";
-import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog";
+import { accountDisplayName } from "@/features/users/account";
 import { ROUTES } from "@/lib/constants";
 import { isStaffRole, ROLE_LABELS } from "@/lib/panel-menu";
 
@@ -15,10 +14,10 @@ type PanelTopBarProps = {
 };
 
 export function PanelTopBar({ onSignOut }: PanelTopBarProps) {
-  const { user } = useAuth();
-  const { show } = useToast();
-  const [changingPassword, setChangingPassword] = useState(false);
+  const pathname = usePathname();
+  const { user, profile } = useAuth();
   const roleLabel = user && isStaffRole(user.role) ? ROLE_LABELS[user.role] : "";
+  const displayName = accountDisplayName(profile, user?.email ?? "");
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
@@ -35,20 +34,20 @@ export function PanelTopBar({ onSignOut }: PanelTopBarProps) {
           </span>
         </Link>
         <div className="flex items-center gap-1 text-sm sm:gap-2">
-          {/* D-32: el personal cambia su propia contraseña; el administrador nunca la ve. */}
-          <button
-            type="button"
-            onClick={() => setChangingPassword(true)}
-            title="Cambiar contraseña"
-            className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 font-medium text-ink hover:bg-canvas sm:px-3"
+          {/* D-44: igual que "Mi perfil" en el portal, el usuario y su rol llevan a "Mi cuenta". */}
+          <Link
+            href={ROUTES.panelAccount}
+            aria-current={pathname === ROUTES.panelAccount ? "page" : undefined}
+            title="Mi cuenta"
+            className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 font-medium text-ink hover:bg-canvas aria-[current=page]:bg-brand-50 sm:px-3"
           >
             <Icon name="user" className="size-5 text-brand-600" />
-            <span className="sr-only">Cambiar contraseña de</span>
-            <span className="hidden max-w-56 truncate sm:inline">{user?.email}</span>
+            <span className="sr-only">Mi cuenta:</span>
+            <span className="hidden max-w-56 truncate sm:inline">{displayName}</span>
             <span className="rounded-chip bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
               {roleLabel}
             </span>
-          </button>
+          </Link>
           <button
             type="button"
             onClick={onSignOut}
@@ -58,14 +57,6 @@ export function PanelTopBar({ onSignOut }: PanelTopBarProps) {
           </button>
         </div>
       </div>
-      <ChangePasswordDialog
-        open={changingPassword}
-        onClose={() => setChangingPassword(false)}
-        onChanged={() => {
-          setChangingPassword(false);
-          show("Contraseña actualizada", "success");
-        }}
-      />
     </header>
   );
 }

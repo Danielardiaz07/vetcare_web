@@ -24,6 +24,7 @@ export const ROUTES = {
   panelStaff: "/panel/staff",
   panelInventory: "/panel/inventory",
   panelReports: "/panel/reports",
+  panelAccount: "/panel/account",
 } as const;
 
 export const PROTECTED_ROUTE_PREFIXES = [ROUTES.portal, ROUTES.panel] as const;
