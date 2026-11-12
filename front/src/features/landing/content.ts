@@ -1,31 +1,43 @@
 import type { IconName } from "@/components/ui/icon";
 import type { AppointmentType } from "@/types/domain";
 
-// Los datos de la clínica que aún no tenemos van entre corchetes para reemplazarlos.
+// Datos de demostración para presentar la propuesta (D-41): no son de una clínica real. El horario
+// coincide con el de los profesionales de seed-demo para que la agenda no contradiga a la landing.
 export const CLINIC = {
-  emergencyPhone: "[TELÉFONO]",
-  whatsappNumber: "[NÚMERO]",
-  phone: "[TELÉFONO / WHATSAPP]",
-  email: "[CORREO DE CONTACTO]",
-  address: "[DIRECCIÓN]",
-  neighborhood: "[BARRIO]",
-  city: "[CIUDAD]",
-  landmark: "[PUNTO DE REFERENCIA]",
-  weekdayHours: "[HORARIO]",
-  saturdayHours: "[HORARIO]",
-  emergencyHours: "[HORARIO DE URGENCIAS]",
-  busDirections: "rutas [RUTAS]. Bájate en [PARADERO], a [X] metros de la clínica.",
-  carDirections: "[INDICACIONES DESDE UNA VÍA PRINCIPAL]. Parqueadero: [SÍ / NO].",
-  dataPolicyUrl: "[ENLACE A LA POLÍTICA DE TRATAMIENTO DE DATOS]",
-  // Pega aquí la URL "Insertar mapa" de Google Maps cuando se tenga la dirección.
-  mapEmbedUrl: null as string | null,
+  emergencyPhone: "315 482 7391",
+  whatsappPhone: "300 418 2765",
+  phone: "(605) 580 4127",
+  email: "vetcare.veterinaria01@gmail.com",
+  address: "Carrera 12 # 15-24",
+  neighborhood: "Centro",
+  city: "Valledupar",
+  region: "Cesar",
+  landmark: "A media cuadra de la Gobernación del Cesar.",
+  weekdayHours: "de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.",
+  saturdayHours: "de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.",
+  emergencyHours: "las 24 horas, todos los días",
+  busDirections:
+    "toma una buseta que vaya al Centro por la Calle 16 y bájate frente a la Gobernación del Cesar; la clínica queda a 50 metros.",
+  carDirections:
+    "llega por la Calle 16 hasta la Gobernación del Cesar y gira por la Carrera 12; la clínica está a media cuadra. Tenemos parqueadero para carros y motos.",
 } as const;
 
-export const whatsappUrl = `https://wa.me/${CLINIC.whatsappNumber}`;
-export const phoneUrl = `tel:${CLINIC.phone}`;
-export const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-  `${CLINIC.address}, ${CLINIC.neighborhood}, ${CLINIC.city}`,
-)}`;
+const COLOMBIA_CALLING_CODE = "57";
+
+const internationalDigits = (phone: string) =>
+  `${COLOMBIA_CALLING_CODE}${phone.replace(/\D/g, "")}`;
+
+const telUrl = (phone: string) => `tel:+${internationalDigits(phone)}`;
+
+const mapsQuery = encodeURIComponent(
+  `${CLINIC.address}, ${CLINIC.city}, ${CLINIC.region}, Colombia`,
+);
+
+export const whatsappUrl = `https://wa.me/${internationalDigits(CLINIC.whatsappPhone)}`;
+export const phoneUrl = telUrl(CLINIC.phone);
+export const emergencyPhoneUrl = telUrl(CLINIC.emergencyPhone);
+export const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+export const mapEmbedUrl = `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
 export const sectionHref = (id: string) => `/#${id}`;
 
@@ -61,7 +73,7 @@ export const LANDING_SERVICES: LandingService[] = [
     icon: "stethoscope",
     appointmentType: "GENERAL_CONSULTATION",
     durationMinutes: 30,
-    price: "Desde [VALOR]",
+    price: "Desde $45.000",
   },
   {
     name: "Vacunación",
@@ -71,7 +83,7 @@ export const LANDING_SERVICES: LandingService[] = [
     icon: "syringe",
     appointmentType: "VACCINATION",
     durationMinutes: 30,
-    price: "Desde [VALOR]",
+    price: "Desde $40.000",
   },
   {
     name: "Control",
@@ -80,7 +92,7 @@ export const LANDING_SERVICES: LandingService[] = [
     icon: "clipboard-check",
     appointmentType: "CHECKUP",
     durationMinutes: 30,
-    price: "Desde [VALOR]",
+    price: "Desde $30.000",
   },
   {
     name: "Estética: baño y motilada",
@@ -89,14 +101,14 @@ export const LANDING_SERVICES: LandingService[] = [
     icon: "scissors",
     appointmentType: "GROOMING",
     durationMinutes: 90,
-    price: "Desde [VALOR], según tamaño",
+    price: "Desde $45.000, según tamaño",
   },
   {
     name: "Cirugía",
     shortName: "Cirugía",
     description: "Valoración prequirúrgica, esterilizaciones y procedimientos programados.",
     icon: "scalpel",
-    price: "Valoración desde [VALOR]",
+    price: "Valoración desde $50.000",
   },
   {
     name: "Laboratorio",
@@ -104,10 +116,22 @@ export const LANDING_SERVICES: LandingService[] = [
     description:
       "Hemograma, química sanguínea, coproscópico y más, con los resultados en tu historial.",
     icon: "flask",
-    price: "Desde [VALOR]",
+    price: "Desde $40.000",
   },
 ];
 
 export const BOOKABLE_SERVICES = LANDING_SERVICES.filter((service) => service.appointmentType);
 
-export const TEAM_PLACEHOLDERS = 3;
+export type TeamMember = {
+  name: string;
+  specialty: string;
+  // Ruta dentro de front/public; sin foto se muestran las iniciales.
+  photo: string | null;
+};
+
+// Mismos veterinarios que los datos de prueba del frontend (services/mocks/fixtures.ts).
+export const LANDING_TEAM: TeamMember[] = [
+  { name: "Dra. Natalia Quintero Ramos", specialty: "Medicina general", photo: null },
+  { name: "Dr. Andrés Mejía Torres", specialty: "Cirugía", photo: null },
+  { name: "Dra. Mariana Arzuaga Pinto", specialty: "Dermatología veterinaria", photo: null },
+];

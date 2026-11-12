@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useAuthDialog } from "@/features/auth/components/auth-dialog";
 import { homeRouteFor } from "@/features/auth/redirects";
-import { CLINIC, LANDING_NAV } from "@/features/landing/content";
+import { CLINIC, emergencyPhoneUrl, LANDING_NAV } from "@/features/landing/content";
 import { useActiveSection } from "@/features/landing/use-active-section";
 import { ROUTES } from "@/lib/constants";
 
@@ -55,7 +55,7 @@ export function SiteHeader() {
           <span>
             Urgencias 24 h:{" "}
             <a
-              href={`tel:${CLINIC.emergencyPhone}`}
+              href={emergencyPhoneUrl}
               className="font-semibold underline-offset-2 hover:underline"
             >
               {CLINIC.emergencyPhone}

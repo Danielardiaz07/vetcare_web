@@ -1,6 +1,12 @@
 import { Icon } from "@/components/ui/icon";
 import { SectionHeading } from "@/features/landing/components/section-heading";
-import { CLINIC, directionsUrl, phoneUrl, whatsappUrl } from "@/features/landing/content";
+import {
+  CLINIC,
+  directionsUrl,
+  mapEmbedUrl,
+  phoneUrl,
+  whatsappUrl,
+} from "@/features/landing/content";
 
 const DIRECTIONS = [
   { label: "En bus:", text: CLINIC.busDirections },
@@ -19,23 +25,13 @@ export function LocationSection() {
           Estamos en {CLINIC.neighborhood}, {CLINIC.city}.
         </SectionHeading>
         <div className="grid gap-8 lg:grid-cols-2">
-          {CLINIC.mapEmbedUrl ? (
-            <iframe
-              src={CLINIC.mapEmbedUrl}
-              title="Mapa de la clínica"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="aspect-[4/3] w-full rounded-card border border-line"
-            />
-          ) : (
-            <div
-              role="img"
-              aria-label="Espacio para el mapa de la clínica"
-              className="flex aspect-[4/3] items-center justify-center rounded-card border border-sand-border bg-sand p-4 text-center font-semibold text-honey"
-            >
-              [MAPA DE GOOGLE MAPS]
-            </div>
-          )}
+          <iframe
+            src={mapEmbedUrl}
+            title="Mapa de la clínica"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="aspect-[4/3] w-full rounded-card border border-line"
+          />
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
               <h3 className="font-semibold text-ink">Dirección</h3>

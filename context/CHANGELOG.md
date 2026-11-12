@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-12 · 12 · D-41: la landing usa datos de demostración (teléfonos de Valledupar, dirección cerca de la Gobernación del Cesar con mapa, equipo ficticio de 3 veterinarios) para presentar la propuesta; correo real del proyecto; horario igual al de `seed-demo`, urgencias 24 horas y precios “Desde” estimados; política de tratamiento de datos de demostración en una ventana que se abre desde el pie y el registro (RN-60).
 - 2026-11-10 · 08 · Ruta `/panel/inventory` (“Inventario” en el menú del administrador): medicamentos y vacunas con stock, precio, vencimiento y estado, alertas de stock crítico y por vencer con filtro (umbrales de la API), buscador, paginación y modal de crear y editar sin stock negativo (HU-18, RF-22, RN-55, RN-56, RN-57, D-36, §7.2).
 - 2026-11-07 · 08, 13 · Ruta `/panel/reports` (“Indicadores” en el menú del administrador): tablero con filtro de periodo, citas por estado, inasistencias, servicios más solicitados e ingresos, con barras en CSS sin librerías nuevas (HU-24, RF-24, RN-80, D-35, §7.2).
 - 2026-11-07 · 08 · Ruta `/panel/patients/[id]`: ficha del paciente con historial completo, carné y registro de cirugías, exámenes e internaciones por el veterinario; el portal suma las pestañas Cirugías, Internaciones y Exámenes (HU-20, RN-41, RN-50, D-34, §7.2).
