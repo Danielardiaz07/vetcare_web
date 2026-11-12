@@ -64,8 +64,9 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 | Capacidad | Propietario | Recepcionista | Veterinario | Estilista | Administrador |
 |-----------|:-----------:|:-------------:|:-----------:|:---------:|:-------------:|
 | Registrarse / iniciar sesión / recuperar contraseña | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Cambiar mi contraseña (D-32, D-43) | ✔ (Mi perfil) | ✔ (barra del panel) | ✔ (barra del panel) | ✔ (barra del panel) | ✔ (barra del panel) |
 | Gestionar usuarios del personal (RF-04) | | | | | ✔ |
-| Gestionar propietarios (RF-05) | | ✔ | | | ✔ |
+| Gestionar propietarios (RF-05) | | ✔ | | | |
 | Gestionar pacientes (RF-06) | propias (alta, RF-15) | ✔ | ✔ | | |
 | Gestionar personal y horarios (RF-07) | | | | | ✔ |
 | Mis mascotas, historial, carné (RF-08/09/10) | ✔ (solo las suyas) | | | | |
@@ -79,6 +80,7 @@ Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`
 | Gestionar inventario (RF-22) | | | | | ✔ |
 | Ver el registro de correos y ejecutar el envío a mano (D-38) | | | | | ✔ |
 | Generar factura (RF-23) | | ✔ | | | |
+| Consultar todas las facturas | | ✔ | | | ✔ (D-42) |
 | Anular factura (RN-74) | | | | | ✔ |
 | Reportes (RF-24) | | | | | ✔ |
 

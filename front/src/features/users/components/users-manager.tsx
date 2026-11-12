@@ -18,6 +18,7 @@ import { STATUS_LABELS } from "@/features/users/labels";
 import { MANAGEABLE_STATUSES, STAFF_ROLES } from "@/features/users/schemas";
 import { ROLE_LABELS } from "@/lib/panel-menu";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { listStaffNamesByAccount } from "@/services/staff";
 import { listUsers, type ListUsersParams } from "@/services/users";
 import type { Paginated } from "@/types/api";
 import type { StaffUser } from "@/types/auth";
@@ -27,6 +28,23 @@ const SEARCH_DELAY_MS = 300;
 
 type ListState =
   { status: "loading" } | { status: "error" } | { status: "ready"; result: Paginated<StaffUser> };
+
+// Solo estos roles tienen perfil con nombre (D-22); recepción y administración se identifican por correo.
+const ROLES_WITH_PROFILE: readonly StaffUser["role"][] = ["VETERINARIAN", "GROOMER"];
+
+type NamesState = Map<string, string> | "loading" | "error";
+
+function NameCell({ user, names }: { user: StaffUser; names: NamesState }) {
+  if (!ROLES_WITH_PROFILE.includes(user.role)) return <span className="text-subtle">—</span>;
+  if (names === "loading") return <span className="text-subtle">Cargando…</span>;
+  if (names === "error") return <span className="text-subtle">No disponible</span>;
+  const name = names.get(user.id);
+  return name ? (
+    <span className="font-medium text-ink">{name}</span>
+  ) : (
+    <span className="text-subtle">Sin perfil</span>
+  );
+}
 
 export function UsersManager() {
   const { user: sessionUser } = useAuth();
@@ -39,6 +57,7 @@ export function UsersManager() {
   const [reloadKey, setReloadKey] = useState(0);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<StaffUser | null>(null);
+  const [names, setNames] = useState<NamesState>("loading");
   const q = useDebouncedValue(search.trim(), SEARCH_DELAY_MS) || undefined;
 
   useEffect(() => {
@@ -56,12 +75,29 @@ export function UsersManager() {
     };
   }, [page, role, status, q, reloadKey]);
 
+  // Los nombres no dependen de la página ni de los filtros: se piden una vez y al recargar.
+  useEffect(() => {
+    let active = true;
+    setNames("loading");
+    listStaffNamesByAccount()
+      .then((result) => {
+        if (active) setNames(result);
+      })
+      .catch(() => {
+        if (active) setNames("error");
+      });
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
 
   // Cambiar un filtro vuelve a la primera página.
   useEffect(() => setPage(1), [role, status, q]);
 
   const columns: DataTableColumn<StaffUser>[] = [
+    { key: "name", header: "Nombre", render: (row) => <NameCell user={row} names={names} /> },
     {
       key: "email",
       header: "Correo",
@@ -146,6 +182,10 @@ export function UsersManager() {
       {list.status === "ready" && list.result.data.length > 0 && (
         <>
           <DataTable columns={columns} rows={list.result.data} getRowKey={(row) => row.id} />
+          <p className="text-sm text-muted">
+            El nombre sale del perfil en Personal y horarios. Recepción y administración no tienen
+            perfil, así que se identifican por su correo.
+          </p>
           {list.result.meta.totalPages > 1 && (
             <Pagination
               page={list.result.meta.page}

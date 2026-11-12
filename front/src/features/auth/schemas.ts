@@ -130,8 +130,25 @@ export const resetPasswordSchema = z
     message: "Las contraseñas no coinciden",
   });
 
+// RN-02; la API también exige que la nueva sea distinta de la actual (D-32). Lo usan el portal y el panel.
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Escribe tu contraseña actual"),
+    password: passwordField,
+    confirmPassword: z.string().min(1, "Confirma la contraseña nueva"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Las contraseñas no coinciden",
+  })
+  .refine((data) => data.password !== data.currentPassword, {
+    path: ["password"],
+    message: "La contraseña nueva debe ser distinta de la actual",
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type OtpInput = z.infer<typeof otpSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

@@ -1,20 +1,8 @@
-"use client";
+import type { Metadata } from "next";
+import { PanelHomeRedirect } from "@/components/layout/panel-home-redirect";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { LoadingState } from "@/components/ui/loading-state";
-import { useAuth } from "@/features/auth/auth-provider";
-import { isStaffRole, PANEL_MENU } from "@/lib/panel-menu";
+export const metadata: Metadata = { title: "Panel" };
 
 export default function PanelHomePage() {
-  const router = useRouter();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (!user || !isStaffRole(user.role)) return;
-    const firstItem = PANEL_MENU[user.role][0];
-    if (firstItem) router.replace(firstItem.href);
-  }, [user, router]);
-
-  return <LoadingState />;
+  return <PanelHomeRedirect />;
 }

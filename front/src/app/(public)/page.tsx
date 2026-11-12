@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { LandingBookingProvider } from "@/features/landing/booking-context";
 import { BookingSection } from "@/features/landing/components/booking-section";
 import { Hero } from "@/features/landing/components/hero";
@@ -6,6 +7,11 @@ import { PortalSection } from "@/features/landing/components/portal-section";
 import { ServicesSection } from "@/features/landing/components/services-section";
 import { TeamSection } from "@/features/landing/components/team-section";
 import { VetBotSection } from "@/features/landing/components/vetbot-section";
+import { CLINIC } from "@/features/landing/content";
+
+export const metadata: Metadata = {
+  title: { absolute: `VetCare | Clínica veterinaria en ${CLINIC.city}` },
+};
 
 export default function HomePage() {
   return (

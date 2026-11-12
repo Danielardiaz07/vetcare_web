@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/features/auth/auth-provider";
 import { invoiceErrorMessage, isConflict } from "@/features/invoices/errors";
 import { INVOICE_STATUS, PAYMENT_METHOD_LABELS } from "@/features/invoices/labels";
 import { ownerSearchSchema, type OwnerSearchInput } from "@/features/invoices/schemas";
@@ -21,6 +23,7 @@ import { ownerDocument, ownerFullName } from "@/features/owners/labels";
 import { clinicDateOf } from "@/lib/clinic-time";
 import { FIELD_LIMITS, IVA_RATE_PERCENT, ROUTES } from "@/lib/constants";
 import { formatCop, formatDate } from "@/lib/format";
+import { canOperateReception } from "@/lib/panel-menu";
 import { createInvoice, getPendingConcepts, taxOf } from "@/services/invoices";
 import { listOwners } from "@/services/owners";
 import type { Invoice, Owner, PaymentMethod, PendingConcept } from "@/types/domain";
@@ -46,8 +49,18 @@ const idsOf = (concepts: PendingConcept[], kind: PendingConcept["kind"]) =>
 const conceptDate = (concept: PendingConcept) => formatDate(clinicDateOf(new Date(concept.date)));
 
 export function NewInvoice() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const canCreate = user ? canOperateReception(user.role) : false;
   const [owner, setOwner] = useState<Owner | null>(null);
   const [created, setCreated] = useState<Invoice | null>(null);
+
+  // D-42: el administrador comparte la sección Facturación, pero como supervisor no factura.
+  useEffect(() => {
+    if (user && !canCreate) router.replace(ROUTES.panelInvoices);
+  }, [user, canCreate, router]);
+
+  if (!canCreate) return <LoadingState />;
 
   if (created) {
     return (

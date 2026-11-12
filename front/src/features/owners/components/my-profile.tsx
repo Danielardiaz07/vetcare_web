@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Icon } from "@/components/ui/icon";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useToast } from "@/components/ui/toast";
-import { ChangePasswordDialog } from "@/features/owners/components/change-password-dialog";
+import { ChangePasswordDialog } from "@/features/auth/components/change-password-dialog";
 import { EditContactDialog } from "@/features/owners/components/edit-contact-dialog";
 import { ownerDocument, ownerFullName } from "@/features/owners/labels";
 import { PetCard } from "@/features/patients/components/pet-card";

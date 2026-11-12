@@ -129,9 +129,9 @@ export type TeamMember = {
   photo: string | null;
 };
 
-// Mismos veterinarios que los datos de prueba del frontend (services/mocks/fixtures.ts).
+// Los mismos veterinarios de la base de demostración (back/prisma/seed-demo.ts), para que quien
+// agende vea en la agenda al equipo que anuncia la portada.
 export const LANDING_TEAM: TeamMember[] = [
-  { name: "Dra. Natalia Quintero Ramos", specialty: "Medicina general", photo: null },
-  { name: "Dr. Andrés Mejía Torres", specialty: "Cirugía", photo: null },
-  { name: "Dra. Mariana Arzuaga Pinto", specialty: "Dermatología veterinaria", photo: null },
+  { name: "Dra. Laura Gómez Ruiz", specialty: "Medicina general", photo: null },
+  { name: "Dr. Andrés Pérez Mora", specialty: "Medicina interna", photo: null },
 ];

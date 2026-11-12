@@ -241,11 +241,14 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 
 ### 7.2 Rutas del frontend
 
+Cada ruta define su `metadata.title` y el layout raíz lo completa como “Título | VetCare”; la portada usa “VetCare | Clínica veterinaria en Valledupar”. Una sección del panel que no está en el menú del rol devuelve a `/panel` (RN-13). En la barra superior del panel, el botón con el usuario y su rol abre “Cambiar contraseña” (D-43).
+
 | Ruta | Quién entra | Para qué |
 |------|-------------|----------|
 | `/` | Cualquiera | Portada |
 | `/login` | Cualquiera | Iniciar sesión |
 | `/register` | Cualquiera | Crear cuenta con verificación OTP |
+| `/reset-password` | Cualquiera | Crear la contraseña nueva desde el enlace del correo (`?token=`, D-31) |
 | `/portal` | Propietario | Inicio: saludo, próxima cita y mascotas |
 | `/portal/appointments` | Propietario | Mis citas |
 | `/portal/appointments/new` | Propietario | Agendar cita |
@@ -254,15 +257,17 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `/portal/invoices` | Propietario | Facturas y su PDF |
 | `/portal/profile` | Propietario | Mi perfil |
 | `/portal/pets/new` | Propietario | Agregar mascota |
+| `/panel` | Personal | Sin contenido propio: lleva a la primera sección del menú del rol |
 | `/panel/agenda` | Recepcionista, veterinario, estilista | Agenda (Mi agenda para veterinario y estilista) |
 | `/panel/owners` | Recepcionista | Propietarios |
-| `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas y desactivar |
+| `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas, editar, desactivar y agregar mascota |
 | `/panel/patients` | Recepcionista, veterinario | Pacientes |
 | `/panel/patients/[id]` | Recepcionista, veterinario | Ficha del paciente: datos, carné, historial con notas internas y estética; el veterinario registra cirugías, exámenes e internaciones (D-34) |
 | `/panel/attention` | Veterinario, estilista | Atención: citas confirmadas de hoy por atender (destino del menú) |
 | `/panel/attention/[appointmentId]` | Veterinario, estilista | Atención de la cita: consulta o vacuna (veterinario) o servicio estético (estilista, D-33) |
-| `/panel/invoices` | Recepcionista | Facturación |
-| `/panel/users` | Administrador | Usuarios |
+| `/panel/invoices` | Recepcionista, administrador | Facturación: listado con filtro por estado; recepción ve “Nueva factura” y el administrador solo consulta y anula (RN-74, D-42) |
+| `/panel/invoices/new` | Recepcionista | Nueva factura con los conceptos pendientes de un propietario (RF-23); el administrador vuelve a `/panel/invoices` (D-42) |
+| `/panel/users` | Administrador | Usuarios: cuentas del personal con nombre (del perfil de veterinario o estilista), correo, rol y estado (D-43) |
 | `/panel/staff` | Administrador | Personal y horarios |
 | `/panel/inventory` | Administrador | Inventario: pestañas Medicamentos y Vacunas con nombre, stock, precio, vencimiento y estado (stock crítico, por vencer o vencido); conteo de alertas con filtro, buscador por nombre, paginación y modal para crear y editar. Los umbrales los da la API; una vacuna nueva se crea en `POST /vaccines` y luego se completa su stock (RN-55, RN-56, RN-57, D-36) |
 | `/panel/reports` | Administrador | Indicadores: citas por estado, inasistencias, servicios más solicitados e ingresos del periodo elegido (por defecto el mes actual), con barras en CSS sin librería de gráficas (RN-80, D-35) |

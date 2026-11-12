@@ -10,7 +10,7 @@
 | RF-02 | Seguridad | Iniciar y cerrar sesión | Autenticación con correo y contraseña; redirige al portal o al panel según el rol | Todos | M |
 | RF-03 ★ | Seguridad | Recuperar contraseña | Enlace de restablecimiento al correo registrado, válido 30 min; la cuenta se identifica por correo o por cédula (RN-11, D-18) | Todos | S |
 | RF-04 | Seguridad | Gestionar usuarios del personal | Crear, editar, activar/desactivar usuarios y asignar rol (Administrador, Recepcionista, Veterinario, Estilista) | Administrador | M |
-| RF-05 | Gestión | Gestionar propietarios | Registrar, consultar, actualizar y desactivar propietarios | Recepcionista, Administrador | M |
+| RF-05 | Gestión | Gestionar propietarios | Registrar, consultar, actualizar y desactivar propietarios | Recepcionista (D-42) | M |
 | RF-06 | Gestión | Gestionar pacientes | Registrar, consultar, actualizar y desactivar mascotas (especie, raza, sexo, peso, fecha de nacimiento, foto; tipos en RN-15) asociadas a un propietario | Recepcionista, Veterinario | M |
 | RF-07 | Gestión | Gestionar personal y horarios | Registrar veterinarios (especialidad) y estilistas; definir horarios de atención y duración de cada tipo de cita | Administrador | M |
 | RF-08 ★ | Portal | Consultar mis mascotas | Lista y ficha de cada mascota (edad calculada, peso, especie, raza, próxima cita) | Propietario | M |
@@ -28,7 +28,7 @@
 | RF-20 | Clínico | Registrar cirugía, internación y examen de laboratorio | Procedimientos, ingreso/egreso de internación y resultados de exámenes del paciente | Veterinario | S |
 | RF-21 | Estética | Registrar servicio estético | Baño, corte o peluquería realizados por un estilista, con observaciones y costo | Estilista | C |
 | RF-22 | Inventario | Gestionar medicamentos y vacunas | CRUD con stock, precio y vencimiento; alerta de stock crítico y productos por vencer | Administrador | S |
-| RF-23 | Facturación | Generar factura | Factura de un propietario con detalle de consultas, servicios y medicamentos; subtotal, IVA y total; método de pago | Recepcionista | M |
+| RF-23 | Facturación | Generar factura | Factura de un propietario con detalle de consultas, servicios y medicamentos; subtotal, IVA y total; método de pago | Recepcionista (D-42) | M |
 | RF-24 | Reportes | Consultar reportes e indicadores | Tablero: citas por estado, inasistencias, servicios más solicitados, ingresos por periodo | Administrador | C |
 
 ## 2. Especificación detallada de los RF principales
