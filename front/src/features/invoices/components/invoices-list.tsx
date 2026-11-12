@@ -17,6 +17,7 @@ import { INVOICE_STATUS, PAYMENT_METHOD_LABELS } from "@/features/invoices/label
 import { ownerFullName } from "@/features/owners/labels";
 import { clinicDateOf } from "@/lib/clinic-time";
 import { ROUTES } from "@/lib/constants";
+import { canOperateReception } from "@/lib/panel-menu";
 import { formatCop, formatDate } from "@/lib/format";
 import { listInvoices } from "@/services/invoices";
 import type { Paginated } from "@/types/api";
@@ -37,6 +38,7 @@ export function InvoicesList() {
   const [voiding, setVoiding] = useState<Invoice | null>(null);
   // RN-74: anular es exclusivo del administrador.
   const canVoid = user?.role === "ADMIN";
+  const canCreate = user ? canOperateReception(user.role) : false;
 
   useEffect(() => {
     let active = true;
@@ -133,12 +135,14 @@ export function InvoicesList() {
             <option value="VOIDED">Anuladas</option>
           </Select>
         </div>
-        <Link
-          href={ROUTES.panelNewInvoice}
-          className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
-        >
-          Nueva factura
-        </Link>
+        {canCreate && (
+          <Link
+            href={ROUTES.panelNewInvoice}
+            className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
+          >
+            Nueva factura
+          </Link>
+        )}
       </div>
 
       {list.status === "loading" && <LoadingState />}

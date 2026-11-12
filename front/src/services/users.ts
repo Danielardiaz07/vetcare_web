@@ -2,7 +2,7 @@ import { request } from "@/services/http-client";
 import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
 import { MOCK_PASSWORD, mockProfile, mockStaffAccounts } from "@/services/mocks/fixtures";
 import type { Paginated } from "@/types/api";
-import type { ChangePasswordInput } from "@/features/owners/schemas";
+import type { ChangePasswordInput } from "@/features/auth/schemas";
 import type { StaffUser, UserProfile, UserStatus } from "@/types/auth";
 
 const NOT_FOUND = 404;

@@ -139,6 +139,20 @@ export const createGroomer = (input: CreateStaffInput) => createStaff("groomers"
 export const updateGroomer = (id: string, input: UpdateStaffInput) =>
   updateStaff("groomers", id, input);
 
+// La cuenta (User) no guarda nombre: solo lo tienen los perfiles de veterinario y estilista (D-22).
+// Devuelve el nombre de cada cuenta que ya tiene perfil, indexado por el id de la cuenta.
+export async function listStaffNamesByAccount(): Promise<Map<string, string>> {
+  const [veterinarians, groomers] = await Promise.all([
+    listStaff("veterinarians", { page: 1, limit: ALL_LIMIT }),
+    listStaff("groomers", { page: 1, limit: ALL_LIMIT }),
+  ]);
+  const names = new Map<string, string>();
+  for (const profile of [...veterinarians.data, ...groomers.data]) {
+    if (profile.userId) names.set(profile.userId, `${profile.firstNames} ${profile.lastNames}`);
+  }
+  return names;
+}
+
 // D-22: la cuenta se crea antes en Usuarios; aquí solo se ofrecen las activas de ese rol sin perfil.
 export async function listAccountsWithoutProfile(kind: StaffKind): Promise<StaffUser[]> {
   const role = ROLE_OF_KIND[kind];

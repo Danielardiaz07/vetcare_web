@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { PasswordField } from "@/features/auth/components/password-field";
 import { isNetworkError, NETWORK_ERROR_MESSAGE } from "@/features/auth/errors";
-import { changePasswordSchema, type ChangePasswordInput } from "@/features/owners/schemas";
+import { changePasswordSchema, type ChangePasswordInput } from "@/features/auth/schemas";
 import { FIELD_LIMITS } from "@/lib/constants";
 import { ApiError } from "@/services/http-client";
 import { changeMyPassword, CURRENT_PASSWORD_INCORRECT } from "@/services/users";
