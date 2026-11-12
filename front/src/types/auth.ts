@@ -31,12 +31,26 @@ export interface OwnerSummary {
   address: string | null;
 }
 
+export interface StaffProfileSummary {
+  id: string;
+  documentType: DocumentType;
+  documentNumber: string;
+  firstNames: string;
+  lastNames: string;
+  phone: string;
+  specialty?: string;
+  active: boolean;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   role: Role;
   status: UserStatus;
   owner: OwnerSummary | null;
+  // P-16: la API los agregará a /users/me; mientras tanto llegan undefined (no es lo mismo que null = sin perfil).
+  veterinarian?: StaffProfileSummary | null;
+  groomer?: StaffProfileSummary | null;
 }
 
 export interface StaffUser {

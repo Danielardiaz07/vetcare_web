@@ -241,7 +241,7 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 
 ### 7.2 Rutas del frontend
 
-Cada ruta define su `metadata.title` y el layout raíz lo completa como “Título | VetCare”; la portada usa “VetCare | Clínica veterinaria en Valledupar”. Una sección del panel que no está en el menú del rol devuelve a `/panel` (RN-13). En la barra superior del panel, el botón con el usuario y su rol abre “Cambiar contraseña” (D-43).
+Cada ruta define su `metadata.title` y el layout raíz lo completa como “Título | VetCare”; la portada usa “VetCare | Clínica veterinaria en Valledupar”. Una sección del panel que no está en el menú del rol devuelve a `/panel` (RN-13). En la barra superior del panel, el usuario (su nombre si tiene perfil, si no su correo) y su rol llevan a “Mi cuenta” (D-44).
 
 | Ruta | Quién entra | Para qué |
 |------|-------------|----------|
@@ -258,6 +258,7 @@ Cada ruta define su `metadata.title` y el layout raíz lo completa como “Títu
 | `/portal/profile` | Propietario | Mi perfil |
 | `/portal/pets/new` | Propietario | Agregar mascota |
 | `/panel` | Personal | Sin contenido propio: lleva a la primera sección del menú del rol |
+| `/panel/account` | Personal | Mi cuenta: correo y rol; veterinarios y estilistas además sus datos y su horario (solo consulta); cambiar contraseña. Se entra desde la barra superior (D-44) |
 | `/panel/agenda` | Recepcionista, veterinario, estilista | Agenda (Mi agenda para veterinario y estilista) |
 | `/panel/owners` | Recepcionista | Propietarios |
 | `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas, editar, desactivar y agregar mascota |
