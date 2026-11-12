@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { PasswordField } from "@/features/auth/components/password-field";
 import { isNetworkError, NETWORK_ERROR_MESSAGE } from "@/features/auth/errors";
 import { RECOVER_PASSWORD_HREF } from "@/features/auth/redirects";
+import { DataPolicyLink } from "@/features/landing/components/data-policy-link";
 import {
   DOCUMENT_TYPE_LABELS,
   REGISTER_DOCUMENT_TYPES,
@@ -204,9 +205,9 @@ export function RegisterForm({ onRegistered, onGoToLogin, onForgotPassword }: Re
         label={
           <>
             Acepto el tratamiento de mis datos personales (
-            <Link href={ROUTES.dataPolicy} className="font-semibold text-brand-700 underline">
+            <DataPolicyLink className="font-semibold text-brand-700 underline">
               ver la política
-            </Link>
+            </DataPolicyLink>
             )
           </>
         }

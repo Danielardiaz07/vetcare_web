@@ -24,8 +24,6 @@ export const ROUTES = {
   panelStaff: "/panel/staff",
   panelInventory: "/panel/inventory",
   panelReports: "/panel/reports",
-  // El texto de la Ley 1581 va en el pie de la portada.
-  dataPolicy: "/#tratamiento-de-datos",
 } as const;
 
 export const PROTECTED_ROUTE_PREFIXES = [ROUTES.portal, ROUTES.panel] as const;

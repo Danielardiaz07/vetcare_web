@@ -3,6 +3,7 @@ import {
   BOOKABLE_SERVICES,
   CLINIC,
   directionsUrl,
+  emergencyPhoneUrl,
   LANDING_SERVICES,
   phoneUrl,
   whatsappUrl,
@@ -57,7 +58,7 @@ const PAYMENT_REPLY: ChatReply = {
 
 const EMERGENCY_REPLY: ChatReply = {
   text: `Si es una urgencia no esperes una cita: llama ya al ${CLINIC.emergencyPhone}.`,
-  links: [{ label: "Llamar a urgencias", href: `tel:${CLINIC.emergencyPhone}` }],
+  links: [{ label: "Llamar a urgencias", href: emergencyPhoneUrl }],
 };
 
 const GREETING_REPLY: ChatReply = {

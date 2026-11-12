@@ -9,7 +9,7 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { homeRouteFor } from "@/features/auth/redirects";
 import { useLandingBooking } from "@/features/landing/booking-context";
 import { SectionHeading } from "@/features/landing/components/section-heading";
-import { BOOKING_SECTION_ID, CLINIC } from "@/features/landing/content";
+import { BOOKING_SECTION_ID, CLINIC, emergencyPhoneUrl } from "@/features/landing/content";
 import { MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
 
 const BOOKING_PERKS = [
@@ -95,10 +95,7 @@ export function BookingSection() {
           <p className="text-sm text-muted">
             <strong className="font-semibold text-ink">¿Es una urgencia?</strong> No esperes una
             cita: llama al{" "}
-            <a
-              href={`tel:${CLINIC.emergencyPhone}`}
-              className="font-semibold text-brand-700 underline"
-            >
+            <a href={emergencyPhoneUrl} className="font-semibold text-brand-700 underline">
               {CLINIC.emergencyPhone}
             </a>
             .
