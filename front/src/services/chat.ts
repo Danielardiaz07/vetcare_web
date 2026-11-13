@@ -37,7 +37,7 @@ const CONTACT_LINKS: ChatLink[] = [
 
 const FAQ_REPLIES: Record<FaqTopic, ChatReply> = {
   hours: {
-    text: `Atendemos de lunes a viernes ${CLINIC.weekdayHours} y los sábados ${CLINIC.saturdayHours}. Para urgencias: ${CLINIC.emergencyHours}, al ${CLINIC.emergencyPhone}.`,
+    text: `Atendemos de lunes a viernes ${CLINIC.weekdayHours} y los sábados ${CLINIC.saturdayHours}; para urgencias, ${CLINIC.emergencyHours}, al ${CLINIC.emergencyPhone}.`,
   },
   services: {
     text: `Ofrecemos ${listOf(LANDING_SERVICES.map(serviceLabel))}. En línea puedes agendar ${listOf(BOOKABLE_SERVICES.map(serviceLabel))}; lo demás se coordina con la clínica. Los valores están en la sección Servicios.`,

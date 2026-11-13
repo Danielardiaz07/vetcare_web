@@ -28,6 +28,8 @@
   --color-danger: #be123c;
   --color-danger-bg: #fff1f2;
   --color-danger-border: #fecdd3;
+  /* Urgencia sobre fondo navy: el rojo normal no alcanza contraste ahí. */
+  --color-danger-on-dark: #fb7185;
   --color-info: #1f6f85;
   --color-info-bg: #eef7fa;
   --color-info-border: #c5e1e9;
@@ -37,6 +39,39 @@
   --radius-card: 24px;
   --radius-block: 32px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* D-45: alturas fijas del encabezado público. La franja de urgencias se va con el scroll y solo
+     queda el menú; las secciones se detienen justo en su borde inferior (header-bar) y el inicio,
+     arriba del todo para que se vea la franja (header). */
+  --spacing-header-strip: 2.75rem;
+  --spacing-header-bar: 4.25rem;
+  --spacing-header: calc(var(--spacing-header-strip) + var(--spacing-header-bar) + 1px);
+
+  /* D-45: sombra de las tarjetas destacadas de la landing (agendar, portal, ubicación). */
+  --shadow-soft: 0 1px 2px rgb(26 46 59 / 0.05), 0 12px 32px rgb(26 46 59 / 0.06);
+
+  --animate-fade-in: fade-in 300ms var(--ease-out) both;
+  --animate-fade-in-late: fade-in 400ms var(--ease-out) 180ms both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
   --font-sans:
     var(--font-ibm-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial,
@@ -57,6 +92,38 @@
   :focus-visible {
     outline: 3px solid var(--color-brand-500);
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-200);
+    color: var(--color-ink);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Los globos del chat de ejemplo aparecen al entrar en pantalla; sin soporte se ven quietos. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .rise-on-view > * {
+      animation: rise var(--ease-out) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
   }
 }
 
