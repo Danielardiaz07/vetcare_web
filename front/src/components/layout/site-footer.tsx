@@ -16,11 +16,12 @@ const ACCESS_LINK_CLASS =
 
 export function SiteFooter() {
   return (
-    <footer id="contacto" className="scroll-mt-28 bg-navy text-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6">
+    // pb-28: en móvil el botón flotante de VetBot no tapa la última línea.
+    <footer id="contacto" className="scroll-mt-header-bar bg-navy text-white">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pt-20 pb-28 sm:px-6 sm:pb-20">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-2">
-            <span className="text-lg font-semibold">VetCare</span>
+            <span className="text-lg font-semibold tracking-[-0.02em]">VetCare</span>
             <p className="text-white/75">
               Clínica veterinaria con atención presencial y herramientas digitales para el cuidado
               de tu mascota.
@@ -42,8 +43,14 @@ export function SiteFooter() {
             <h2 className="font-semibold">Horario</h2>
             <p className="text-white/75">Lunes a viernes: {CLINIC.weekdayHours}</p>
             <p className="text-white/75">Sábados: {CLINIC.saturdayHours}</p>
-            <p className="text-white/75">
-              Urgencias: {CLINIC.emergencyHours} · {CLINIC.emergencyPhone}
+            <p className="flex items-baseline gap-2 font-semibold text-white">
+              <span
+                aria-hidden="true"
+                className="size-2 flex-none -translate-y-px rounded-full bg-danger-on-dark"
+              />
+              <span>
+                Urgencias: {CLINIC.emergencyHours} · {CLINIC.emergencyPhone}
+              </span>
             </p>
           </div>
           <nav aria-label="Accesos" className="flex flex-col gap-1">

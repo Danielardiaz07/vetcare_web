@@ -20,52 +20,55 @@ export function VetBotSection() {
 
   return (
     <>
-      <section id="asistente" aria-labelledby="asistente-title" className="scroll-mt-28 bg-surface">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center">
-          <div className="flex flex-col items-start gap-6">
-            <SectionHeading
-              id="asistente-title"
-              title="¿Tienes una duda? Pregúntale a nuestro asistente"
-            >
-              VetBot responde preguntas frecuentes sobre servicios, horarios y ubicación, y te lleva
-              a agendar tu cita. No reemplaza la consulta con el veterinario.
-            </SectionHeading>
-            <Button onClick={() => setChatOpen(true)}>
-              <Icon name="message" width={20} height={20} />
-              Abrir chat
-            </Button>
+      {/* D-45: bloque arena dentro del ancho de la página, el único toque cálido de la portada. */}
+      <section id="asistente" aria-labelledby="asistente-title" className="scroll-mt-header-bar">
+        <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+          <div className="flex flex-col gap-10 rounded-block border border-sand-border bg-sand p-[clamp(1.75rem,4.5vw,3.5rem)] lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-col items-start gap-6 lg:flex-[1_1_23.75rem]">
+              <SectionHeading
+                id="asistente-title"
+                title="¿Tienes una duda? Pregúntale a nuestro asistente."
+              >
+                VetBot responde preguntas frecuentes sobre servicios, horarios y ubicación, y te
+                lleva a agendar tu cita. No reemplaza la consulta con el veterinario.
+              </SectionHeading>
+              <Button onClick={() => setChatOpen(true)}>
+                <Icon name="message" width={20} height={20} />
+                Abrir chat
+              </Button>
+            </div>
+            <figure className="flex min-w-0 flex-col gap-3 lg:flex-[1_1_21.25rem]">
+              <ol aria-hidden="true" className="rise-on-view flex flex-col gap-2.5">
+                {SAMPLE_CHAT.map((message) => (
+                  <li
+                    key={message.text}
+                    className={
+                      message.from === "user"
+                        ? "max-w-[85%] self-end rounded-chip rounded-br-[4px] bg-brand-600 px-3.5 py-2.5 text-[15px] leading-normal text-white"
+                        : "flex max-w-[85%] flex-col items-start gap-2 self-start"
+                    }
+                  >
+                    {message.from === "bot" ? (
+                      <>
+                        <span className="flex items-center gap-2 px-0.5 text-sm font-semibold text-ink">
+                          <span className="size-2 rounded-full bg-brand-500" />
+                          VetBot
+                        </span>
+                        <span className="rounded-chip rounded-bl-[4px] border border-line bg-surface px-3.5 py-2.5 text-[15px] leading-normal text-ink">
+                          {message.text}
+                        </span>
+                      </>
+                    ) : (
+                      message.text
+                    )}
+                  </li>
+                ))}
+              </ol>
+              <figcaption className="text-sm text-subtle">
+                Ejemplo de conversación con VetBot
+              </figcaption>
+            </figure>
           </div>
-          <figure className="flex flex-col gap-3 rounded-card border border-line bg-canvas p-5">
-            <ol aria-hidden="true" className="flex flex-col gap-3">
-              {SAMPLE_CHAT.map((message) => (
-                <li
-                  key={message.text}
-                  className={
-                    message.from === "user"
-                      ? "max-w-[85%] self-end rounded-control rounded-br-sm bg-brand-600 px-4 py-2.5 text-white"
-                      : "flex max-w-[85%] flex-col gap-1 self-start"
-                  }
-                >
-                  {message.from === "bot" ? (
-                    <>
-                      <span className="flex items-center gap-1.5 text-sm font-semibold text-brand-700">
-                        <span className="size-2 rounded-full bg-success" />
-                        VetBot
-                      </span>
-                      <span className="rounded-control rounded-bl-sm border border-line bg-surface px-4 py-2.5 text-ink">
-                        {message.text}
-                      </span>
-                    </>
-                  ) : (
-                    message.text
-                  )}
-                </li>
-              ))}
-            </ol>
-            <figcaption className="text-center text-sm text-subtle">
-              Ejemplo de conversación con VetBot
-            </figcaption>
-          </figure>
         </div>
       </section>
       <ChatWidget open={chatOpen} onOpenChange={setChatOpen} />

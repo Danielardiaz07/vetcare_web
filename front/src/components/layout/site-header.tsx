@@ -3,21 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/components/ui/cn";
 import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useAuthDialog } from "@/features/auth/components/auth-dialog";
 import { homeRouteFor } from "@/features/auth/redirects";
-import { CLINIC, emergencyPhoneUrl, LANDING_NAV } from "@/features/landing/content";
+import {
+  CLINIC,
+  emergencyPhoneUrl,
+  HOURS_SUMMARY,
+  LANDING_NAV,
+  LANDING_SECTION_IDS,
+  whatsappUrl,
+} from "@/features/landing/content";
 import { useActiveSection } from "@/features/landing/use-active-section";
 import { ROUTES } from "@/lib/constants";
 
-const SECTION_IDS = LANDING_NAV.flatMap((item) => (item.sectionId ? [item.sectionId] : []));
+// Botón suave del prototipo (D-45): fondo petróleo claro con borde, para no competir con "Agendar cita".
+const SOFT_ACTION_CLASS =
+  "inline-flex items-center justify-center gap-2 rounded-control border-[1.5px] border-brand-200 bg-brand-100 font-semibold text-brand-600 transition-[background-color,transform] duration-150 ease-out hover:bg-brand-200 active:scale-[0.97] motion-reduce:active:scale-100";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const isHome = pathname === ROUTES.home;
-  const activeSection = useActiveSection(isHome ? SECTION_IDS : []);
+  const headerRef = useRef<HTMLElement>(null);
+  const activeSection = useActiveSection(isHome ? LANDING_SECTION_IDS : [], headerRef);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -48,37 +59,57 @@ export function SiteHeader() {
     });
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
-      <div className="bg-navy text-sm text-white">
-        <p className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-2 sm:px-6">
-          <Icon name="phone" width={16} height={16} />
-          <span>
-            Urgencias 24 h:{" "}
+    // La franja de urgencias (header-strip, con su borde incluido) se va con el scroll y solo queda
+    // fijo el menú (header-bar). Las secciones usan esas mismas alturas para detenerse (D-45).
+    <header
+      ref={headerRef}
+      className="sticky -top-header-strip z-30 border-b border-line bg-canvas"
+    >
+      <div className="h-header-strip border-b border-divider bg-surface text-[13px] text-muted">
+        <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+          <p className="flex min-w-0 items-center gap-2">
+            <Icon name="phone" width={16} height={16} className="flex-none text-danger" />
+            <span className="truncate">
+              Urgencias 24 h:{" "}
+              <a
+                href={emergencyPhoneUrl}
+                className="font-semibold text-danger underline-offset-2 hover:underline"
+              >
+                {CLINIC.emergencyPhone}
+              </a>
+            </span>
+          </p>
+          <div className="flex flex-none items-center gap-4">
+            <span className="hidden lg:inline">Atención con cita de {HOURS_SUMMARY}</span>
             <a
-              href={emergencyPhoneUrl}
-              className="font-semibold underline-offset-2 hover:underline"
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`WhatsApp ${CLINIC.whatsappPhone}`}
+              className="inline-flex h-full min-w-11 items-center justify-center gap-2 font-semibold text-ink hover:text-brand-700"
             >
-              {CLINIC.emergencyPhone}
+              <Icon name="message-circle" width={16} height={16} className="text-success" />
+              <span className="hidden sm:inline">WhatsApp {CLINIC.whatsappPhone}</span>
             </a>
-          </span>
-        </p>
+          </div>
+        </div>
       </div>
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex h-header-bar w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           href={ROUTES.home}
-          className="flex items-center gap-2 text-lg font-semibold text-brand-700"
+          className="flex flex-none items-center gap-3 text-2xl font-semibold tracking-[-0.02em] text-ink"
         >
           <Image src="/logo.png" alt="" width={44} height={44} priority />
           VetCare
         </Link>
-        <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label="Principal" className="hidden items-center gap-6 lg:flex">
           {navLinks(
-            "rounded-control px-3 py-2 text-muted transition-colors duration-150 ease-out hover:text-ink aria-[current=location]:bg-brand-50 aria-[current=location]:font-semibold aria-[current=location]:text-brand-700",
+            "border-b-2 border-transparent pt-3 pb-2 text-[15px] font-semibold text-muted transition-colors duration-150 ease-out hover:text-brand-600 aria-[current=location]:border-brand-600 aria-[current=location]:text-brand-700",
           )}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="hidden sm:flex">
-            <SessionActions />
+            <SessionActions layout="bar" />
           </div>
           <button
             type="button"
@@ -86,21 +117,27 @@ export function SiteHeader() {
             aria-controls="menu-movil"
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             onClick={() => setMenuOpen((open) => !open)}
-            className="inline-flex size-11 items-center justify-center rounded-control text-ink hover:bg-brand-50 lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-control border-[1.5px] border-line bg-surface text-ink hover:bg-brand-50 lg:hidden"
           >
-            <Icon name={menuOpen ? "close" : "menu"} />
+            <Icon name={menuOpen ? "close" : "menu"} width={20} height={20} />
           </button>
         </div>
       </div>
       {menuOpen && (
-        <div id="menu-movil" className="border-t border-line bg-surface lg:hidden">
-          <nav aria-label="Principal" className="mx-auto flex max-w-6xl flex-col px-4 py-2 sm:px-6">
+        <div
+          id="menu-movil"
+          className="border-t border-line transition-[opacity,translate] duration-200 ease-out starting:-translate-y-1.5 starting:opacity-0 motion-reduce:starting:translate-y-0 lg:hidden"
+        >
+          <nav
+            aria-label="Principal"
+            className="mx-auto flex max-w-6xl flex-col px-4 pt-2 text-lg font-semibold sm:px-6"
+          >
             {navLinks(
-              "flex min-h-11 items-center border-b border-divider text-ink aria-[current=location]:font-semibold aria-[current=location]:text-brand-700",
+              "flex min-h-12 items-center border-b border-divider text-ink hover:text-brand-600 aria-[current=location]:text-brand-700",
             )}
           </nav>
-          <div className="mx-auto flex max-w-6xl px-4 pb-4 sm:hidden">
-            <SessionActions onAction={closeMenu} />
+          <div className="mx-auto flex max-w-6xl flex-col px-4 pt-4 pb-5 sm:hidden">
+            <SessionActions layout="menu" onAction={closeMenu} />
           </div>
         </div>
       )}
@@ -108,9 +145,16 @@ export function SiteHeader() {
   );
 }
 
-function SessionActions({ onAction }: { onAction?: () => void }) {
+type SessionActionsProps = {
+  // "bar": junto al menú en pantallas medianas y grandes; "menu": a lo ancho en el menú móvil.
+  layout: "bar" | "menu";
+  onAction?: () => void;
+};
+
+function SessionActions({ layout, onAction }: SessionActionsProps) {
   const { user, status, signOut } = useAuth();
   const { open } = useAuthDialog();
+  const inMenu = layout === "menu";
 
   if (status === "loading") return <span className="h-11" aria-hidden="true" />;
 
@@ -122,34 +166,55 @@ function SessionActions({ onAction }: { onAction?: () => void }) {
           onAction?.();
           open();
         }}
-        className="inline-flex min-h-11 items-center gap-2 rounded-control border border-field-border px-4 font-medium text-ink hover:bg-brand-50"
+        className={cn(SOFT_ACTION_CLASS, "px-4", inMenu ? "min-h-12 w-full" : "min-h-11")}
       >
-        <Icon name="log-in" width={18} height={18} />
+        <Icon name="user" width={18} height={18} />
         Iniciar sesión
       </button>
     );
   }
 
+  const signOutButton = (
+    <button
+      type="button"
+      onClick={() => {
+        onAction?.();
+        void signOut();
+      }}
+      className={
+        inMenu
+          ? "min-h-12 w-full rounded-control border-[1.5px] border-line bg-surface font-semibold text-ink hover:bg-brand-50"
+          : "min-h-11 rounded-control px-3 font-semibold text-muted underline underline-offset-[3px] hover:text-ink"
+      }
+    >
+      Cerrar sesión
+    </button>
+  );
+
+  if (inMenu) {
+    return (
+      <div className="flex flex-col gap-3">
+        <Link
+          href={homeRouteFor(user.role)}
+          onClick={onAction}
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-brand-600 font-semibold text-white hover:bg-brand-700"
+        >
+          Ir a mi portal
+        </Link>
+        {signOutButton}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2">
-      <Link
-        href={homeRouteFor(user.role)}
-        onClick={onAction}
-        className="inline-flex min-h-11 items-center gap-2 rounded-control bg-brand-600 px-4 font-medium text-white hover:bg-brand-700"
-      >
-        <Icon name="user" width={18} height={18} />
+      <Link href={homeRouteFor(user.role)} className={cn(SOFT_ACTION_CLASS, "min-h-11 pr-4 pl-2")}>
+        <span className="flex size-8 items-center justify-center rounded-full bg-surface">
+          <Icon name="user" width={18} height={18} />
+        </span>
         Mi portal
       </Link>
-      <button
-        type="button"
-        onClick={() => {
-          onAction?.();
-          void signOut();
-        }}
-        className="min-h-11 rounded-control px-3 font-medium text-muted hover:text-ink"
-      >
-        Cerrar sesión
-      </button>
+      {signOutButton}
     </div>
   );
 }
