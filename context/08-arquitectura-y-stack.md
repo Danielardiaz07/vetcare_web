@@ -233,11 +233,13 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 | `success` / `success-bg` / `success-border` | `#047857` / `#ECFDF5` / `#A7F3D0` |
 | `warning` / `warning-bg` / `warning-border` | `#B45309` / `#FFFBEB` / `#FDE68A` |
 | `danger` / `danger-bg` / `danger-border` | `#BE123C` / `#FFF1F2` / `#FECDD3` |
+| `danger-on-dark` | `#FB7185` (urgencia sobre fondo navy, D-45) |
 | `info` / `info-bg` / `info-border` | `#1F6F85` / `#EEF7FA` / `#C5E1E9` |
 
 - Fuente: **IBM Plex Sans**.
 - Logo: `front/public/logo.png`; ícono de la pestaña: `front/src/app/icon.png`.
 - Radios: 10, 14, 24 y 32 px.
+- Landing (D-45): Equipo sobre hueso (`canvas`), Ubicación sobre blanco (`surface`) y Asistente sobre hueso con bloque arena (`sand`); espacio superior e inferior equilibrado en todas las secciones salvo Inicio, sin alturas fijas. Servicios y Ubicación usan 64 px por lado desde `lg` para reducir el espacio vacío en escritorio; los demás espacios conservan la suma por breakpoint. Tarjetas destacadas con `shadow-soft` (`0 1px 2px` y `0 12px 32px` en navy al 5 % y 6 %); curva `ease-out` `cubic-bezier(0.23, 1, 0.32, 1)`; botones al 97 % al presionarlos y movimiento apagado con “reducir movimiento”.
 
 ### 7.2 Rutas del frontend
 

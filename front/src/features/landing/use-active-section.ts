@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
-// La sección cuenta como vista cuando cruza la franja media de la pantalla, no apenas asoma.
-const VIEWPORT_BAND = "-45% 0px -50% 0px";
+// Margen para que una sección que llega exactamente al borde del menú cuente como la actual.
+const EDGE_TOLERANCE_PX = 1;
 
-export function useActiveSection(sectionIds: string[]): string | null {
+// D-45: la sección activa es la que está justo debajo del borde inferior del encabezado, que es
+// donde queda cada sección al elegirla en el menú. Arriba del todo, la primera.
+export function useActiveSection(
+  sectionIds: readonly string[],
+  headerRef: RefObject<HTMLElement | null>,
+): string | null {
   const [active, setActive] = useState<string | null>(null);
   const key = sectionIds.join(",");
 
@@ -13,19 +18,31 @@ export function useActiveSection(sectionIds: string[]): string | null {
     const sections = key
       .split(",")
       .map((id) => document.getElementById(id))
-      .filter((section): section is HTMLElement => section !== null);
+      .filter((section): section is HTMLElement => section !== null)
+      // En el orden de la página, sin importar el orden en que lleguen los ids.
+      .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     if (sections.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.find((entry) => entry.isIntersecting);
-        if (visible) setActive(visible.target.id);
-      },
-      { rootMargin: VIEWPORT_BAND },
-    );
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [key]);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + EDGE_TOLERANCE_PX;
+      const current = sections.filter((section) => section.getBoundingClientRect().top <= line);
+      setActive((current.at(-1) ?? sections[0])?.id ?? null);
+    };
+    const schedule = () => {
+      if (frame === 0) frame = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame !== 0) cancelAnimationFrame(frame);
+    };
+  }, [key, headerRef]);
 
   return active;
 }

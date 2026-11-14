@@ -16,10 +16,8 @@ export const CLINIC = {
   weekdayHours: "de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.",
   saturdayHours: "de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.",
   emergencyHours: "las 24 horas, todos los días",
-  busDirections:
-    "toma una buseta que vaya al Centro por la Calle 16 y bájate frente a la Gobernación del Cesar; la clínica queda a 50 metros.",
-  carDirections:
-    "llega por la Calle 16 hasta la Gobernación del Cesar y gira por la Carrera 12; la clínica está a media cuadra. Tenemos parqueadero para carros y motos.",
+  busDirections: "busetas al Centro por la Calle 16; bájate en la Gobernación del Cesar.",
+  carDirections: "por la Calle 16 hasta la Gobernación y gira en la Carrera 12. Hay parqueadero.",
 } as const;
 
 const COLOMBIA_CALLING_CODE = "57";
@@ -34,6 +32,11 @@ const mapsQuery = encodeURIComponent(
 );
 
 export const whatsappUrl = `https://wa.me/${internationalDigits(CLINIC.whatsappPhone)}`;
+// Franja superior y ubicación: si el sábado se atiende igual que entre semana, va en una sola frase.
+export const HOURS_SUMMARY =
+  CLINIC.weekdayHours === CLINIC.saturdayHours
+    ? `lunes a sábado, ${CLINIC.weekdayHours}`
+    : `lunes a viernes, ${CLINIC.weekdayHours}; sábados, ${CLINIC.saturdayHours}`;
 export const phoneUrl = telUrl(CLINIC.phone);
 export const emergencyPhoneUrl = telUrl(CLINIC.emergencyPhone);
 export const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
@@ -44,6 +47,18 @@ export const sectionHref = (id: string) => `/#${id}`;
 export const BOOKING_SECTION_ID = "agendar";
 
 type NavItem = { label: string; href: string; sectionId?: string };
+
+// Todas las secciones de la portada, también las que no están en el menú (portal y asistente):
+// así, al pasar por ellas el menú no deja marcada la sección anterior.
+export const LANDING_SECTION_IDS = [
+  "inicio",
+  "servicios",
+  BOOKING_SECTION_ID,
+  "portal",
+  "equipo",
+  "ubicacion",
+  "asistente",
+] as const;
 
 export const LANDING_NAV: NavItem[] = [
   { label: "Inicio", href: sectionHref("inicio"), sectionId: "inicio" },

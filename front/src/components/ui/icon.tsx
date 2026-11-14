@@ -30,7 +30,12 @@ export type IconName =
   | "arrow-right"
   | "log-in"
   | "chart"
-  | "box";
+  | "box"
+  | "check"
+  | "lock"
+  | "bus"
+  | "car"
+  | "message-circle";
 
 const ICON_SIZE = 24;
 
@@ -189,6 +194,30 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="m3 8 9 5 9-5M12 13v8" />
     </>
   ),
+  check: <path d="M20 6 9 17l-5-5" />,
+  lock: (
+    <>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  bus: (
+    <>
+      <rect x="4" y="3" width="16" height="15" rx="3" />
+      <path d="M4 11h16M8 18l-2 3M16 18l2 3" />
+      <circle cx="8" cy="14.5" r="1" />
+      <circle cx="16" cy="14.5" r="1" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="M5 17h14v-5l-2-5H7l-2 5v5z" />
+      <path d="M5 12h14" />
+      <circle cx="8" cy="17" r="2" />
+      <circle cx="16" cy="17" r="2" />
+    </>
+  ),
+  "message-circle": <path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z" />,
 };
 
 type IconProps = Omit<SVGProps<SVGSVGElement>, "name"> & {

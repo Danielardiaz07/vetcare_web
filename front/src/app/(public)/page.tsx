@@ -13,14 +13,15 @@ export const metadata: Metadata = {
   title: { absolute: `VetCare | Clínica veterinaria en ${CLINIC.city}` },
 };
 
+// D-45: mismo orden del prototipo; el portal va justo después de agendar porque ahí sigue la cita.
 export default function HomePage() {
   return (
     <LandingBookingProvider>
       <Hero />
       <ServicesSection />
       <BookingSection />
-      <TeamSection />
       <PortalSection />
+      <TeamSection />
       <LocationSection />
       <VetBotSection />
     </LandingBookingProvider>
