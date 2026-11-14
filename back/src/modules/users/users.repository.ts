@@ -1,4 +1,4 @@
-import type { Owner, Prisma, Role, User, UserStatus } from "@prisma/client";
+import type { Groomer, Owner, Prisma, Role, User, UserStatus, Veterinarian } from "@prisma/client";
 import { prisma } from "@/shared/prisma";
 
 export interface StaffListFilters {
@@ -16,8 +16,18 @@ export interface NewStaffUserData {
 }
 
 export class UsersRepository {
-  findByIdWithOwner(id: string): Promise<(User & { owner: Owner | null }) | null> {
-    return prisma.user.findUnique({ where: { id }, include: { owner: true } });
+  findByIdWithProfile(id: string): Promise<
+    | (User & {
+        owner: Owner | null;
+        veterinarian: Veterinarian | null;
+        groomer: Groomer | null;
+      })
+    | null
+  > {
+    return prisma.user.findUnique({
+      where: { id },
+      include: { owner: true, veterinarian: true, groomer: true },
+    });
   }
 
   findById(id: string): Promise<User | null> {

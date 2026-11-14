@@ -229,7 +229,10 @@ export const OPERATIONS: Operation[] = [
   ),
 
   // Usuarios
-  op("get", "/users/me", TAGS.users, "Ver mi perfil", "authenticated", 200),
+  op("get", "/users/me", TAGS.users, "Ver mi perfil", "authenticated", 200, {
+    description:
+      "Incluye owner, veterinarian o groomer según la cuenta; los que no aplican vienen en null (recepción y administración no tienen perfil, D-44).",
+  }),
   op("patch", "/users/me", TAGS.users, "Actualizar mi contacto", [OWNER], 200, {
     body: updateMyContactRequestSchema,
     description: "Solo teléfono y dirección. El correo y la cédula se cambian en recepción (D-18).",
@@ -257,7 +260,7 @@ export const OPERATIONS: Operation[] = [
     {
       body: updateStaffUserRequestSchema,
       description:
-        "Suspender una cuenta cierra sus sesiones. El administrador no puede suspenderse ni cambiarse el rol a sí mismo (RN-12).",
+        "Suspender una cuenta cierra sus sesiones. El administrador no puede suspenderse ni cambiarse el rol a sí mismo (RN-12), ni cambiar su propia contraseña aquí: lo hace desde Mi cuenta, que pide la actual.",
     },
   ),
 

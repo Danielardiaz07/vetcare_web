@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-13 · 08, 09, 12 · D-47 (resuelve P-16): `GET /users/me` incluye `veterinarian` y `groomer` (con `null` cuando no aplican) para “Mi cuenta”; `PATCH /users/{id}` rechaza que el administrador cambie su propia contraseña, que se cambia con `PUT /users/me/password` (RN-02, D-44).
 - 2026-11-13 · 12 · D-46 (resuelve P-15): la API queda alineada con D-42; solo recepción crea facturas y ve los conceptos pendientes, el administrador conserva listado, detalle y anulación, y `/owners` es solo de recepción (RF-05, RF-23, RN-74). Swagger actualizado.
 - 2026-11-12 · 08, 12 · D-45: rediseño de la landing según el prototipo: franja superior que se oculta al bajar, hero a pantalla completa, servicios en lista, agendar en dos columnas, portal celeste antes del equipo compacto, ubicación blanca con íconos, VetBot en bloque arena y microinteracciones; tokens `shadow-soft` y `danger-on-dark` en 08 §7.1. Espaciado vertical equilibrado sin alturas fijas: Servicios y Ubicación usan 64 px por lado desde `lg`; los demás espacios conservan su suma por breakpoint. Inicio queda intacto.
 - 2026-11-12 · 08, 09, 12 · D-44: ruta `/panel/account` (“Mi cuenta”) para todo el personal, con sus datos y su horario si es veterinario o estilista y el cambio de contraseña de los cuatro roles; la barra del panel muestra el nombre del perfil. P-16: `GET /users/me` debe incluir el perfil del veterinario o estilista.

@@ -32,10 +32,10 @@ export class UsersService {
   ) {}
 
   async getProfile(userId: string): Promise<UserProfileResponseDto> {
-    const user = await this.repository.findByIdWithOwner(userId);
+    const user = await this.repository.findByIdWithProfile(userId);
     if (!user) throw new NotFoundError("Usuario no encontrado");
 
-    const { owner } = user;
+    const { owner, veterinarian, groomer } = user;
     return {
       id: user.id,
       email: user.email,
@@ -50,6 +50,25 @@ export class UsersService {
         phone: owner.phone,
         address: owner.address,
       },
+      veterinarian: veterinarian && {
+        id: veterinarian.id,
+        documentType: veterinarian.documentType,
+        documentNumber: veterinarian.documentNumber,
+        firstNames: veterinarian.firstNames,
+        lastNames: veterinarian.lastNames,
+        phone: veterinarian.phone,
+        specialty: veterinarian.specialty,
+        active: veterinarian.active,
+      },
+      groomer: groomer && {
+        id: groomer.id,
+        documentType: groomer.documentType,
+        documentNumber: groomer.documentNumber,
+        firstNames: groomer.firstNames,
+        lastNames: groomer.lastNames,
+        phone: groomer.phone,
+        active: groomer.active,
+      },
     };
   }
 
@@ -58,7 +77,7 @@ export class UsersService {
     userId: string,
     { phone, address }: UpdateMyContactRequestDto,
   ): Promise<UserProfileResponseDto> {
-    const user = await this.repository.findByIdWithOwner(userId);
+    const user = await this.repository.findByIdWithProfile(userId);
     if (!user?.ownerId) throw new NotFoundError("Propietario no encontrado");
 
     await this.repository.updateOwnerContact(user.ownerId, {
@@ -130,6 +149,10 @@ export class UsersService {
     const changesRole = dto.role !== undefined && dto.role !== user.role;
     if (id === actorId && (losesAccess || changesRole)) {
       throw new ConflictError("No puedes cambiar tu propio rol ni desactivar tu cuenta");
+    }
+
+    if (id === actorId && dto.password !== undefined) {
+      throw new ConflictError("Cambia tu propia contrasena desde Mi cuenta");
     }
 
     const { password, ...rest } = dto;
