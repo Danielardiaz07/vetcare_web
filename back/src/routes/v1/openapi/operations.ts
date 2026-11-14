@@ -262,29 +262,21 @@ export const OPERATIONS: Operation[] = [
   ),
 
   // Propietarios
-  op("post", "/owners", TAGS.owners, "Registrar un propietario", [RECEPTIONIST, ADMIN], 201, {
+  op("post", "/owners", TAGS.owners, "Registrar un propietario", [RECEPTIONIST], 201, {
     body: createOwnerRequestSchema,
   }),
-  op("get", "/owners", TAGS.owners, "Listar propietarios", [RECEPTIONIST, ADMIN], 200, {
+  op("get", "/owners", TAGS.owners, "Listar propietarios", [RECEPTIONIST], 200, {
     query: listOwnersQuerySchema,
   }),
-  op("get", "/owners/{id}", TAGS.owners, "Ver un propietario", [RECEPTIONIST, ADMIN], 200),
-  op("patch", "/owners/{id}", TAGS.owners, "Editar un propietario", [RECEPTIONIST, ADMIN], 200, {
+  op("get", "/owners/{id}", TAGS.owners, "Ver un propietario", [RECEPTIONIST], 200),
+  op("patch", "/owners/{id}", TAGS.owners, "Editar un propietario", [RECEPTIONIST], 200, {
     body: updateOwnerRequestSchema,
     description:
       "La cédula no se edita. Cambiar el correo actualiza también el de su cuenta (D-18).",
   }),
-  op(
-    "delete",
-    "/owners/{id}",
-    TAGS.owners,
-    "Desactivar un propietario",
-    [RECEPTIONIST, ADMIN],
-    204,
-    {
-      description: "Eliminación lógica: se conserva el historial (RN-14).",
-    },
-  ),
+  op("delete", "/owners/{id}", TAGS.owners, "Desactivar un propietario", [RECEPTIONIST], 204, {
+    description: "Eliminación lógica: se conserva el historial (RN-14).",
+  }),
 
   // Pacientes
   op(
@@ -605,7 +597,7 @@ export const OPERATIONS: Operation[] = [
     "/invoices/pending",
     TAGS.invoices,
     "Ver los conceptos pendientes de facturar",
-    [RECEPTIONIST, ADMIN],
+    [RECEPTIONIST],
     200,
     {
       query: pendingQuerySchema,
@@ -613,7 +605,7 @@ export const OPERATIONS: Operation[] = [
         "Consultas, vacunaciones y servicios de estética sin facturar de un propietario (RN-70).",
     },
   ),
-  op("post", "/invoices", TAGS.invoices, "Generar una factura", [RECEPTIONIST, ADMIN], 201, {
+  op("post", "/invoices", TAGS.invoices, "Generar una factura", [RECEPTIONIST], 201, {
     body: createInvoiceRequestSchema,
     description:
       "El IVA del 19 % se calcula por línea. La factura nace PAID y numerada (FAC-000001) (RN-70 a RN-75).",

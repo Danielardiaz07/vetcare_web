@@ -15,7 +15,7 @@ export function createOwnersRouter(
   authenticate: RequestHandler,
 ): Router {
   const router = Router();
-  const staff = [authenticate, authorize(Role.RECEPTIONIST, Role.ADMIN)];
+  const staff = [authenticate, authorize(Role.RECEPTIONIST)];
 
   router.post("/", ...staff, validate({ body: createOwnerRequestSchema }), controller.create);
   router.get("/", ...staff, validate({ query: listOwnersQuerySchema }), controller.list);

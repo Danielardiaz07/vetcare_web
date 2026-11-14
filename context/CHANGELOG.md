@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-13 · 12 · D-45 (resuelve P-15): la API queda alineada con D-42; solo recepción crea facturas y ve los conceptos pendientes, el administrador conserva listado, detalle y anulación, y `/owners` es solo de recepción (RF-05, RF-23, RN-74). Swagger actualizado.
 - 2026-11-12 · 08, 09, 12 · D-44: ruta `/panel/account` (“Mi cuenta”) para todo el personal, con sus datos y su horario si es veterinario o estilista y el cambio de contraseña de los cuatro roles; la barra del panel muestra el nombre del perfil. P-16: `GET /users/me` debe incluir el perfil del veterinario o estilista.
 - 2026-11-12 · 08, 09, 12 · D-43: la pantalla Usuarios muestra el nombre del perfil de veterinarios y estilistas (recepción y administración no tienen perfil) y el personal cambia su propia contraseña desde la barra del panel. D-41: el equipo de la landing pasa a ser el de `seed-demo` (Laura Gómez Ruiz y Andrés Pérez Mora).
 - 2026-11-12 · 02, 05, 08, 09, 12 · La tabla de rutas del front (§7.2) queda igual a las rutas reales: se agregan `/reset-password`, `/panel` y `/panel/invoices/new`, y Facturación pasa a recepción y administración; cada ruta tiene su título “Título | VetCare”. D-42: el administrador es supervisor; consulta y anula facturas, pero no factura (RF-23) ni tiene acceso a propietarios (RF-05). P-15: cambios pendientes en la API para que coincida (permisos de facturas y propietarios, y su documentación en Swagger).
