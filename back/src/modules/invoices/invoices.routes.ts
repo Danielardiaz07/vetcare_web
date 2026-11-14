@@ -17,11 +17,12 @@ export function createInvoicesRouter(
   authenticate: RequestHandler,
 ): Router {
   const router = Router();
-  const billing = [authenticate, authorize(Role.RECEPTIONIST, Role.ADMIN)];
+  const billing = [authenticate, authorize(Role.RECEPTIONIST)];
+  const supervision = [authenticate, authorize(Role.RECEPTIONIST, Role.ADMIN)];
 
   router.get("/pending", ...billing, validate({ query: pendingQuerySchema }), controller.pending);
   router.post("/", ...billing, validate({ body: createInvoiceRequestSchema }), controller.create);
-  router.get("/", ...billing, validate({ query: listInvoicesQuerySchema }), controller.list);
+  router.get("/", ...supervision, validate({ query: listInvoicesQuerySchema }), controller.list);
   router.get(
     "/:id",
     authenticate,
