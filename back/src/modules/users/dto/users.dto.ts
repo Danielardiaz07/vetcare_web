@@ -65,12 +65,28 @@ export interface OwnerSummaryDto {
   address: string | null;
 }
 
+export interface StaffProfileSummaryDto {
+  id: string;
+  documentType: string;
+  documentNumber: string;
+  firstNames: string;
+  lastNames: string;
+  phone: string;
+  active: boolean;
+}
+
+export interface VeterinarianSummaryDto extends StaffProfileSummaryDto {
+  specialty: string;
+}
+
 export interface UserProfileResponseDto {
   id: string;
   email: string;
   role: string;
   status: string;
   owner: OwnerSummaryDto | null;
+  veterinarian: VeterinarianSummaryDto | null;
+  groomer: StaffProfileSummaryDto | null;
 }
 
 export interface StaffUserResponseDto {
