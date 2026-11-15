@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ResponsiveSummary } from "@/components/ui/responsive-summary";
 import { VACCINE_STATUS } from "@/features/clinical/labels";
 import { ownerFullName } from "@/features/owners/labels";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
@@ -42,7 +43,10 @@ export function PatientSummary({
   ];
 
   return (
-    <aside className="flex flex-col gap-4">
+    <ResponsiveSummary
+      title={patient.name}
+      description={`${APPOINTMENT_TYPE_LABELS[appointment.type]} · ${formatClinicTime(appointment.startsAt)}`}
+    >
       <Section title={patient.name}>
         <dl className="grid gap-3">
           {details.map(([label, value]) => (
@@ -95,7 +99,7 @@ export function PatientSummary({
           </ul>
         )}
       </Section>
-    </aside>
+    </ResponsiveSummary>
   );
 }
 

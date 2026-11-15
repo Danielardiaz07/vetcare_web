@@ -9,7 +9,7 @@ Clasificados según ISO/IEC 25010. La columna **Implementación en el stack** ad
 | RNF-03 | Seguridad | Toda la comunicación usa HTTPS; credenciales de BD y correo en variables de entorno, no en el repositorio | Escaneo del repositorio sin secretos expuestos | `.env` no versionado, `.env.example`, validación de env con Zod al arrancar, cookie `Secure` |
 | RNF-04 | Seguridad / Legal | Tratamiento de datos personales conforme a la Ley 1581 de 2012 (aceptación explícita y política visible) | Casilla obligatoria en el registro | Campo de aceptación en el DTO de registro y en el formulario; política enlazada (RN-60) |
 | RNF-05 | Eficiencia | Consultas de la API responden en < 2 s con 50 usuarios concurrentes | Prueba de carga (herramienta por definir) | Índices justificados por consultas, paginación `?page=&limit=`, pooler de Supabase |
-| RNF-06 | Usabilidad | Un propietario nuevo agenda una cita en máx. 3 min y 5 pasos, sin capacitación | Prueba con 5 usuarios reales | Asistente de agendamiento en pasos (ver [13](13-mensajes-y-experiencia.md)) |
+| RNF-06 | Usabilidad | Un propietario nuevo agenda una cita en máx. 3 min y 4 pasos, sin capacitación | Prueba con 5 usuarios reales | Asistente de agendamiento en pasos (ver [13](13-mensajes-y-experiencia.md)) |
 | RNF-07 | Usabilidad | Interfaz responsiva, usable en celulares desde 360 px de ancho | Chrome DevTools y celular Android | Tailwind CSS v4, diseño mobile-first |
 | RNF-08 | Usabilidad | Interfaz en español; los mensajes de error indican cómo corregir | Revisión de todos los formularios | Mensajes de Zod y de la API en español |
 | RNF-09 | Compatibilidad | Funciona en las dos últimas versiones de Chrome, Edge y Firefox | Prueba en cada navegador | Next.js con soporte de navegadores modernos |

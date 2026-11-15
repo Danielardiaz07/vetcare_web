@@ -65,7 +65,6 @@ export function StaffManager() {
     setPage(1);
   }
 
-  // Las flechas mueven entre pestañas, como en un tablist nativo.
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
     const next = STAFF_KINDS.find((item) => item !== kind) ?? kind;
@@ -92,14 +91,62 @@ export function StaffManager() {
     }
   }
 
+  function renderIdentity(profile: StaffProfile) {
+    return (
+      <div className="flex min-w-44 flex-col gap-1">
+        <span className="break-words font-semibold">{ownerFullName(profile)}</span>
+        <span className="break-words text-sm text-muted">{ownerDocument(profile)}</span>
+        <span className="text-sm text-muted">{profile.phone}</span>
+      </div>
+    );
+  }
+
+  function renderStatus(profile: StaffProfile) {
+    return profile.active ? (
+      <StatusBadge tone="success">Activo</StatusBadge>
+    ) : (
+      <StatusBadge tone="neutral">Inactivo</StatusBadge>
+    );
+  }
+
+  function renderActions(profile: StaffProfile) {
+    const name = ownerFullName(profile);
+    return (
+      <div className="flex flex-wrap gap-2 md:flex-nowrap">
+        <Button
+          variant="secondary"
+          className="px-3!"
+          onClick={() => setEditing(profile)}
+          aria-label={`Editar a ${name}`}
+        >
+          Editar
+        </Button>
+        <Button
+          variant="secondary"
+          className="px-3!"
+          onClick={() => setScheduling(profile)}
+          aria-label={`Horario de ${name}`}
+        >
+          Horario
+        </Button>
+        <Button
+          variant="secondary"
+          className="px-3!"
+          onClick={() => setToggling(profile)}
+          aria-label={`${profile.active ? "Desactivar" : "Activar"} a ${name}`}
+        >
+          {profile.active ? "Desactivar" : "Activar"}
+        </Button>
+      </div>
+    );
+  }
+
   const columns: DataTableColumn<StaffProfile>[] = [
     {
       key: "name",
-      header: "Nombre",
-      render: (profile) => <span className="font-semibold">{ownerFullName(profile)}</span>,
+      header: "Profesional",
+      render: renderIdentity,
     },
-    { key: "document", header: "Documento", render: (profile) => ownerDocument(profile) },
-    { key: "phone", header: "Celular", render: (profile) => profile.phone },
     ...(kind === "veterinarians"
       ? [
           {
@@ -112,44 +159,12 @@ export function StaffManager() {
     {
       key: "status",
       header: "Estado",
-      render: (profile) =>
-        profile.active ? (
-          <StatusBadge tone="success">Activo</StatusBadge>
-        ) : (
-          <StatusBadge tone="neutral">Inactivo</StatusBadge>
-        ),
+      render: renderStatus,
     },
     {
       key: "actions",
       header: "Acciones",
-      render: (profile) => {
-        const name = ownerFullName(profile);
-        return (
-          <span className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setEditing(profile)}
-              aria-label={`Editar a ${name}`}
-            >
-              Editar
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setScheduling(profile)}
-              aria-label={`Horario de ${name}`}
-            >
-              Horario
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setToggling(profile)}
-              aria-label={`${profile.active ? "Desactivar" : "Activar"} a ${name}`}
-            >
-              {profile.active ? "Desactivar" : "Activar"}
-            </Button>
-          </span>
-        );
-      },
+      render: renderActions,
     },
   ];
 
@@ -206,6 +221,18 @@ export function StaffManager() {
                 columns={columns}
                 rows={list.result.data}
                 getRowKey={(profile) => profile.id}
+                renderMobileRow={(profile) => (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      {renderIdentity(profile)}
+                      {renderStatus(profile)}
+                    </div>
+                    {kind === "veterinarians" && profile.specialty && (
+                      <p className="break-words text-sm text-muted">{profile.specialty}</p>
+                    )}
+                    {renderActions(profile)}
+                  </div>
+                )}
               />
               {list.result.meta.totalPages > 1 && (
                 <Pagination

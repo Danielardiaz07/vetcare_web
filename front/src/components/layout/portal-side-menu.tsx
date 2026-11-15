@@ -86,7 +86,6 @@ export function PortalSideMenu() {
   const isNewAppointment = current === ROUTES.portalNewAppointment;
   const [upcoming, setUpcoming] = useState(0);
 
-  // Se vuelve a contar al cambiar de página y cuando se agenda, reprograma o cancela una cita.
   useEffect(() => {
     let active = true;
     const count = () =>
@@ -113,7 +112,7 @@ export function PortalSideMenu() {
   return (
     <>
       <aside className="hidden w-60 shrink-0 flex-col gap-4 self-start md:sticky md:top-24 md:flex">
-        <nav aria-label="Portal">
+        <nav aria-label="Portal" className="rounded-card border border-line bg-surface p-3">
           <ul className="flex flex-col gap-1">
             {MENU_ITEMS.map(({ href, label, icon }) => (
               <li key={href}>
@@ -121,10 +120,10 @@ export function PortalSideMenu() {
                   href={href}
                   aria-current={href === current ? "page" : undefined}
                   className={cn(
-                    "flex min-h-11 items-center gap-3 rounded-control px-3 font-medium transition-colors duration-150 ease-out",
+                    "flex min-h-11 items-center gap-3 rounded-control px-3 transition-colors duration-150 ease-out",
                     href === current
-                      ? "bg-brand-50 text-brand-700"
-                      : "text-muted hover:bg-canvas hover:text-ink",
+                      ? "bg-brand-50 font-semibold text-brand-700"
+                      : "font-medium text-muted hover:bg-brand-50 hover:text-brand-700",
                   )}
                 >
                   <Icon name={icon} className="size-5" />
@@ -139,12 +138,15 @@ export function PortalSideMenu() {
           href={ROUTES.portalNewAppointment}
           aria-current={isNewAppointment ? "page" : undefined}
           className={cn(
-            "flex min-h-11 items-center justify-center gap-2 rounded-control bg-brand-600 px-4 font-semibold text-white transition-colors duration-150 ease-out hover:bg-brand-700",
+            "flex min-h-11 items-center gap-3 rounded-2xl border border-white bg-brand-600 px-3 font-semibold text-white shadow-sm transition-colors duration-150 ease-out hover:bg-brand-700",
             isNewAppointment && "pointer-events-none opacity-75",
           )}
         >
-          <Icon name="calendar-plus" className="size-5" />
-          Agendar cita
+          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-control bg-surface text-brand-600">
+            <Icon name="calendar-plus" className="size-5" />
+          </span>
+          <span>Agendar cita</span>
+          <Icon name="arrow-right" className="ml-auto size-5 shrink-0" />
         </Link>
       </aside>
       <nav

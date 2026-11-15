@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +11,7 @@ import { BookingReceipt } from "@/features/appointments/components/booking-recei
 import { BookingSummary } from "@/features/appointments/components/booking-summary";
 import { ChoiceButton } from "@/features/appointments/components/choice-button";
 import { ReviewStep } from "@/features/appointments/components/review-step";
+import { DateTimeAvailability } from "@/features/appointments/components/date-time-availability";
 import {
   appointmentErrorMessage,
   isActiveLimit,
@@ -20,17 +21,16 @@ import {
 import { ownerFullName } from "@/features/owners/labels";
 import { SPECIES_LABELS } from "@/features/patients/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
-import { bookableDates, dayParts, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
+import { bookableDates, clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
-import { createAppointment, getAvailability, listProfessionals } from "@/services/appointments";
+import { createAppointment, listProfessionals } from "@/services/appointments";
 import { getMyPatients, listPatients } from "@/services/patients";
 import { listAppointmentTypes } from "@/services/staff";
 import type {
   Appointment,
   AppointmentType,
   AppointmentTypeSetting,
-  Availability,
   AvailableSlot,
   Owner,
   Patient,
@@ -39,12 +39,11 @@ import type {
 
 // D-26: "Cualquiera disponible" no manda profesional y la API asigna el primero libre.
 const ANY_PROFESSIONAL = "any";
-const LAST_STEP = 5;
+const LAST_STEP = 4;
 const REVIEW = "review";
-// Un propietario tiene pocas mascotas; una sola página las trae todas.
 const OWNER_PETS_LIMIT = 100;
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4;
 type View = Step | typeof REVIEW;
 
 type Selection = {
@@ -74,8 +73,7 @@ const STEP_MISSING: Record<Step, string> = {
   1: "una mascota",
   2: "el tipo de cita",
   3: "un profesional o “Cualquiera disponible”",
-  4: "un día",
-  5: "una hora",
+  4: "un día y una hora",
 };
 
 function isChosen(step: Step, selection: Selection): boolean {
@@ -83,21 +81,19 @@ function isChosen(step: Step, selection: Selection): boolean {
     1: selection.petId,
     2: selection.type,
     3: selection.professionalId,
-    4: selection.date,
-    5: selection.slot,
+    4: selection.date && selection.slot,
   };
   return values[step] !== null;
 }
 
 function firstMissingStep(selection: Selection): Step {
-  const steps: Step[] = [1, 2, 3, 4, 5];
+  const steps: Step[] = [1, 2, 3, 4];
   return steps.find((step) => !isChosen(step, selection)) ?? LAST_STEP;
 }
 
 type AppointmentWizardProps = {
   initialPetId?: string;
   initialType?: string;
-  // Recepción agenda por un propietario (RF-16); sin él, son las mascotas de quien tiene sesión.
   owner?: Owner;
   onDone?: () => void;
 };
@@ -125,11 +121,13 @@ export function AppointmentWizard({
     status: "loading",
   });
   const [professionalsKey, setProfessionalsKey] = useState(0);
-  const [availability, setAvailability] = useState<Loadable<Availability>>({ status: "loading" });
   const [availabilityKey, setAvailabilityKey] = useState(0);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const movedByUser = useRef(false);
-  const dates = useMemo(() => bookableDates(), []);
+  const today = clinicDateOf(new Date());
+  const dates = bookableDates();
+  // Hoy sigue visible aunque la anticipación mínima deje todos sus horarios fuera del plazo.
+  if (!dates.includes(today)) dates.unshift(today);
 
   useEffect(() => {
     let active = true;
@@ -138,7 +136,6 @@ export function AppointmentWizard({
       .then(([pets, types]) => {
         if (!active) return;
         setBase({ status: "ready", data: { pets, types } });
-        // ?petId= y ?type= dejan esos pasos ya elegidos si existen.
         const petId = pets.some((pet) => pet.id === initialPetId) ? (initialPetId ?? null) : null;
         const type = types.find((item) => item.type === initialType)?.type ?? null;
         const preset: Selection = { ...EMPTY_SELECTION, petId, type };
@@ -171,32 +168,11 @@ export function AppointmentWizard({
     };
   }, [type, professionalsKey]);
 
-  useEffect(() => {
-    if (!type || !professionalId || !date) return;
-    let active = true;
-    setAvailability({ status: "loading" });
-    getAvailability({
-      type,
-      date,
-      ...(professionalId !== ANY_PROFESSIONAL && { professionalId }),
-    })
-      .then((data) => {
-        if (active) setAvailability({ status: "ready", data });
-      })
-      .catch(() => {
-        if (active) setAvailability({ status: "error" });
-      });
-    return () => {
-      active = false;
-    };
-  }, [type, professionalId, date, availabilityKey]);
-
   // Al cambiar de paso, el lector de pantalla anuncia el título nuevo.
   useEffect(() => {
     if (movedByUser.current) headingRef.current?.focus();
   }, [step]);
 
-  // "Agendar otra cita" vuelve al paso 1 sin nada elegido.
   const restart = useCallback(() => {
     movedByUser.current = true;
     setConfirmed(null);
@@ -262,8 +238,7 @@ export function AppointmentWizard({
     1: "Mascota",
     2: "Tipo de cita",
     3: proTitle,
-    4: "Día",
-    5: "Hora",
+    4: "Fecha y hora",
   };
 
   function goTo(next: View) {
@@ -278,6 +253,9 @@ export function AppointmentWizard({
     if (!isChosen(step, selection)) {
       setStepError(`Elige ${STEP_MISSING[step]} para continuar.`);
       return;
+    }
+    if (step === 3 && (!date || !dates.includes(date))) {
+      choose({ date: today, slot: null });
     }
     goTo(step < LAST_STEP ? ((step + 1) as Step) : REVIEW);
   }
@@ -365,10 +343,18 @@ export function AppointmentWizard({
   const reviewing = step === REVIEW;
 
   return (
-    <div className={cn("grid gap-6", !reviewing && "lg:grid-cols-[minmax(0,1fr)_18rem]")}>
+    <div
+      className={cn(
+        "grid items-start gap-6",
+        !reviewing &&
+          (step === 4
+            ? "lg:grid-cols-[minmax(0,1fr)_16rem]"
+            : "lg:grid-cols-[minmax(0,1fr)_18rem]"),
+      )}
+    >
       <div className="flex flex-col gap-5">
         <ol className="flex flex-wrap gap-2 text-sm" aria-label="Pasos para agendar">
-          {([1, 2, 3, 4, 5] as Step[]).map((item) => (
+          {([1, 2, 3, 4] as Step[]).map((item) => (
             <li
               key={item}
               aria-current={item === step ? "step" : undefined}
@@ -388,7 +374,7 @@ export function AppointmentWizard({
 
         <section
           aria-labelledby="wizard-step-title"
-          className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5"
+          className="@container flex flex-col gap-4 rounded-card border border-line bg-surface p-5"
         >
           <h2
             id="wizard-step-title"
@@ -470,67 +456,18 @@ export function AppointmentWizard({
             </div>
           )}
 
-          {step === 4 && (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2">
-              {dates.map((item) => {
-                const parts = dayParts(item);
-                return (
-                  <ChoiceButton
-                    key={item}
-                    selected={item === date}
-                    onSelect={() => choose({ date: item, slot: null })}
-                    ariaLabel={formatLongDate(item)}
-                    className="items-center text-center"
-                    label={parts.day}
-                    detail={`${parts.weekday} · ${parts.month}`}
-                  />
-                );
-              })}
-            </div>
+          {step === 4 && type && professionalId && (
+            <DateTimeAvailability
+              key={`${type}:${professionalId}`}
+              type={type}
+              professionalId={professionalId === ANY_PROFESSIONAL ? undefined : professionalId}
+              dates={dates}
+              date={date}
+              slot={selection.slot}
+              refreshKey={availabilityKey}
+              onChange={(nextDate, slot) => choose({ date: nextDate, slot })}
+            />
           )}
-
-          {step === 5 && availability.status === "loading" && <LoadingState rows={2} />}
-          {step === 5 && availability.status === "error" && (
-            <ErrorState onRetry={() => setAvailabilityKey((key) => key + 1)} />
-          )}
-          {step === 5 && availability.status === "ready" && availability.data.slots.length > 0 && (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2">
-              {availability.data.slots.map((slot) => (
-                <ChoiceButton
-                  key={slot.startsAt}
-                  selected={slot.startsAt === selection.slot?.startsAt}
-                  onSelect={() => choose({ slot })}
-                  className="items-center"
-                  label={formatClinicTime(slot.startsAt)}
-                />
-              ))}
-            </div>
-          )}
-          {step === 5 &&
-            availability.status === "ready" &&
-            availability.data.slots.length === 0 && (
-              <div className="flex flex-col gap-3">
-                <p className="text-ink">No quedan horas libres ese día.</p>
-                {availability.data.suggestedDates.length > 0 && (
-                  <>
-                    <p className="text-muted">Estos días sí tienen horas:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {availability.data.suggestedDates.map((item) => (
-                        <ChoiceButton
-                          key={item}
-                          selected={false}
-                          onSelect={() => choose({ date: item, slot: null })}
-                          label={formatLongDate(item)}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-                {availability.data.suggestedDates.length === 0 && (
-                  <p className="text-muted">Prueba con otro día o con otro profesional.</p>
-                )}
-              </div>
-            )}
 
           {stepError && (
             <p role="alert" className="text-sm text-danger">

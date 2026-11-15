@@ -50,8 +50,8 @@ Módulos: M1 Seguridad y acceso · M2 Portal del propietario · M3 Gestión · M
 ### CU-09 Agendar cita en línea
 
 - **Actor**: Propietario; secundario: Servidor de correo. **Precondición**: sesión como propietario con al menos una mascota.
-- **Flujo básico**: 1) elige “Agendar cita”; 2) selecciona mascota y tipo de cita; 3) selecciona veterinario o “cualquiera disponible” y fecha; 4) el sistema calcula y muestra franjas libres (*include* CU-10); 5) elige franja y escribe el motivo; 6) confirma; 7) el sistema valida reglas y registra la cita `PROGRAMADA`; 8) muestra comprobante y envía el correo de confirmación; 9) programa el recordatorio de 24 h.
-- **Alternos**: 4a) sin franjas ese día → sugiere las tres fechas más cercanas; 7a) otra persona tomó la franja → informa y vuelve al paso 4; 7b) la mascota ya tiene 3 citas activas o la cita es a menos de 2 h → muestra el motivo y no registra; 8a) falla el correo → la cita se conserva y el envío se reintenta.
+- **Flujo básico**: 1) elige “Agendar cita”; 2) selecciona mascota y tipo de cita; 3) selecciona veterinario o “cualquiera disponible”; 4) elige la fecha en un calendario mensual siempre visible y el sistema muestra sus franjas libres (*include* CU-10); 5) elige franja y escribe el motivo; 6) confirma; 7) el sistema valida reglas y registra la cita `PROGRAMADA`; 8) muestra comprobante y envía el correo de confirmación; 9) programa el recordatorio de 24 h.
+- **Alternos**: 4a) sin franjas ese día → en el paso Fecha y hora muestra “Sin horarios disponibles” y permite elegir otro día desde el calendario; las otras selecciones de día conservan las tres fechas sugeridas (RN-33); 7a) otra persona tomó la franja → informa y vuelve al paso 4; 7b) la mascota ya tiene 3 citas activas o la cita es a menos de 2 h → muestra el motivo y no registra; 8a) falla el correo → la cita se conserva y el envío se reintenta.
 - **Postcondición**: cita registrada, franja ocupada, visible en la agenda de recepción y del veterinario. **Trazabilidad**: RF-11, RF-17 · RNF-06, RNF-11 · RN-20 a RN-27, RN-33, RN-35, RN-36, RN-38.
 
 ### CU-11 / CU-12 Reprogramar o cancelar cita

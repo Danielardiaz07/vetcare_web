@@ -29,7 +29,6 @@ const SEARCH_DELAY_MS = 300;
 type ListState =
   { status: "loading" } | { status: "error" } | { status: "ready"; result: Paginated<StaffUser> };
 
-// Solo estos roles tienen perfil con nombre (D-22); recepción y administración se identifican por correo.
 const ROLES_WITH_PROFILE: readonly StaffUser["role"][] = ["VETERINARIAN", "GROOMER"];
 
 type NamesState = Map<string, string> | "loading" | "error";
@@ -75,7 +74,6 @@ export function UsersManager() {
     };
   }, [page, role, status, q, reloadKey]);
 
-  // Los nombres no dependen de la página ni de los filtros: se piden una vez y al recargar.
   useEffect(() => {
     let active = true;
     setNames("loading");
@@ -93,7 +91,6 @@ export function UsersManager() {
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
 
-  // Cambiar un filtro vuelve a la primera página.
   useEffect(() => setPage(1), [role, status, q]);
 
   const columns: DataTableColumn<StaffUser>[] = [
@@ -181,7 +178,42 @@ export function UsersManager() {
       )}
       {list.status === "ready" && list.result.data.length > 0 && (
         <>
-          <DataTable columns={columns} rows={list.result.data} getRowKey={(row) => row.id} />
+          <DataTable
+            columns={columns}
+            rows={list.result.data}
+            getRowKey={(row) => row.id}
+            renderMobileRow={(row) => (
+              <div className="flex min-w-0 flex-col gap-3">
+                <div className="min-w-0">
+                  <h2 className="break-all font-semibold text-ink">
+                    {row.email}
+                    {row.id === sessionUser?.id && (
+                      <span className="ml-2 font-normal text-subtle">(tú)</span>
+                    )}
+                  </h2>
+                  {ROLES_WITH_PROFILE.includes(row.role) && (
+                    <p className="mt-1 break-words text-sm">
+                      <NameCell user={row} names={names} />
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm text-muted">{ROLE_LABELS[row.role]}</span>
+                  <StatusBadge tone={STATUS_LABELS[row.status].tone}>
+                    {STATUS_LABELS[row.status].label}
+                  </StatusBadge>
+                </div>
+                <Button
+                  variant="secondary"
+                  className="self-start"
+                  onClick={() => setEditing(row)}
+                  aria-label={`Editar ${row.email}`}
+                >
+                  Editar
+                </Button>
+              </div>
+            )}
+          />
           <p className="text-sm text-muted">
             El nombre sale del perfil en Personal y horarios. Recepción y administración no tienen
             perfil, así que se identifican por su correo.

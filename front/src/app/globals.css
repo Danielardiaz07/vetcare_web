@@ -40,14 +40,11 @@
   --radius-block: 32px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
-  /* D-45: alturas fijas del encabezado público. La franja de urgencias se va con el scroll y solo
-     queda el menú; las secciones se detienen justo en su borde inferior (header-bar) y el inicio,
-     arriba del todo para que se vea la franja (header). */
-  --spacing-header-strip: 2.75rem;
+  /* El menú fijo y los anclajes comparten estas alturas al ocultarse la franja de urgencias. */
+  --spacing-header-strip: 2.25rem;
   --spacing-header-bar: 4.25rem;
   --spacing-header: calc(var(--spacing-header-strip) + var(--spacing-header-bar) + 1px);
 
-  /* D-45: sombra de las tarjetas destacadas de la landing (agendar, portal, ubicación). */
   --shadow-soft: 0 1px 2px rgb(26 46 59 / 0.05), 0 12px 32px rgb(26 46 59 / 0.06);
 
   --animate-fade-in: fade-in 300ms var(--ease-out) both;
@@ -116,7 +113,6 @@
   }
 }
 
-/* Los globos del chat de ejemplo aparecen al entrar en pantalla; sin soporte se ven quietos. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .rise-on-view > * {
@@ -138,7 +134,6 @@
   }
 }
 
-/* Al imprimir una factura abierta en su ventana, solo sale la factura. */
 @media print {
   body:has(dialog[open] .invoice-print) * {
     visibility: hidden;
