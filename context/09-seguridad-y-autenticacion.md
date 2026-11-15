@@ -59,7 +59,10 @@ Implementación (D-31):
 
 ## 6. Roles y permisos (RBAC)
 
-Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`. Cada petición verifica JWT y rol (RN-13); además, para recursos del propietario se verifica la **propiedad** del dato (RN-16, RN-40 → 403).
+Roles: `OWNER` (propietario), `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN`. Cada petición privada verifica JWT y rol (RN-13); además, para recursos del propietario se verifica la **propiedad** del dato (RN-16, RN-40 → 403).
+
+Contrato público requerido para agendamiento (D-50), pendiente del backend de Daniela (P-17): GET /appointment-types, GET /appointments/availability, GET /veterinarians/public y GET /groomers/public. Los profesionales se proyectan a identificador, nombres, apellidos y especialidad; nunca documento, teléfono, cuenta ni horarios completos. No se exponen citas ni datos de pacientes. Crear la cita y registrar la mascota siguen exigiendo autenticación y comprobación de propiedad.
+
 
 | Capacidad | Propietario | Recepcionista | Veterinario | Estilista | Administrador |
 |-----------|:-----------:|:-------------:|:-----------:|:---------:|:-------------:|

@@ -42,10 +42,14 @@ export function RegisterFlow({
       const user = credentials ? await signIn(credentials.email, credentials.password) : null;
       if (user && onSignedIn) onSignedIn(user);
       else router.push(ROUTES.portal);
-    } catch {
-      router.push(ROUTES.login);
-    } finally {
       onDone?.();
+    } catch {
+      if (onSignedIn && onGoToLogin) {
+        onGoToLogin();
+      } else {
+        router.push(ROUTES.login);
+        onDone?.();
+      }
     }
   }
 

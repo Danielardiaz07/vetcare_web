@@ -16,6 +16,7 @@ import {
 } from "@/lib/constants";
 import { getMe } from "@/services/auth";
 import { request } from "@/services/http-client";
+import { getPatient } from "@/services/patients";
 import { getSchedule } from "@/services/staff";
 import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
 import {
@@ -72,7 +73,10 @@ export interface RescheduleAppointmentInput {
 
 const isGrooming = (type: AppointmentType) => type === "GROOMING";
 
-export function listProfessionals(type: AppointmentType): Promise<Professional[]> {
+export function listProfessionals(
+  type: AppointmentType,
+  publicOnly = false,
+): Promise<Professional[]> {
   if (isMockEnabled) {
     const profiles = isGrooming(type) ? mockGroomers : mockVeterinarians;
     return mockResponse(
@@ -87,7 +91,7 @@ export function listProfessionals(type: AppointmentType): Promise<Professional[]
     );
   }
   const path = isGrooming(type) ? "/groomers" : "/veterinarians";
-  return request<Paginated<Professional>>(path, {
+  return request<Paginated<Professional>>(publicOnly ? `${path}/public` : path, {
     // Recepción también recibe al personal inactivo; agendar y reasignar solo admiten activos.
     query: { page: 1, limit: PROFESSIONALS_LIMIT, active: true },
   }).then((result) => result.data);
@@ -371,8 +375,7 @@ const isActiveFuture = (appointment: Appointment, now: string) =>
   appointment.startsAt > now;
 
 async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
-  const pet = mockClinicPatients.find((item) => item.id === input.patientId);
-  if (!pet) return mockNotFound();
+  const pet = await getPatient(input.patientId);
   const now = new Date().toISOString();
   const activeCount = mockAppointmentStore.filter(
     (item) => item.patient.id === pet.id && isActiveFuture(item, now),

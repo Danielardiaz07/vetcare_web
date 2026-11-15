@@ -20,7 +20,7 @@ type DateTimeAvailabilityProps = {
   professionalId?: string;
   dates: string[];
   date: string | null;
-  slot: AvailableSlot | null;
+  slot: Pick<AvailableSlot, "startsAt"> | null;
   refreshKey: number;
   onChange: (date: string, slot: AvailableSlot | null) => void;
 };

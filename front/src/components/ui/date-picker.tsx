@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { addDays, clinicDateOf, formatLongDate, isoWeekday, monthRange } from "@/lib/clinic-time";
 import { Button } from "./button";
 import { cn } from "./cn";
@@ -52,7 +52,6 @@ export function DatePicker({
   variant = "button",
 }: DatePickerProps) {
   const isInline = variant === "inline";
-  const id = useId();
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(monthOf(value));
   const [focusedDate, setFocusedDate] = useState(value);
@@ -323,30 +322,13 @@ export function DatePicker({
       )}
     </>
   );
-  const fieldDate = new Intl.DateTimeFormat("es-CO", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value + "T12:00:00Z"));
-
   return isInline ? (
     <div className="min-w-0">
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-ink">
-        {label}
-      </label>
-      <output
-        id={id}
-        aria-live="polite"
-        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-control border border-field-border bg-surface px-3 py-2 text-ink"
-      >
-        <span>{fieldDate}</span>
-        <Icon name="calendar" className="size-5 shrink-0 text-brand-700" />
-      </output>
+      <p className="mb-1.5 text-sm font-medium text-ink">{label}</p>
       <div
         role="group"
         aria-label="Calendario para agendar"
-        className="mt-3 flex flex-col gap-3 rounded-card border border-line bg-surface p-3 shadow-soft"
+        className="flex flex-col gap-3 rounded-card border border-line bg-surface p-3 shadow-soft"
       >
         {calendar}
       </div>
