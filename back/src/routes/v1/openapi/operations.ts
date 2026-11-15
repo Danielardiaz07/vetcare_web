@@ -229,7 +229,10 @@ export const OPERATIONS: Operation[] = [
   ),
 
   // Usuarios
-  op("get", "/users/me", TAGS.users, "Ver mi perfil", "authenticated", 200),
+  op("get", "/users/me", TAGS.users, "Ver mi perfil", "authenticated", 200, {
+    description:
+      "Incluye owner, veterinarian o groomer según la cuenta; los que no aplican vienen en null (recepción y administración no tienen perfil, D-44).",
+  }),
   op("patch", "/users/me", TAGS.users, "Actualizar mi contacto", [OWNER], 200, {
     body: updateMyContactRequestSchema,
     description: "Solo teléfono y dirección. El correo y la cédula se cambian en recepción (D-18).",
@@ -257,34 +260,26 @@ export const OPERATIONS: Operation[] = [
     {
       body: updateStaffUserRequestSchema,
       description:
-        "Suspender una cuenta cierra sus sesiones. El administrador no puede suspenderse ni cambiarse el rol a sí mismo (RN-12).",
+        "Suspender una cuenta cierra sus sesiones. El administrador no puede suspenderse ni cambiarse el rol a sí mismo (RN-12), ni cambiar su propia contraseña aquí: lo hace desde Mi cuenta, que pide la actual.",
     },
   ),
 
   // Propietarios
-  op("post", "/owners", TAGS.owners, "Registrar un propietario", [RECEPTIONIST, ADMIN], 201, {
+  op("post", "/owners", TAGS.owners, "Registrar un propietario", [RECEPTIONIST], 201, {
     body: createOwnerRequestSchema,
   }),
-  op("get", "/owners", TAGS.owners, "Listar propietarios", [RECEPTIONIST, ADMIN], 200, {
+  op("get", "/owners", TAGS.owners, "Listar propietarios", [RECEPTIONIST], 200, {
     query: listOwnersQuerySchema,
   }),
-  op("get", "/owners/{id}", TAGS.owners, "Ver un propietario", [RECEPTIONIST, ADMIN], 200),
-  op("patch", "/owners/{id}", TAGS.owners, "Editar un propietario", [RECEPTIONIST, ADMIN], 200, {
+  op("get", "/owners/{id}", TAGS.owners, "Ver un propietario", [RECEPTIONIST], 200),
+  op("patch", "/owners/{id}", TAGS.owners, "Editar un propietario", [RECEPTIONIST], 200, {
     body: updateOwnerRequestSchema,
     description:
       "La cédula no se edita. Cambiar el correo actualiza también el de su cuenta (D-18).",
   }),
-  op(
-    "delete",
-    "/owners/{id}",
-    TAGS.owners,
-    "Desactivar un propietario",
-    [RECEPTIONIST, ADMIN],
-    204,
-    {
-      description: "Eliminación lógica: se conserva el historial (RN-14).",
-    },
-  ),
+  op("delete", "/owners/{id}", TAGS.owners, "Desactivar un propietario", [RECEPTIONIST], 204, {
+    description: "Eliminación lógica: se conserva el historial (RN-14).",
+  }),
 
   // Pacientes
   op(
@@ -605,7 +600,7 @@ export const OPERATIONS: Operation[] = [
     "/invoices/pending",
     TAGS.invoices,
     "Ver los conceptos pendientes de facturar",
-    [RECEPTIONIST, ADMIN],
+    [RECEPTIONIST],
     200,
     {
       query: pendingQuerySchema,
@@ -613,7 +608,7 @@ export const OPERATIONS: Operation[] = [
         "Consultas, vacunaciones y servicios de estética sin facturar de un propietario (RN-70).",
     },
   ),
-  op("post", "/invoices", TAGS.invoices, "Generar una factura", [RECEPTIONIST, ADMIN], 201, {
+  op("post", "/invoices", TAGS.invoices, "Generar una factura", [RECEPTIONIST], 201, {
     body: createInvoiceRequestSchema,
     description:
       "El IVA del 19 % se calcula por línea. La factura nace PAID y numerada (FAC-000001) (RN-70 a RN-75).",
