@@ -52,7 +52,7 @@ Origen: `specs.pdf` salvo donde diga *(alineación)*, que indica una adaptación
 | RN-30 | Cancelar exige motivo, pasa la cita a `CANCELADA`, libera la franja y **conserva el registro** | RF-12 |
 | RN-31 | Registrar la llegada pasa la cita a `CONFIRMADA`. Pasados 15 minutos sin llegada, la recepcionista puede marcarla `NO_ASISTIO` | RF-16 |
 | RN-32 | Un veterinario no puede tener dos citas en la misma franja; recepción puede reasignar veterinario | RF-16 |
-| RN-33 | Si no hay franjas libres el día elegido, el sistema sugiere las tres fechas más cercanas con disponibilidad | RF-11 |
+| RN-33 | Si no hay franjas libres el día elegido, el sistema sugiere las tres fechas más cercanas con disponibilidad. En el paso Fecha y hora del asistente de agendamiento (D-49), solo se muestra “Sin horarios disponibles”, sin enlaces a otras fechas; el usuario puede elegir otro día desde el calendario mensual siempre visible | RF-11 |
 | RN-34 | Estados de cita y transiciones: `PROGRAMADA` → `CONFIRMADA` (llegada) → `ATENDIDA` (consulta guardada); `PROGRAMADA`/`CONFIRMADA` → `CANCELADA`; `PROGRAMADA`/`CONFIRMADA` → `NO_ASISTIO`. `ATENDIDA`, `CANCELADA` y `NO_ASISTIO` son finales | RF-13, RF-16 |
 
 ## Notificaciones

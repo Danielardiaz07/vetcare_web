@@ -27,14 +27,12 @@ export function PanelTopBar({ onSignOut }: PanelTopBarProps) {
           className="flex items-center gap-2 text-lg font-semibold text-brand-700"
         >
           <Image src="/logo.png" alt="" width={44} height={44} priority />
-          {/* A 360 px no cabe junto al rol y los botones; el logo basta y el nombre queda para lectores. */}
           <span className="sr-only sm:not-sr-only">VetCare</span>
           <span className="hidden border-l border-line pl-3 text-sm font-medium text-muted sm:inline">
             Panel interno
           </span>
         </Link>
         <div className="flex items-center gap-1 text-sm sm:gap-2">
-          {/* D-44: igual que "Mi perfil" en el portal, el usuario y su rol llevan a "Mi cuenta". */}
           <Link
             href={ROUTES.panelAccount}
             aria-current={pathname === ROUTES.panelAccount ? "page" : undefined}
@@ -48,12 +46,15 @@ export function PanelTopBar({ onSignOut }: PanelTopBarProps) {
               {roleLabel}
             </span>
           </Link>
+          <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
           <button
             type="button"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
             onClick={onSignOut}
-            className="min-h-11 rounded-control px-2 font-medium whitespace-nowrap text-muted hover:bg-canvas hover:text-ink sm:px-3"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-control text-brand-600 transition-colors duration-150 ease-out hover:bg-brand-50"
           >
-            Cerrar sesión
+            <Icon name="log-out" className="size-5" />
           </button>
         </div>
       </div>

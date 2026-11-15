@@ -9,11 +9,20 @@ type ModalProps = {
   title: string;
   onClose: () => void;
   children: ReactNode;
-  // Para contenidos con varias columnas, como el asistente para agendar.
   wide?: boolean;
+  compact?: boolean;
+  headerActions?: ReactNode;
 };
 
-export function Modal({ open, title, onClose, children, wide = false }: ModalProps) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  wide = false,
+  compact = false,
+  headerActions,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -40,6 +49,17 @@ export function Modal({ open, title, onClose, children, wide = false }: ModalPro
     }
   }
 
+  const closeButton = (
+    <button
+      type="button"
+      onClick={() => dialogRef.current?.close()}
+      aria-label="Cerrar"
+      className="inline-flex size-11 items-center justify-center rounded-control text-muted hover:bg-canvas"
+    >
+      <Icon name="close" />
+    </button>
+  );
+
   return (
     <dialog
       ref={dialogRef}
@@ -51,19 +71,19 @@ export function Modal({ open, title, onClose, children, wide = false }: ModalPro
         wide ? "max-w-5xl" : "max-w-lg",
       )}
     >
-      <div className="flex flex-col gap-4 p-6">
+      <div className={cn("flex flex-col", compact ? "gap-2 p-3" : "gap-4 p-6")}>
         <div className="flex items-start justify-between gap-4">
           <h2 id={titleId} className="text-lg font-semibold">
             {title}
           </h2>
-          <button
-            type="button"
-            onClick={() => dialogRef.current?.close()}
-            aria-label="Cerrar"
-            className="inline-flex size-11 items-center justify-center rounded-control text-muted hover:bg-canvas"
-          >
-            <Icon name="close" />
-          </button>
+          {headerActions ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {headerActions}
+              {closeButton}
+            </div>
+          ) : (
+            closeButton
+          )}
         </div>
         {children}
       </div>

@@ -15,7 +15,6 @@ export type ChatLink = { label: string; href: string; external?: boolean };
 export type ChatReply = {
   text: string;
   links?: ChatLink[];
-  // "Agendar cita" lleva a la sección de agendar de la portada.
   bookingAction?: boolean;
 };
 
@@ -24,7 +23,6 @@ export type FaqTopic = "hours" | "services" | "location" | "booking";
 const listOf = (items: string[]) =>
   items.length > 1 ? `${items.slice(0, -1).join(", ")} y ${items.at(-1)}` : (items[0] ?? "");
 
-// "Estética: baño y motilada" se lee mejor dentro de una lista como "estética (baño y motilada)".
 const serviceLabel = ({ name }: { name: string }) => {
   const [main, detail] = name.toLowerCase().split(": ");
   return detail ? `${main} (${detail})` : (main ?? "");
@@ -47,7 +45,7 @@ const FAQ_REPLIES: Record<FaqTopic, ChatReply> = {
     links: [{ label: "Cómo llegar", href: directionsUrl, external: true }],
   },
   booking: {
-    text: "Agendas aquí mismo en 5 pasos: mascota, tipo de cita, profesional, día y hora. Para elegir a tu mascota necesitas iniciar sesión.",
+    text: "Agendas aquí mismo en 4 pasos: mascota, tipo de cita, profesional y fecha con hora. Para elegir a tu mascota necesitas iniciar sesión.",
     bookingAction: true,
   },
 };
@@ -111,7 +109,6 @@ export function faqReply(topic: FaqTopic): ChatReply {
   return FAQ_REPLIES[topic];
 }
 
-// Es asíncrona para que cambiarla por un endpoint de la API no toque el chat.
 export async function askVetBot(question: string): Promise<ChatReply> {
   // Por palabra y no por texto: así "ahora" no cuenta como "hora".
   const words = normalize(question).split(/[^a-z0-9]+/);

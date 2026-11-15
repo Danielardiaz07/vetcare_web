@@ -37,12 +37,15 @@ export function PortalTopBar({ onSignOut }: PortalTopBarProps) {
             <Icon name="user" className="size-5 text-brand-600" />
             <span className="hidden max-w-48 truncate sm:inline">{displayName}</span>
           </Link>
+          <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
           <button
             type="button"
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
             onClick={onSignOut}
-            className="min-h-11 rounded-control px-3 font-medium text-muted hover:bg-canvas hover:text-ink"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-control text-brand-600 transition-colors duration-150 ease-out hover:bg-brand-50"
           >
-            Cerrar sesión
+            <Icon name="log-out" className="size-5" />
           </button>
         </div>
       </div>

@@ -20,6 +20,7 @@ export type IconName =
   | "phone"
   | "map-pin"
   | "message"
+  | "bot"
   | "stethoscope"
   | "syringe"
   | "clipboard-check"
@@ -29,6 +30,7 @@ export type IconName =
   | "shield"
   | "arrow-right"
   | "log-in"
+  | "log-out"
   | "chart"
   | "box"
   | "check"
@@ -136,6 +138,12 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   message: <path d="M4 5h16v11H9l-5 4z" />,
+  bot: (
+    <>
+      <rect x="4" y="7" width="16" height="14" rx="4" />
+      <path d="M12 7V3M10 3h4M1 12v4M23 12v4M9 12v1M15 12v1M9 17h6" />
+    </>
+  ),
   stethoscope: (
     <>
       <path d="M6 3v6a4 4 0 0 0 8 0V3" />
@@ -176,6 +184,7 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   "arrow-right": <path d="M5 12h14M13 6l6 6-6 6" />,
+  "log-out": <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4M16 17l5-5-5-5M21 12H9" />,
   "log-in": (
     <>
       <path d="M14 4h5v16h-5" />

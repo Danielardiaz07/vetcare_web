@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
+import { ResponsiveSummary } from "@/components/ui/responsive-summary";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
@@ -27,14 +28,13 @@ import type { Appointment, GroomingService } from "@/types/domain";
 const RECENT_SERVICES = 3;
 
 type Context =
-  // La agenda del estilista solo trae sus citas, así que una ajena no aparece.
   | { status: "not-found" }
   | { status: "unavailable"; appointment: Appointment }
   | { status: "ready"; appointment: Appointment; services: GroomingService[] };
 
 type State = { status: "loading" } | { status: "error" } | { status: "loaded"; data: Context };
 
-// La API no tiene GET /appointments/{id}: la cita se busca en la agenda del día que trae el enlace.
+// La API no expone una cita por ID; se busca en la agenda autorizada del día.
 async function loadContext(appointmentId: string, date: string): Promise<Context> {
   const agenda = await getAgenda({ from: date });
   const appointment = agenda.find((item) => item.id === appointmentId);
@@ -51,7 +51,6 @@ type GroomingAttentionProps = {
   date: string;
 };
 
-// RN-51: el estilista registra el servicio de su cita de estética Confirmada.
 export function GroomingAttention({ appointmentId, date }: GroomingAttentionProps) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
@@ -196,7 +195,10 @@ function Summary({
   ];
 
   return (
-    <aside className="flex flex-col gap-4">
+    <ResponsiveSummary
+      title={appointment.patient.name}
+      description={`Estética · ${formatClinicTime(appointment.startsAt)}`}
+    >
       <Section title={appointment.patient.name}>
         <dl className="grid gap-3">
           {details.map(([label, value]) => (
@@ -226,7 +228,7 @@ function Summary({
           </ul>
         )}
       </Section>
-    </aside>
+    </ResponsiveSummary>
   );
 }
 

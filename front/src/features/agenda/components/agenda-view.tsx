@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
+import { DatePicker } from "@/components/ui/date-picker";
 import { ErrorState } from "@/components/ui/error-state";
 import { Icon } from "@/components/ui/icon";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -36,7 +37,6 @@ type Staff = { veterinarians: Professional[]; groomers: Professional[] };
 
 type Load<T> = { status: "loading" } | { status: "error" } | { status: "ready"; data: T };
 
-// El filtro guarda el tipo junto al id porque la API pide veterinarianId o groomerId.
 const filterValue = (kind: Kind, id: string) => `${kind}:${id}`;
 
 function filterParams(filter: string): Pick<AgendaParams, "veterinarianId" | "groomerId"> {
@@ -104,7 +104,6 @@ export function AgendaView() {
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
 
-  // Crear, registrar llegada, No asistió o reasignar cambian la agenda en pantalla.
   useEffect(() => {
     window.addEventListener(APPOINTMENTS_CHANGED_EVENT, reload);
     return () => window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, reload);
@@ -122,7 +121,6 @@ export function AgendaView() {
       ? filterValue("GROOMER", professionals.groomers[0].id)
       : ALL;
 
-  // La semana es de un solo profesional; "Todos" solo existe en la vista diaria.
   function changeView(next: View) {
     setView(next);
     if (next === "week" && isReception && filter === ALL) setFilter(firstProfessional);
@@ -140,8 +138,8 @@ export function AgendaView() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:flex sm:flex-wrap sm:justify-between sm:gap-4">
+        <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3">
           <div role="group" aria-label="Vista" className="flex gap-2">
             {VIEWS.map((item) => (
               <button
@@ -150,7 +148,7 @@ export function AgendaView() {
                 aria-pressed={item.value === view}
                 onClick={() => changeView(item.value)}
                 className={cn(
-                  "min-h-11 rounded-control border px-4 font-semibold transition-colors duration-150 ease-out",
+                  "min-h-11 rounded-control border px-3 font-semibold transition-colors duration-150 ease-out sm:px-4",
                   item.value === view
                     ? "border-brand-600 bg-brand-50 text-brand-700"
                     : "border-field-border bg-surface text-ink hover:bg-brand-50",
@@ -160,37 +158,50 @@ export function AgendaView() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div
+            role="group"
+            aria-label="Navegación por fecha"
+            className="flex flex-wrap items-center gap-2"
+          >
             <Button
               variant="secondary"
-              className="px-3"
+              className="px-3!"
               aria-label={`${unit} anterior`}
               onClick={() => move(-1)}
             >
               <Icon name="chevron-right" className="size-5 rotate-180" />
             </Button>
-            <Button variant="secondary" onClick={() => setDate(today)}>
+            <Button variant="secondary" className="px-3! sm:px-5!" onClick={() => setDate(today)}>
               Hoy
             </Button>
             <Button
               variant="secondary"
-              className="px-3"
+              className="px-3!"
               aria-label={`${unit} siguiente`}
               onClick={() => move(1)}
             >
               <Icon name="chevron-right" className="size-5" />
             </Button>
+            <DatePicker value={date} onChange={setDate} />
           </div>
         </div>
         {isReception && (
-          <Button onClick={() => setCreating(true)}>
+          <Button
+            className="order-3 px-3! sm:order-none sm:px-5!"
+            onClick={() => setCreating(true)}
+          >
             <Icon name="calendar-plus" className="size-5" />
             Nueva cita
           </Button>
         )}
         {isReception && professionals && (
-          <div className="w-full sm:w-72">
-            <Select label="Profesional" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <div className="order-2 min-w-0 sm:order-none sm:w-72">
+            <Select
+              label="Profesional"
+              className="w-full min-w-0"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
               {view === "day" && <option value={ALL}>Todos los profesionales</option>}
               <optgroup label="Veterinarios">
                 {professionals.veterinarians.map((item) => (
@@ -260,7 +271,6 @@ function AppointmentList({ appointments, onOpen }: ListProps) {
   );
 }
 
-// Con "Todos", recepción ve una columna por profesional (RF-16).
 function DayView({ appointments, groups, onOpen }: ListProps & { groups: Staff | null }) {
   if (!groups) return <AppointmentList appointments={appointments} onOpen={onOpen} />;
   const listed = [...groups.veterinarians, ...groups.groomers];

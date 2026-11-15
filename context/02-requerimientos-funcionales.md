@@ -59,7 +59,7 @@ Flujo central: **cuenta → cita → atención → factura**.
 ### RF-11 Agendar cita en línea
 
 - **Entradas**: mascota, tipo de cita (consulta general, vacunación, control, estética), veterinario o “cualquiera disponible”, fecha y franja, motivo.
-- **Reglas**: RN-20 a RN-27.
+- **Reglas**: RN-20 a RN-27 y RN-33 (en el paso Fecha y hora, un día sin cupos muestra solo el aviso; se elige otra fecha desde el calendario).
 - **Salida**: cita registrada, comprobante en pantalla y correo de confirmación.
 - **Aceptación**: (1) si dos propietarios eligen la misma franja, el segundo recibe “La franja ya no está disponible” y se le ofrecen otras; (2) la cita aparece en la agenda de recepción y del veterinario; (3) el correo llega en < 1 min.
 
