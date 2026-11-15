@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { useAuth } from "@/features/auth/auth-provider";
-import { useAuthDialog } from "@/features/auth/components/auth-dialog";
+import { useAuthDialog, type SignedInHandler } from "@/features/auth/components/auth-dialog";
 import { BOOKING_SECTION_ID } from "@/features/landing/content";
 import type { AppointmentType } from "@/types/domain";
 
@@ -13,14 +12,14 @@ const BOOKING_REASONS = {
 
 type LandingBookingContextValue = {
   type: AppointmentType | null;
+  requestKey: number;
   requestBooking: (type?: AppointmentType) => void;
-  openLogin: (tab?: "login" | "register") => void;
+  openLogin: (tab?: "login" | "register", onSignedIn?: SignedInHandler) => void;
 };
 
 const LandingBookingContext = createContext<LandingBookingContextValue | null>(null);
 
 function scrollToBooking() {
-  // El asistente aparece después de entrar; se espera un cuadro para bajar con la altura ya nueva.
   requestAnimationFrame(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document
@@ -30,27 +29,30 @@ function scrollToBooking() {
 }
 
 export function LandingBookingProvider({ children }: { children: ReactNode }) {
-  const { status } = useAuth();
   const { open } = useAuthDialog();
   const [type, setType] = useState<AppointmentType | null>(null);
+  const [requestKey, setRequestKey] = useState(0);
 
   const openLogin = useCallback(
-    (tab: "login" | "register" = "login") => open(BOOKING_REASONS[tab], tab, scrollToBooking),
+    (tab: "login" | "register" = "login", onSignedIn?: SignedInHandler) =>
+      open(BOOKING_REASONS[tab], tab, (user) => {
+        onSignedIn?.(user);
+        scrollToBooking();
+      }),
     [open],
   );
 
-  const requestBooking = useCallback(
-    (nextType?: AppointmentType) => {
-      if (nextType) setType(nextType);
-      scrollToBooking();
-      if (status === "anonymous") openLogin();
-    },
-    [status, openLogin],
-  );
+  const requestBooking = useCallback((nextType?: AppointmentType) => {
+    if (nextType) {
+      setType(nextType);
+      setRequestKey((key) => key + 1);
+    }
+    scrollToBooking();
+  }, []);
 
   const value = useMemo(
-    () => ({ type, requestBooking, openLogin }),
-    [type, requestBooking, openLogin],
+    () => ({ type, requestKey, requestBooking, openLogin }),
+    [type, requestKey, requestBooking, openLogin],
   );
 
   return <LandingBookingContext.Provider value={value}>{children}</LandingBookingContext.Provider>;

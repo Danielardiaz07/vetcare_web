@@ -238,7 +238,7 @@ export function ChatWidget({ open, onOpenChange }: ChatWidgetProps) {
         title="Abrir VetBot"
         onClick={() => onOpenChange(true)}
         className={cn(
-          "fixed top-[calc((100dvh+var(--spacing-header-bar)+1px)/2)] right-0 z-40 h-16 w-12 -translate-y-1/2 items-center justify-center rounded-l-full bg-brand-600 text-white shadow-lg transition-colors duration-150 ease-out hover:bg-brand-700",
+          "fixed right-0 bottom-6 z-40 h-16 w-12 items-center justify-center rounded-l-full bg-brand-600 text-white shadow-lg transition-colors duration-150 ease-out hover:bg-brand-700",
           open ? "hidden" : "inline-flex",
         )}
       >

@@ -67,6 +67,7 @@ function changesOf(patient: Patient, input: PatientFormInput): UpdatePatientInpu
 
 type PatientFormProps = {
   patient?: Patient;
+  initialValues?: Partial<PatientFormInput>;
   owner?: Owner;
   // Portal (RN-18): registra una mascota propia; el propietario es el de la sesión.
   createMine?: (input: PatientFormInput) => Promise<Patient>;
@@ -76,6 +77,7 @@ type PatientFormProps = {
 
 export function PatientForm({
   patient,
+  initialValues,
   owner: presetOwner,
   createMine,
   onCancel,
@@ -101,7 +103,7 @@ export function PatientForm({
           birthDate: patient.birthDate,
           weightKg: patient.weightKg,
         }
-      : undefined,
+      : initialValues,
   });
   const needsOwner = !patient && !presetOwner && !createMine;
 
