@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,18 +12,46 @@ import { InvoiceDetail } from "@/features/invoices/components/invoice-detail";
 import { PAYMENT_METHOD_LABELS } from "@/features/invoices/labels";
 import { clinicDateOf } from "@/lib/clinic-time";
 import { formatCop, formatDate } from "@/lib/format";
-import { listMyInvoices } from "@/services/invoices";
+import { getMyInvoice, listMyInvoices } from "@/services/invoices";
 import type { Paginated } from "@/types/api";
 import type { Invoice } from "@/types/domain";
 
 type ListState =
   { status: "loading" } | { status: "error" } | { status: "ready"; result: Paginated<Invoice> };
 
-export function MyInvoices() {
+type DetailState =
+  | { status: "closed" }
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; invoice: Invoice };
+
+export function MyInvoices({ invoiceId }: { invoiceId?: string }) {
   const [page, setPage] = useState(1);
   const [list, setList] = useState<ListState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
-  const [selected, setSelected] = useState<Invoice | null>(null);
+  const [detail, setDetail] = useState<DetailState>({ status: "closed" });
+  const [detailRetry, setDetailRetry] = useState(0);
+  const detailRequest = useRef(0);
+
+  useEffect(() => {
+    const request = ++detailRequest.current;
+    if (!invoiceId) {
+      setDetail({ status: "closed" });
+      return;
+    }
+    let active = true;
+    setDetail({ status: "loading" });
+    getMyInvoice(invoiceId)
+      .then((invoice) => {
+        if (active && request === detailRequest.current) setDetail({ status: "ready", invoice });
+      })
+      .catch(() => {
+        if (active && request === detailRequest.current) setDetail({ status: "error" });
+      });
+    return () => {
+      active = false;
+    };
+  }, [invoiceId, detailRetry]);
 
   useEffect(() => {
     let active = true;
@@ -71,7 +99,10 @@ export function MyInvoices() {
       render: (invoice) => (
         <Button
           variant="secondary"
-          onClick={() => setSelected(invoice)}
+          onClick={() => {
+            detailRequest.current += 1;
+            setDetail({ status: "ready", invoice });
+          }}
           aria-label={`Ver la factura ${invoice.number}`}
         >
           Ver
@@ -108,14 +139,21 @@ export function MyInvoices() {
       )}
 
       <Modal
-        open={selected !== null}
-        title={selected ? `Factura ${selected.number}` : "Factura"}
-        onClose={() => setSelected(null)}
+        open={detail.status !== "closed"}
+        title={detail.status === "ready" ? `Factura ${detail.invoice.number}` : "Factura"}
+        onClose={() => {
+          detailRequest.current += 1;
+          setDetail({ status: "closed" });
+        }}
         wide
       >
-        {selected && (
+        {detail.status === "loading" && <LoadingState />}
+        {detail.status === "error" && (
+          <ErrorState onRetry={() => setDetailRetry((key) => key + 1)} />
+        )}
+        {detail.status === "ready" && (
           <>
-            <InvoiceDetail invoice={selected} />
+            <InvoiceDetail invoice={detail.invoice} />
             <div className="flex justify-end print:hidden">
               <Button onClick={() => window.print()}>Imprimir</Button>
             </div>

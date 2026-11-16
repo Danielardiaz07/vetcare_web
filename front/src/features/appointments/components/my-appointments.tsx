@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -39,7 +39,8 @@ async function loadAppointments(): Promise<AppointmentsData> {
   return { pets, upcoming, past };
 }
 
-export function MyAppointments() {
+export function MyAppointments({ appointmentId }: { appointmentId?: string }) {
+  const selectedRef = useRef<HTMLLIElement>(null);
   const { show } = useToast();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
@@ -52,7 +53,21 @@ export function MyAppointments() {
     setState({ status: "loading" });
     loadAppointments()
       .then((data) => {
-        if (active) setState({ status: "ready", data });
+        if (!active) return;
+        setState({ status: "ready", data });
+        if (appointmentId) {
+          const targetTab = TABS.find((tab) =>
+            data[tab.when].some((appointment) => appointment.id === appointmentId),
+          );
+          if (targetTab) {
+            const index = data[targetTab.when].findIndex(
+              (appointment) => appointment.id === appointmentId,
+            );
+            setWhen(targetTab.when);
+            setPetId(ALL_PETS);
+            setPage(Math.floor(index / PAGE_SIZE) + 1);
+          }
+        }
       })
       .catch(() => {
         if (active) setState({ status: "error" });
@@ -60,7 +75,14 @@ export function MyAppointments() {
     return () => {
       active = false;
     };
-  }, [reloadKey]);
+  }, [reloadKey, appointmentId]);
+
+  useEffect(() => {
+    if (state.status === "ready" && appointmentId && selectedRef.current) {
+      selectedRef.current.focus({ preventScroll: true });
+      selectedRef.current.scrollIntoView({ block: "center" });
+    }
+  }, [state, appointmentId]);
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
 
@@ -89,6 +111,11 @@ export function MyAppointments() {
   if (state.status === "error") return <ErrorState onRetry={reload} />;
 
   const { pets } = state.data;
+  const targetMissing =
+    appointmentId &&
+    ![...state.data.upcoming, ...state.data.past].some(
+      (appointment) => appointment.id === appointmentId,
+    );
   const pet = pets.find((item) => item.id === petId);
   const ofPet = (list: Appointment[]) => list.filter((item) => !pet || item.patient.id === pet.id);
   const matches = ofPet(state.data[when]);
@@ -106,6 +133,11 @@ export function MyAppointments() {
 
   return (
     <div className="flex flex-col gap-5">
+      {targetMissing && (
+        <p role="status" className="text-sm text-muted">
+          La cita de este aviso ya no está disponible. Puedes consultar tus demás citas.
+        </p>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div role="tablist" aria-label="Citas" className="flex gap-2">
           {TABS.map((tab) => {
@@ -182,7 +214,12 @@ export function MyAppointments() {
         ) : (
           <ul className="flex flex-col gap-3">
             {visible.map((appointment) => (
-              <li key={appointment.id}>
+              <li
+                key={appointment.id}
+                ref={appointment.id === appointmentId ? selectedRef : undefined}
+                tabIndex={appointment.id === appointmentId ? -1 : undefined}
+                className="scroll-mt-24 rounded-card"
+              >
                 <AppointmentCard
                   appointment={appointment}
                   withPrep={when === "upcoming"}
