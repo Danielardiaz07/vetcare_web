@@ -94,3 +94,16 @@ Del 18 de agosto al 24 de noviembre de 2026.
 | Fin del Sprint 2 | 15 nov 2026 | Incremento 2 |
 | Fin del Sprint 3 | 23 nov 2026 | Incremento 3 (v1.0) |
 | Sustentación final | Por definir (ref. 24 nov 2026) | Aplicativo funcionando, documento completo y presentación de 15 min |
+
+## 8. Mejoras para la sustentación (2026-11-15)
+
+Las 24 historias ya están comprometidas; con los días que quedan antes de la sustentación se acordó sumar mejoras de valor visible para la demostración, sin tablas nuevas ni librerías fuera del stack ([08](08-arquitectura-y-stack.md)). Se siguen en [12](12-decisiones-y-pendientes.md) (P-18 y P-19). No cambian el alcance comprometido de la sección 5.
+
+| Mejora | Backend (Daniela) | Frontend (Kenys) | Fecha objetivo |
+|--------|-------------------|------------------|----------------|
+| Ficha de la mascota con gráfica de peso y carné imprimible | Sin cambios: el historial ya trae el peso de cada consulta | Pendiente | 18 nov |
+| Campana de avisos del portal | Hecho: `GET /me/alerts` (D-52) | Pendiente | 18 nov |
+| Agenda de recepción en cuadrícula | Sin cambios | Pendiente: revisar qué falta de RF-16 | 20 nov |
+| Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Pendiente | 20 nov |
+| Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Pendiente | 21 y 22 nov |
+| VetBot con IA | Fuera del alcance por ahora (P-08) | — | Solo si sobra tiempo |

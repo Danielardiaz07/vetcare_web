@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-15 · 10, 12 · Plan de mejoras para la sustentación: se agrega la sección 8 de 10 y los pendientes P-18 (mejoras del frontend) y P-19 (verificación previa), y se aclara en P-08 que VetBot con IA necesita una decisión previa. No cambia el alcance de las historias.
 - 2026-11-15 · 04, 08, 09, 12 · D-52, D-53, D-54: centro de avisos del propietario (`GET /me/alerts`), tablero con periodo anterior y exportación a CSV (`GET /reports/dashboard/export`) y datos de demostración con historia de peso y facturas. Sin tablas ni librerías nuevas.
 - 2026-11-15 · 03, 04, 08, 09, 12 · D-51: la API publica `GET /appointment-types`, `GET /appointments/availability`, `GET /veterinarians/public` y `GET /groomers/public` (activos, paginados, datos mínimos) para el agendamiento desde la landing; crear la cita y registrar mascotas siguen autenticados. P-17 resuelto; Swagger pasa a 86 operaciones. la pestaña lateral de VetBot pasa del centro vertical a 24 px del borde inferior, conservando su tamaño y funcionamiento.
 - 2026-11-15 · 08 · D-45: la pestaña lateral de VetBot pasa del centro vertical a 24 px del borde inferior, conservando su tamaño y funcionamiento.
