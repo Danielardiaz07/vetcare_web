@@ -62,6 +62,10 @@ export const VACCINE_NOTICE_DAYS = 7; // RN-37
 export const ALERT_APPOINTMENT_HOURS = 48; // citas que empiezan dentro de este plazo
 export const ALERT_INVOICE_DAYS = 7; // facturas creadas dentro de este plazo
 
+// RN-81, D-55: variación de peso entre dos consultas seguidas.
+export const WEIGHT_ALERT_PERCENT = 10; // desde este porcentaje (subida o bajada) se marca
+export const ALERT_WEIGHT_DAYS = 30; // el aviso del portal dura este plazo desde la última consulta
+
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * MINUTE_MS;
 

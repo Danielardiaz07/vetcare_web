@@ -30,9 +30,39 @@ const HISTORY_COST = 45000;
 // Consultas pasadas con su peso: dan la curva de la ficha y ingresos repartidos en el tablero.
 // `hourUtc` separa a cada mascota para no cruzar la agenda del mismo veterinario (RN-27).
 const WEIGHT_HISTORY = [
-  { pet: "Luna", vet: 0, hourUtc: 14, points: [[150, 22.0], [100, 22.8], [60, 23.6], [30, 24.1]] },
-  { pet: "Milo", vet: 0, hourUtc: 15, points: [[120, 3.6], [75, 3.9], [35, 4.1], [3, 4.2]] },
-  { pet: "Rocky", vet: 1, hourUtc: 16, points: [[140, 19.2], [90, 18.8], [45, 18.3], [12, 18.0]] },
+  {
+    pet: "Luna",
+    vet: 0,
+    hourUtc: 14,
+    points: [
+      [150, 22.0],
+      [100, 22.8],
+      [60, 23.6],
+      [30, 24.1],
+    ],
+  },
+  {
+    pet: "Milo",
+    vet: 0,
+    hourUtc: 15,
+    points: [
+      [120, 3.6],
+      [75, 3.9],
+      [35, 4.1],
+      [3, 4.2],
+    ],
+  },
+  {
+    pet: "Rocky",
+    vet: 1,
+    hourUtc: 16,
+    points: [
+      [140, 19.2],
+      [90, 18.8],
+      [45, 18.3],
+      [12, 18.0],
+    ],
+  },
 ] as const;
 const PAYMENT_ROTATION = [PaymentMethod.CASH, PaymentMethod.CARD, PaymentMethod.TRANSFER];
 
@@ -107,6 +137,51 @@ async function addWeightHistory() {
   console.log(`Historia de peso y facturas de demostración creadas (${invoiced} consultas).`);
 }
 
+const WEIGHT_JUMP_REASON = "Variacion de peso (demo)";
+
+// RN-81: una consulta reciente de Rocky con +12,2 % frente a la anterior (18 a 20,2 kg) para mostrar el aviso de peso.
+// Sin factura: queda pendiente de facturar, como una atención recién hecha.
+async function addWeightJump() {
+  if (await prisma.appointment.findFirst({ where: { reason: WEIGHT_JUMP_REASON } })) return;
+
+  const veterinarian = await prisma.veterinarian.findUnique({
+    where: { documentNumber: "10000002" },
+  });
+  const patient = await prisma.patient.findFirst({
+    where: { name: "Rocky", owner: { email: { endsWith: `@${DEMO_DOMAIN}` } } },
+  });
+  if (!veterinarian || !patient) return;
+
+  const day = new Date(Date.now() - 2 * DAY_MS).toISOString().slice(0, 10);
+  const startsAt = new Date(`${day}T16:00:00.000Z`);
+  const appointment = await prisma.appointment.create({
+    data: {
+      patientId: patient.id,
+      type: AppointmentType.GENERAL_CONSULTATION,
+      veterinarianId: veterinarian.id,
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + SLOT_MS),
+      status: AppointmentStatus.ATTENDED,
+      reason: WEIGHT_JUMP_REASON,
+    },
+  });
+  await prisma.consultation.create({
+    data: {
+      appointmentId: appointment.id,
+      patientId: patient.id,
+      veterinarianId: veterinarian.id,
+      symptoms: "Control de peso por aumento de apetito",
+      weightKg: 20.2,
+      temperatureC: 38.6,
+      diagnosis: "Sobrepeso leve",
+      treatment: "Ajuste de la porcion diaria y mas ejercicio",
+      cost: HISTORY_COST,
+      createdAt: startsAt,
+    },
+  });
+  console.log("Consulta de demostración con variación de peso creada.");
+}
+
 // Datos de demostración para la presentación: no reemplazan al administrador (npm run db:seed).
 async function main() {
   const password = process.env.SEED_DEMO_PASSWORD;
@@ -115,6 +190,7 @@ async function main() {
   if (await prisma.user.findUnique({ where: { email: `recepcion@${DEMO_DOMAIN}` } })) {
     console.log("Los datos base de demostración ya existen; no se modifican.");
     await addWeightHistory();
+    await addWeightJump();
     return;
   }
 
@@ -324,6 +400,7 @@ async function main() {
   }
 
   await addWeightHistory();
+  await addWeightJump();
 
   console.log(
     `Datos de demostración creados. Cuentas @${DEMO_DOMAIN}: recepcion, vet1, vet2, estilista, propietario1, propietario2.`,

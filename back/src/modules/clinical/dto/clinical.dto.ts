@@ -3,6 +3,7 @@ import { ClinicalLimit, FieldLimit } from "@/config/constants";
 import { dateField, moneyField } from "@/shared/schemas/fields";
 import { clinicDateOf } from "@/shared/utils/clinic-time";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
+import type { WeightChange } from "@/shared/utils/weight-change";
 
 const requiredText = (label: string, max: number) =>
   z
@@ -158,6 +159,13 @@ export interface SurgeryResponseDto {
   performedAt: string;
   notes: string | null;
   createdAt: Date;
+}
+
+// RN-81, D-55: curva de peso de la mascota. `change` compara la última consulta con la anterior.
+export interface WeightTrendResponseDto {
+  thresholdPercent: number;
+  points: { consultationId: string; date: Date; weightKg: number }[]; // de la más antigua a la más reciente
+  change: WeightChange | null; // null con menos de dos consultas
 }
 
 export type HospitalizationStatus = (typeof HOSPITALIZATION_STATUSES)[number];

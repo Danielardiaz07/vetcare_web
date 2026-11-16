@@ -89,6 +89,10 @@ export class ClinicalController {
     );
   };
 
+  weightTrend: RequestHandler = async (req, res) => {
+    res.json(await this.service.weightTrend(req.user!, String(req.params.id)));
+  };
+
   vaccinationCard: RequestHandler = async (req, res) => {
     res.json(await this.service.vaccinationCard(req.user!, String(req.params.id)));
   };

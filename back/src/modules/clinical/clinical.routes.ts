@@ -87,6 +87,12 @@ export function createClinicalRouter(
     validate({ params: uuidParamSchema }),
     controller.vaccinationCard,
   );
+  router.get(
+    "/patients/:id/weight-trend",
+    ...clinicStaff,
+    validate({ params: uuidParamSchema }),
+    controller.weightTrend,
+  );
 
   return router;
 }
@@ -109,6 +115,12 @@ export function createMyClinicalRouter(
     ...owner,
     validate({ params: uuidParamSchema }),
     controller.vaccinationCard,
+  );
+  router.get(
+    "/:id/weight-trend",
+    ...owner,
+    validate({ params: uuidParamSchema }),
+    controller.weightTrend,
   );
 
   return router;
