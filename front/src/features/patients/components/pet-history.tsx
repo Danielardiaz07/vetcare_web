@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { ClinicalHistory } from "@/features/clinical/components/clinical-history";
 import { VaccineAlerts } from "@/features/clinical/components/vaccine-alerts";
 import { PatientAvatar } from "@/features/patients/components/patient-avatar";
+import { WeightHistory } from "@/features/patients/components/weight-history";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
 import { ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
@@ -26,21 +27,24 @@ type HistoryData = { pet: Patient; pets: Patient[]; card: VaccinationCardEntry[]
 
 type HistoryState =
   | { status: "loading" }
+  | { status: "empty" }
   | { status: "not-found" }
   | { status: "error" }
   | { status: "ready"; data: HistoryData };
 
-async function loadHistory(petId: string): Promise<HistoryData> {
+async function loadHistory(petId?: string): Promise<HistoryData | null> {
   const [pet, pets, card] = await Promise.all([
-    getMyPatient(petId),
+    petId ? getMyPatient(petId) : null,
     getMyPatients(),
-    getMyVaccinationCard(petId),
+    petId ? getMyVaccinationCard(petId) : null,
   ]);
-  return { pet, pets, card };
+  const selected = pet ?? pets[0];
+  if (!selected) return null;
+  return { pet: selected, pets, card: card ?? (await getMyVaccinationCard(selected.id)) };
 }
 
 type PetHistoryProps = {
-  petId: string;
+  petId?: string;
 };
 
 export function PetHistory({ petId }: PetHistoryProps) {
@@ -52,7 +56,7 @@ export function PetHistory({ petId }: PetHistoryProps) {
     setState({ status: "loading" });
     loadHistory(petId)
       .then((data) => {
-        if (active) setState({ status: "ready", data });
+        if (active) setState(data ? { status: "ready", data } : { status: "empty" });
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -70,6 +74,25 @@ export function PetHistory({ petId }: PetHistoryProps) {
 
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") return <ErrorState onRetry={reload} />;
+  if (state.status === "empty") {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-semibold text-ink">Historial clínico</h1>
+        <EmptyState
+          title="Aún no tienes mascotas registradas"
+          description="Agrega una mascota para consultar aquí su historial clínico."
+          action={
+            <Link
+              href={ROUTES.portalNewPet}
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
+            >
+              Agregar mascota
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
   if (state.status === "not-found") {
     return (
       <EmptyState
@@ -137,7 +160,9 @@ export function PetHistory({ petId }: PetHistoryProps) {
 
       <VaccineAlerts items={[{ pet, card }]} />
 
-      <ClinicalHistory key={pet.id} pet={pet} card={card} />
+      <WeightHistory key={`weight-${pet.id}`} patientId={pet.id} patientName={pet.name} />
+
+      <ClinicalHistory key={`clinical-${pet.id}`} pet={pet} card={card} />
     </div>
   );
 }

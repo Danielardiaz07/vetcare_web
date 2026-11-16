@@ -21,9 +21,11 @@ Fuente para los textos y flujos de pantalla. La interfaz va en español (RN-61) 
 
 **Recordatorios** (D-48): agrupa los avisos de vacunas vencidas o por vencer, con mascota, vacuna, fecha y enlace “Agendar vacunación”; conserva los colores de alerta.
 
-**Historial clínico**: se elige la mascota y se ve su ficha con 7 pestañas: **Consultas**, **Internaciones**, **Vacunaciones**, **Medicaciones**, **Cirugías**, **Estética** y **Laboratorio**, de lo más reciente a lo más antiguo.
+**Historial clínico**: al abrir desde el menú se muestra la primera mascota activa y se puede cambiar mediante el selector. Sin mascotas se ofrece “Agregar mascota”; un fallo de carga permite reintentar. El acceso “Ver historial” desde Inicio abre directamente la mascota elegida. La ficha muestra las pestañas **Consultas**, **Vacunaciones**, **Cirugías**, **Internaciones**, **Exámenes** y **Estética**, de lo más reciente a lo más antiguo.
 
 - Vacunas (carné): verde = al día · amarillo = vence en los próximos 7 días · rojo = vencida.
+
+**Evolución del peso** (D-58, RN-81): en el historial de cada mascota, una gráfica muestra las mediciones de sus consultas y destaca el último peso con su fecha. “Ver registros de peso” despliega una tabla accesible. Con menos de dos consultas aparece “Aún no hay suficientes consultas para graficar”; una medición sigue disponible en la tabla. El cambio frente a la consulta anterior se muestra con signo y un decimal como máximo: ámbar con ícono cuando la API lo marca, neutro cuando no y ausente sin comparación. Si está marcado, el último punto adopta forma de rombo y se muestra “Conviene revisarlo en la próxima consulta”. Un error en este bloque ofrece “Reintentar” y permite seguir usando el historial.
 
 **Agendar cita** (asistente de 4 pasos, ≤ 3 min, RNF-06, D-49): 1) mascota → 2) tipo de cita (consulta general, vacunación, control, estética) → 3) profesional (veterinario o estilista según el tipo de cita) o “Cualquiera disponible” → 4) fecha y hora: un calendario mensual compacto siempre visible bajo la etiqueta Fecha, sin un recuadro adicional que repita la selección; el encabezado muestra mes y año, el día elegido queda marcado en azul y la fecha aparece junto a los horarios. El calendario ocupa su propio espacio y permanece visible al elegir un día; al elegir el día se muestran todas sus horas disponibles al lado, debajo en móvil. Al entrar queda seleccionada la fecha actual de Colombia y se consultan sus horarios; si no quedan horas válidas se muestra el aviso. Cambiar de día limpia la hora anterior. Un día sin cupos muestra únicamente “Sin horarios disponibles”, sin enlaces a otros días (RN-33); luego la revisión con el motivo y “Confirmar cita”. Se muestra el comprobante, llega un correo y, un día antes, un recordatorio.
 
@@ -51,6 +53,8 @@ Los menús laterales de recepción, veterinario, estilista y administrador se ag
 El calendario de recepción muestra vista diaria y semanal por veterinario con **colores por estado** de cita. “Ir a fecha”, junto a las flechas y Hoy, abre el calendario de VetCare con mes, año y fecha escrita para saltar directamente a cualquier día; en vista semanal abre la semana que contiene ese día (D-49). La ventana “Elegir fecha” agrupa las flechas en el encabezado y evita repetir el mes y el formato de fecha para reducir su altura.
 
 **Presentación en móvil** (D-48): la agenda reúne los controles de vista y fecha y alinea el filtro de profesional con “Nueva cita”. En atención veterinaria y estética se muestran primero la mascota y la hora; “Ver datos y antecedentes” despliega toda la información del resumen, que sigue visible al lado del formulario en escritorio. Usuarios y Personal y horarios muestran tarjetas con toda la información y sus acciones; desde `md` vuelven a tablas.
+
+**Peso en la ficha y la consulta** (D-58): recepción y veterinario ven la misma gráfica, tabla y marca de cambio en la ficha del paciente. Junto al peso y la temperatura del formulario de consulta se muestra “Último cambio de peso registrado”, calculado entre las dos últimas consultas guardadas; el aviso acompaña la valoración del veterinario. Si no hay comparación no aparece. Su error de carga permite reintentar sin impedir diligenciar la consulta.
 
 ## 4. Mensajes frecuentes
 

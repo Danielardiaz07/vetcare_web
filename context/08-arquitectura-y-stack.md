@@ -248,6 +248,8 @@ Creación de buckets mediante script reproducible `back/scripts/setup-storage.ts
 
 - Inicio de agendamiento en landing (D-50): tarjeta con cuatro grupos visibles y resumen compacto al pie; calendario y horas reutilizados del asistente. Las selecciones públicas se conservan en sessionStorage de la pestaña durante acceso, registro y verificación, sin credenciales ni datos de la ficha completa. La revisión requiere sesión OWNER y una mascota propia. Si el acceso se solicita tras rellenar el formulario, una coincidencia única de nombre y especie se asocia automáticamente y abre el resumen; ninguna coincidencia lleva directamente a completar PatientForm y POST /me/patients; varias coincidencias requieren desambiguar. El enlace de acceso bajo el nombre conserva la landing y muestra tarjetas de mascotas para elegir. Antes de confirmar se vuelve a consultar disponibilidad y POST /appointments conserva sus permisos y validaciones transaccionales. Consultas públicas disponibles en la API (D-51): GET /appointment-types, GET /appointments/availability, GET /veterinarians/public y GET /groomers/public (activos, con datos mínimos y paginados). Tras entrar, el frontend reutiliza los listados autenticados actuales y vuelve a cargar los tipos de cita. Los listados internos, horarios de personal, escritura y recursos de propietarios siguen protegidos; el límite global de peticiones también cubre las consultas públicas.
 
+- Evolución del peso (D-58, RN-81): WeightHistory reutiliza WeightChart (SVG) y WeightChangeNotice en el historial del propietario y la ficha de pacientes del panel. El servicio getWeightTrend usa /me/patients/{id}/weight-trend para el propietario y /patients/{id}/weight-trend para recepción y veterinario; los mocks derivan sus puntos de las consultas existentes. La alerta usa el porcentaje y la marca enviados por el backend; la consulta veterinaria muestra el mismo aviso en versión compacta. Gráfica responsiva con ejes HTML legibles, puntos ordenados por fecha, último punto mayor y rombo ámbar si está marcado, nombre accesible y tabla nativa desplegable mediante teclado. Cero o una medición muestran el estado sin curva; la tabla conserva una medición. La carga y el reintento quedan limitados al bloque de peso.
+
 ### 7.2 Rutas del frontend
 
 Cada ruta define su `metadata.title` y el layout raíz lo completa como “Título | VetCare”; la portada usa “VetCare | Clínica veterinaria en Valledupar”. Una sección del panel que no está en el menú del rol devuelve a `/panel` (RN-13). En la barra superior del panel, el usuario (su nombre si tiene perfil, si no su correo) y su rol llevan a “Mi cuenta” (D-44).
@@ -262,7 +264,7 @@ Cada ruta define su `metadata.title` y el layout raíz lo completa como “Títu
 | `/portal` | Propietario | Inicio: saludo, próxima cita y mascotas |
 | `/portal/appointments` | Propietario | Mis citas |
 | `/portal/appointments/new` | Propietario | Agendar cita |
-| `/portal/history` | Propietario | Historial clínico: elegir la mascota (destino del menú) |
+| `/portal/history` | Propietario | Historial clínico: abre la primera mascota activa con selector para cambiar; sin mascotas ofrece registrarlas (destino del menú) |
 | `/portal/history/[petId]` | Propietario | Historial clínico de una mascota |
 | `/portal/invoices` | Propietario | Facturas y su PDF |
 | `/portal/profile` | Propietario | Mi perfil |

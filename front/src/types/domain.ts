@@ -124,6 +124,17 @@ export interface Consultation {
   createdAt: string;
 }
 
+export interface WeightTrend {
+  thresholdPercent: number;
+  points: { consultationId: string; date: string; weightKg: number }[];
+  change: {
+    previousKg: number;
+    currentKg: number;
+    percent: number;
+    flagged: boolean;
+  } | null;
+}
+
 export interface Vaccination {
   id: string;
   patientId: string;
