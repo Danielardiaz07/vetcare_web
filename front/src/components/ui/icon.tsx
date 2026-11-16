@@ -1,6 +1,7 @@
 import type { ReactNode, SVGProps } from "react";
 
 export type IconName =
+  | "bell"
   | "home"
   | "calendar"
   | "calendar-plus"
@@ -42,6 +43,11 @@ export type IconName =
 const ICON_SIZE = 24;
 
 const PATHS: Record<IconName, ReactNode> = {
+  bell: (
+    <>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+    </>
+  ),
   home: (
     <>
       <path d="M3 10.5 12 3l9 7.5" />

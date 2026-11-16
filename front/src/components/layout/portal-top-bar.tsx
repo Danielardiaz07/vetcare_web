@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/features/auth/auth-provider";
+import { AlertsBell } from "@/features/alerts/components/alerts-bell";
 import { ROUTES } from "@/lib/constants";
 
 type PortalTopBarProps = {
@@ -29,6 +30,7 @@ export function PortalTopBar({ onSignOut }: PortalTopBarProps) {
           </span>
         </Link>
         <div className="flex items-center gap-2 text-sm">
+          {user && <AlertsBell key={user.id} userId={user.id} />}
           <Link
             href={ROUTES.portalProfile}
             aria-label={`Mi perfil: ${displayName}`}

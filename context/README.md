@@ -51,7 +51,7 @@ Procedimiento (también disponible como skill `actualizar-context`):
 1. Identificar los archivos afectados y actualizarlos manteniendo la **trazabilidad** (NU → RF → HU → CU → RN → entidad).
 2. Mantener los IDs estables: no renumerar RF/RN/CU/HU; los eliminados se marcan `(retirado)`, no se reutilizan.
 3. Si el cambio mueve algo ya implementado, actualizar o dejar anotada la tarea en el código/migraciones.
-4. Registrar una línea en [CHANGELOG.md](CHANGELOG.md).
+4. Registrar una sola entrada por funcionalidad de la rama en [CHANGELOG.md](CHANGELOG.md). Consolidar sus ajustes en una única entrada por documento, describiendo el resultado final; conservar el historial de cambios ya integrados.
 
 ## Convenciones de estos documentos
 

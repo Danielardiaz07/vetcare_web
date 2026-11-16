@@ -2,6 +2,8 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-16 · README, 08, 10, 12, 13 · D-59: campana del propietario con cinco tipos de aviso, panel anclado y adaptable, contador estable, lectura individual o conjunta por cuenta y enlaces a citas, historial y facturas; incluye carga, error, reintento y cuenta sin avisos. Documentación consolidada por funcionalidad.
+- 2026-11-16 · 08, 12, 13 · D-58: puntos de peso seleccionables con clic, toque o teclado y etiqueta compacta de fecha y kg, persistente y preferentemente cercana y superior; evita otras mediciones y ajusta la longitud de su punta a la distancia del punto.
 - 2026-11-16 · 08, 10, 12, 13 · Integración de develop en la rama del carné imprimible: se conservan la entrada del historial desde el menú, las gráficas y alertas de peso (D-58) y el carné imprimible (D-57); se combinan documentación y seguimiento de P-18. El QR del carné continúa pendiente en el frontend (D-56).
 - 2026-11-16 · 08, 10, 12, 13 · D-57: carné de vacunación imprimible desde el portal y las fichas de recepción y veterinario, con vista previa compartida, datos de la mascota, última dosis y estado escrito de cada vacuna, impresión o guardado como PDF y estado sin vacunas. Cierre parcial de P-18; QR pendiente de integración del frontend (D-56).
 

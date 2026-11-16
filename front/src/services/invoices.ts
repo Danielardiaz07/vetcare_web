@@ -1,7 +1,7 @@
 import { GROOMING_TYPE_LABELS } from "@/features/grooming/labels";
 import { mockGroomingStore } from "@/services/grooming";
 import { request } from "@/services/http-client";
-import { isMockEnabled, mockError, mockResponse } from "@/services/mocks";
+import { isMockEnabled, isNewAccount, mockError, mockResponse } from "@/services/mocks";
 import {
   mockClinicPatients,
   mockConsultations,
@@ -218,4 +218,16 @@ export function voidInvoice(id: string, reason: string): Promise<Invoice> {
 export function listMyInvoices(page: number): Promise<Paginated<Invoice>> {
   if (isMockEnabled) return mockListMine(page);
   return request<Paginated<Invoice>>("/me/invoices", { query: { page, limit: PAGE_SIZE } });
+}
+
+export function getMyInvoice(id: string): Promise<Invoice> {
+  if (isMockEnabled) {
+    const invoice = mockInvoiceStore.find(
+      (item) => item.id === id && item.owner.id === mockOwner.id,
+    );
+    return invoice && !isNewAccount
+      ? mockResponse(invoice)
+      : mockError(NOT_FOUND, "NOT_FOUND", "Factura no encontrada");
+  }
+  return request<Invoice>(`/invoices/${encodeURIComponent(id)}`);
 }
