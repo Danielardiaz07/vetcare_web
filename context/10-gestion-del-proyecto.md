@@ -101,12 +101,12 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 
 | Mejora | Backend (Daniela) | Frontend (Kenys) | Fecha objetivo |
 |--------|-------------------|------------------|----------------|
-| Ficha de la mascota con gráfica de peso y carné imprimible | Sin cambios: el historial ya trae el peso de cada consulta | Carné imprimible hecho (D-57); gráfica pendiente de integración | 18 nov |
+| Ficha de la mascota con gráfica de peso y carné imprimible | Sin cambios: el historial ya trae el peso de cada consulta | Hecho: gráfica de peso (D-58) y carné imprimible (D-57) | 18 nov |
 | Campana de avisos del portal | Hecho: `GET /me/alerts` (D-52) | Pendiente | 18 nov |
 | Agenda de recepción en cuadrícula | Sin cambios | Pendiente: revisar qué falta de RF-16 | 20 nov |
 | Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Pendiente | 20 nov |
 | Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Pendiente | 21 y 22 nov |
-| Alerta de variación de peso | Hecho: `weight-trend` y aviso `WEIGHT_CHANGE` (D-55, RN-81) | Pendiente: marca en la consulta, la ficha y la campana | 20 nov |
+| Alerta de variación de peso | Hecho: `weight-trend` y aviso `WEIGHT_CHANGE` (D-55, RN-81) | Hecho en consulta y ficha (D-58); campana pendiente | 20 nov |
 | VetBot con datos reales (sin IA externa) | Sin cambios: usa los endpoints existentes y `weight-trend` | Pendiente | 21 nov |
 | QR del carné de vacunación (verificable) | Hecho: tabla `CardVerification`, `GET …/vaccination-card/verification` y `GET /public/vaccination-cards/{token}` (D-56) | Pendiente: mostrar el QR al imprimir el carné y la página `/verify/[token]` | 21 nov |
 | QR de llegada a la cita | Hecho: `GET /me/appointments/{id}/check-in` y `POST /appointments/check-in` (D-56) | Pendiente: el QR en Mis citas y el lector o el campo de código en recepción | 21 nov |

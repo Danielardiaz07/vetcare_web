@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { consultationSchema, type ConsultationFormInput } from "@/features/clinical/schemas";
 import { FIELD_LIMITS, ROUTES } from "@/lib/constants";
+import { WeightHistory } from "@/features/patients/components/weight-history";
 import { saveConsultation } from "@/services/clinical";
 import type { Appointment, Patient } from "@/types/domain";
 
@@ -78,6 +79,13 @@ export function ConsultationForm({ appointment, patient }: ConsultationFormProps
           {...register("temperatureC", { valueAsNumber: true })}
         />
       </div>
+      <WeightHistory
+        key={patient.id}
+        patientId={patient.id}
+        patientName={patient.name}
+        staff
+        compact
+      />
       <Textarea
         label="Diagnóstico"
         maxLength={CLINICAL_TEXT_MAX}

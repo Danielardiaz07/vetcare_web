@@ -93,7 +93,7 @@ export function listProfessionals(
   const path = isGrooming(type) ? "/groomers" : "/veterinarians";
   return request<Paginated<Professional>>(publicOnly ? `${path}/public` : path, {
     // Recepción también recibe al personal inactivo; agendar y reasignar solo admiten activos.
-    query: { page: 1, limit: PROFESSIONALS_LIMIT, active: true },
+    query: { page: 1, limit: PROFESSIONALS_LIMIT, ...(!publicOnly && { active: true }) },
   }).then((result) => result.data);
 }
 

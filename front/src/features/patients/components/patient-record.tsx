@@ -21,6 +21,7 @@ import { VaccineCard } from "@/features/clinical/components/vaccine-card";
 import { VaccinationCardPrint } from "@/features/clinical/components/vaccination-card-print";
 import { ownerFullName } from "@/features/owners/labels";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
+import { WeightHistory } from "@/features/patients/components/weight-history";
 import { clinicDateOf, formatClinicTime } from "@/lib/clinic-time";
 import { ROUTES } from "@/lib/constants";
 import { calculateAge, formatDate } from "@/lib/format";
@@ -197,6 +198,14 @@ export function PatientRecord({ patientId }: PatientRecordProps) {
           </div>
         )}
       </section>
+
+      <WeightHistory
+        key={patient.id}
+        patientId={patient.id}
+        patientName={patient.name}
+        staff
+        refreshKey={reloadKey}
+      />
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
