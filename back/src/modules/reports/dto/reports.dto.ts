@@ -23,8 +23,18 @@ export const dashboardQuerySchema = z
 
 export type DashboardQueryDto = z.infer<typeof dashboardQuerySchema>;
 
+// D-53: resumen del periodo inmediatamente anterior, de la misma duración, para comparar.
+export interface PreviousPeriodDto {
+  range: { from: string; to: string };
+  appointments: { total: number; noShowRate: number | null };
+  revenue: { invoices: number; total: number };
+  newPatients: number;
+  newOwners: number;
+}
+
 export interface DashboardResponseDto {
   range: { from: string; to: string };
+  previous: PreviousPeriodDto;
   appointments: {
     total: number;
     byStatus: Record<AppointmentStatus, number>;

@@ -40,6 +40,10 @@ import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
+import { AlertsController } from "@/modules/notifications/alerts.controller";
+import { AlertsRepository } from "@/modules/notifications/alerts.repository";
+import { createMyAlertsRouter } from "@/modules/notifications/alerts.routes";
+import { AlertsService } from "@/modules/notifications/alerts.service";
 import { NotificationsController } from "@/modules/notifications/notifications.controller";
 import { NotificationsRepository } from "@/modules/notifications/notifications.repository";
 import { createNotificationsRouter } from "@/modules/notifications/notifications.routes";
@@ -186,6 +190,10 @@ export function buildApp(overrides: AppOverrides = {}) {
     inventory: createInventoryRouter(inventoryController, requireAuth),
     docs: createDocsRouter(),
     health: createHealthRouter(new HealthController(new HealthService(new HealthRepository()))),
+    myAlerts: createMyAlertsRouter(
+      new AlertsController(new AlertsService(new AlertsRepository())),
+      requireAuth,
+    ),
     notifications: createNotificationsRouter(
       new NotificationsController(notificationsService),
       requireAuth,

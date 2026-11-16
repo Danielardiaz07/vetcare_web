@@ -1,6 +1,7 @@
 import {
   AppointmentStatus,
   AppointmentType,
+  PaymentMethod,
   PrismaClient,
   Role,
   Sex,
@@ -22,13 +23,98 @@ const WORKDAYS = [1, 2, 3, 4, 5, 6];
 const time = (value: string) => new Date(`1970-01-01T${value}:00.000Z`);
 const roundToSlot = (date: Date) => new Date(Math.floor(date.getTime() / SLOT_MS) * SLOT_MS);
 
+const HISTORY_REASON = "Control de peso (demo)"; // marca las citas de la historia para no repetirla
+const IVA_RATE = 0.19; // RN-71
+const HISTORY_COST = 45000;
+
+// Consultas pasadas con su peso: dan la curva de la ficha y ingresos repartidos en el tablero.
+// `hourUtc` separa a cada mascota para no cruzar la agenda del mismo veterinario (RN-27).
+const WEIGHT_HISTORY = [
+  { pet: "Luna", vet: 0, hourUtc: 14, points: [[150, 22.0], [100, 22.8], [60, 23.6], [30, 24.1]] },
+  { pet: "Milo", vet: 0, hourUtc: 15, points: [[120, 3.6], [75, 3.9], [35, 4.1], [3, 4.2]] },
+  { pet: "Rocky", vet: 1, hourUtc: 16, points: [[140, 19.2], [90, 18.8], [45, 18.3], [12, 18.0]] },
+] as const;
+const PAYMENT_ROTATION = [PaymentMethod.CASH, PaymentMethod.CARD, PaymentMethod.TRANSFER];
+
+// Idempotente: sirve tanto en una base nueva como en una que ya tenía los datos base.
+async function addWeightHistory() {
+  if (await prisma.appointment.findFirst({ where: { reason: HISTORY_REASON } })) return;
+
+  const vets = [
+    await prisma.veterinarian.findUnique({ where: { documentNumber: "10000001" } }),
+    await prisma.veterinarian.findUnique({ where: { documentNumber: "10000002" } }),
+  ];
+  let invoiced = 0;
+
+  for (const history of WEIGHT_HISTORY) {
+    const patient = await prisma.patient.findFirst({
+      where: { name: history.pet, owner: { email: { endsWith: `@${DEMO_DOMAIN}` } } },
+      include: { owner: true },
+    });
+    const veterinarian = vets[history.vet];
+    if (!patient || !veterinarian) continue;
+
+    for (const [daysAgo, weightKg] of history.points) {
+      const day = new Date(Date.now() - daysAgo * DAY_MS).toISOString().slice(0, 10);
+      const startsAt = new Date(`${day}T${String(history.hourUtc).padStart(2, "0")}:00:00.000Z`);
+      const appointment = await prisma.appointment.create({
+        data: {
+          patientId: patient.id,
+          type: AppointmentType.GENERAL_CONSULTATION,
+          veterinarianId: veterinarian.id,
+          startsAt,
+          endsAt: new Date(startsAt.getTime() + SLOT_MS),
+          status: AppointmentStatus.ATTENDED,
+          reason: HISTORY_REASON,
+        },
+      });
+      const consultation = await prisma.consultation.create({
+        data: {
+          appointmentId: appointment.id,
+          patientId: patient.id,
+          veterinarianId: veterinarian.id,
+          symptoms: "Control de rutina",
+          weightKg,
+          temperatureC: 38.5,
+          diagnosis: "Paciente sano",
+          treatment: "Sin tratamiento",
+          cost: HISTORY_COST,
+          createdAt: startsAt,
+        },
+      });
+
+      const tax = Math.round(HISTORY_COST * IVA_RATE);
+      await prisma.invoice.create({
+        data: {
+          ownerId: patient.ownerId,
+          paymentMethod: PAYMENT_ROTATION[invoiced % PAYMENT_ROTATION.length]!,
+          subtotal: HISTORY_COST,
+          tax,
+          total: HISTORY_COST + tax,
+          createdAt: startsAt,
+          items: {
+            create: {
+              consultationId: consultation.id,
+              description: "Consulta general",
+              amount: HISTORY_COST,
+            },
+          },
+        },
+      });
+      invoiced += 1;
+    }
+  }
+  console.log(`Historia de peso y facturas de demostración creadas (${invoiced} consultas).`);
+}
+
 // Datos de demostración para la presentación: no reemplazan al administrador (npm run db:seed).
 async function main() {
   const password = process.env.SEED_DEMO_PASSWORD;
   if (!password) throw new Error("Define SEED_DEMO_PASSWORD en back/.env");
 
   if (await prisma.user.findUnique({ where: { email: `recepcion@${DEMO_DOMAIN}` } })) {
-    console.log("Los datos de demostración ya existen; no se modifican.");
+    console.log("Los datos base de demostración ya existen; no se modifican.");
+    await addWeightHistory();
     return;
   }
 
@@ -236,6 +322,8 @@ async function main() {
     await vaccination(luna.id, parvo, "PV-2026-07", 30, 335); // al día
     await vaccination(rocky.id, rabies, "RB-2025-11", 400, -35); // vencida
   }
+
+  await addWeightHistory();
 
   console.log(
     `Datos de demostración creados. Cuentas @${DEMO_DOMAIN}: recepcion, vet1, vet2, estilista, propietario1, propietario2.`,

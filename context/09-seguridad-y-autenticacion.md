@@ -86,7 +86,8 @@ Consultas públicas de agendamiento (D-50, D-51): GET /appointment-types, GET /a
 | Generar factura (RF-23) | | ✔ | | | |
 | Consultar todas las facturas | | ✔ | | | ✔ (D-42) |
 | Anular factura (RN-74) | | | | | ✔ |
-| Reportes (RF-24) | | | | | ✔ |
+| Reportes (RF-24), con comparación y exportación a CSV (D-53) | | | | | ✔ |
+| Ver mis avisos (cita próxima, vacuna por vencer, factura nueva; D-52) | ✔ | | | | |
 
 > La matriz deriva de los RF y actores de `specs.pdf`. Los matices no especificados (p. ej. si el veterinario puede ver propietarios, o recepción ver el historial clínico completo) se afinan al implementar el módulo y se registran aquí.
 
