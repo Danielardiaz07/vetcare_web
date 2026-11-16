@@ -71,6 +71,7 @@ export const MIN_APPOINTMENT_LEAD_HOURS = 2;
 export const MAX_APPOINTMENT_ADVANCE_DAYS = 30;
 // RN-24: citas programadas o confirmadas a futuro por mascota.
 export const MAX_ACTIVE_APPOINTMENTS_PER_PATIENT = 3;
+export const WEIGHT_ALERT_PERCENT = 10;
 // RN-31: minutos de espera antes de poder marcar "No asistió".
 export const NO_SHOW_GRACE_MINUTES = 15;
 // D-26: las franjas y los horarios son hora de Colombia.

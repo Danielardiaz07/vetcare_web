@@ -1,4 +1,5 @@
 import { addDays, clinicDateOf } from "@/lib/clinic-time";
+import { WEIGHT_ALERT_PERCENT } from "@/lib/constants";
 import { getAgenda, mockAppointmentById } from "@/services/appointments";
 import { getMe } from "@/services/auth";
 import { request } from "@/services/http-client";
@@ -26,12 +27,15 @@ import type {
   VaccinationCardEntry,
   Vaccine,
   VaccineStatus,
+  WeightTrend,
 } from "@/types/domain";
 
 const FORBIDDEN = 403;
 const NOT_FOUND = 404;
 const CONFLICT = 409;
 const RECENT_CONSULTATIONS = 3;
+const PERCENT = 100;
+const PERCENT_PRECISION = 10;
 // RN-49: una vacuna cuya próxima dosis cae en los próximos 7 días está por vencer.
 const DUE_SOON_DAYS = 7;
 
@@ -200,6 +204,34 @@ async function mockMyVaccinationCard(patientId: string): Promise<VaccinationCard
 export function getMyVaccinationCard(patientId: string): Promise<VaccinationCardEntry[]> {
   if (isMockEnabled) return mockMyVaccinationCard(patientId);
   return request<VaccinationCardEntry[]>(`/me/patients/${patientId}/vaccination-card`);
+}
+
+export async function getWeightTrend(patientId: string, staff = false): Promise<WeightTrend> {
+  if (!isMockEnabled) {
+    const path = staff ? `/patients/${patientId}` : `/me/patients/${patientId}`;
+    return request<WeightTrend>(`${path}/weight-trend`);
+  }
+  await (staff ? getPatient(patientId) : getMyPatient(patientId));
+  const points = mockConsultationStore
+    .filter((item) => item.patientId === patientId)
+    .map(({ id, createdAt, weightKg }) => ({ consultationId: id, date: createdAt, weightKg }))
+    .sort((first, second) => first.date.localeCompare(second.date));
+  const previous = points.at(-2);
+  const current = points.at(-1);
+  let change: WeightTrend["change"] = null;
+  if (previous && current) {
+    const percent =
+      Math.round(
+        ((current.weightKg - previous.weightKg) / previous.weightKg) * PERCENT * PERCENT_PRECISION,
+      ) / PERCENT_PRECISION;
+    change = {
+      previousKg: previous.weightKg,
+      currentKg: current.weightKg,
+      percent,
+      flagged: Math.abs(percent) >= WEIGHT_ALERT_PERCENT,
+    };
+  }
+  return mockResponse({ thresholdPercent: WEIGHT_ALERT_PERCENT, points, change });
 }
 
 export type AttentionContext =
