@@ -1,7 +1,11 @@
 import { Role } from "@prisma/client";
 import { Router, type RequestHandler } from "express";
 import type { ZodType } from "zod";
-import { listStaffQuerySchema, replaceSchedulesRequestSchema } from "@/modules/staff/dto/staff.dto";
+import {
+  listPublicStaffQuerySchema,
+  listStaffQuerySchema,
+  replaceSchedulesRequestSchema,
+} from "@/modules/staff/dto/staff.dto";
 import type { StaffController } from "@/modules/staff/staff.controller";
 import { authorize } from "@/shared/middlewares/authorize";
 import { validate } from "@/shared/middlewares/validate";
@@ -26,6 +30,8 @@ export function createStaffRouter({
 
   router.post("/", ...admin, validate({ body: createSchema }), controller.create);
   router.get("/", authenticate, validate({ query: listStaffQuerySchema }), controller.list);
+  // Sin sesión (D-51): va antes de "/:id" para que "public" no se tome como identificador.
+  router.get("/public", validate({ query: listPublicStaffQuerySchema }), controller.listPublic);
   router.get("/:id", authenticate, validate({ params: uuidParamSchema }), controller.getById);
   router.patch(
     "/:id",

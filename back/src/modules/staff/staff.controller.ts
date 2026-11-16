@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import { HttpStatus } from "@/config/constants";
 import type {
   CreateStaffRequestDto,
+  ListPublicStaffQueryDto,
   ListStaffQueryDto,
   ReplaceSchedulesRequestDto,
   UpdateStaffRequestDto,
@@ -18,6 +19,10 @@ export class StaffController {
 
   list: RequestHandler = async (req, res) => {
     res.json(await this.service.list(req.query as unknown as ListStaffQueryDto, req.user!.role));
+  };
+
+  listPublic: RequestHandler = async (req, res) => {
+    res.json(await this.service.listPublic(req.query as unknown as ListPublicStaffQueryDto));
   };
 
   getById: RequestHandler = async (req, res) => {

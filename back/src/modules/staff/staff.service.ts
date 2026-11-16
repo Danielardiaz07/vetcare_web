@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import type {
   CreateStaffRequestDto,
+  ListPublicStaffQueryDto,
   ListStaffQueryDto,
   ReplaceSchedulesRequestDto,
   ScheduleBlockResponseDto,
@@ -106,6 +107,15 @@ export class StaffService {
       query.page,
       query.limit,
     );
+  }
+
+  async listPublic(query: ListPublicStaffQueryDto): Promise<Paginated<StaffPublicResponseDto>> {
+    const { items, total } = await this.repository.list({
+      active: true,
+      skip: skipOf(query.page, query.limit),
+      take: query.limit,
+    });
+    return paginate(items.map(toPublicResponse), total, query.page, query.limit);
   }
 
   async getById(id: string, viewerRole: Role): Promise<StaffResponseDto | StaffPublicResponseDto> {
