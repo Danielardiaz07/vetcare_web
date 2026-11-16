@@ -26,9 +26,9 @@ export function createAppointmentsRouter(
     authorize(Role.RECEPTIONIST, Role.VETERINARIAN, Role.GROOMER),
   ];
 
+  // Pública (D-51): solo franjas libres, sin datos de citas ni de pacientes.
   router.get(
     "/availability",
-    authenticate,
     validate({ query: availabilityQuerySchema }),
     controller.availability,
   );

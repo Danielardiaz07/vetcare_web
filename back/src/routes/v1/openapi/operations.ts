@@ -60,6 +60,7 @@ import { dashboardQuerySchema } from "@/modules/reports/dto/reports.dto";
 import {
   createGroomerRequestSchema,
   createVeterinarianRequestSchema,
+  listPublicStaffQuerySchema,
   listStaffQuerySchema,
   replaceSchedulesRequestSchema,
   updateGroomerRequestSchema,
@@ -133,6 +134,11 @@ function staffOperations(
     op("post", prefix, TAGS.staff, `Registrar ${noun}`, admin, 201, { body: createSchema }),
     op("get", prefix, TAGS.staff, `Listar ${noun}s`, "authenticated", 200, {
       query: listStaffQuerySchema,
+    }),
+    op("get", `${prefix}/public`, TAGS.staff, `Listar ${noun}s activos (público)`, "public", 200, {
+      query: listPublicStaffQuerySchema,
+      description:
+        "Sin sesión (D-51). Solo profesionales activos, con id, nombres, apellidos y especialidad (veterinarios); nunca documento, teléfono ni cuenta.",
     }),
     op("get", `${prefix}/{id}`, TAGS.staff, `Ver ${noun}`, "authenticated", 200),
     op("patch", `${prefix}/{id}`, TAGS.staff, `Editar o desactivar ${noun}`, admin, 200, {
@@ -381,8 +387,9 @@ export const OPERATIONS: Operation[] = [
     "/appointment-types",
     TAGS.staff,
     "Ver la duración de cada tipo de cita",
-    "authenticated",
+    "public",
     200,
+    { description: "Pública para iniciar el agendamiento desde la landing (D-51)." },
   ),
   op(
     "patch",
@@ -403,11 +410,12 @@ export const OPERATIONS: Operation[] = [
     "/appointments/availability",
     TAGS.appointments,
     "Consultar las franjas libres",
-    "authenticated",
+    "public",
     200,
     {
       query: availabilityQuerySchema,
-      description: "Si ese día no hay franjas, sugiere hasta 3 fechas cercanas (RN-33).",
+      description:
+        "Pública (D-51). Si ese día no hay franjas, sugiere hasta 3 fechas cercanas (RN-33). Crear la cita sigue exigiendo sesión.",
     },
   ),
   op(

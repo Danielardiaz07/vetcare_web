@@ -14,7 +14,8 @@ export function createAppointmentTypesRouter(
 ): Router {
   const router = Router();
 
-  router.get("/", authenticate, controller.list);
+  // Pública (D-51): la landing la necesita para elegir el tipo de cita sin sesión.
+  router.get("/", controller.list);
   router.patch(
     "/:type",
     authenticate,

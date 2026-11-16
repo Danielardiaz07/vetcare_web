@@ -57,6 +57,8 @@ export const listStaffQuerySchema = paginationQuerySchema.extend({
     .optional(),
 });
 
+export const listPublicStaffQuerySchema = paginationQuerySchema;
+
 const timeField = z
   .string()
   .regex(TIME_OF_DAY_PATTERN, "La hora debe tener formato HH:mm")
@@ -106,6 +108,7 @@ export type CreateStaffRequestDto = z.infer<typeof createVeterinarianRequestSche
 };
 export type UpdateStaffRequestDto = z.infer<typeof updateVeterinarianRequestSchema>;
 export type ListStaffQueryDto = z.infer<typeof listStaffQuerySchema>;
+export type ListPublicStaffQueryDto = z.infer<typeof listPublicStaffQuerySchema>;
 export type ReplaceSchedulesRequestDto = z.infer<typeof replaceSchedulesRequestSchema>;
 
 export interface StaffResponseDto {
