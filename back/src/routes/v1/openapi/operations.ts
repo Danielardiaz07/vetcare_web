@@ -368,6 +368,10 @@ export const OPERATIONS: Operation[] = [
   op("get", "/me/invoices", TAGS.portal, "Listar mis facturas", [OWNER], 200, {
     query: listMyInvoicesQuerySchema,
   }),
+  op("get", "/me/alerts", TAGS.portal, "Ver mis avisos", [OWNER], 200, {
+    description:
+      "Centro de avisos (D-52), calculado al consultar: citas de las próximas 48 horas, vacunas vencidas o que vencen en 7 días y facturas de los últimos 7 días. Cada aviso trae `id` estable, `kind`, `message` y `date`.",
+  }),
 
   // Personal y horarios
   ...staffOperations(
@@ -636,8 +640,21 @@ export const OPERATIONS: Operation[] = [
   op("get", "/reports/dashboard", TAGS.reports, "Tablero de indicadores", [ADMIN], 200, {
     query: dashboardQuerySchema,
     description:
-      "Citas por estado, inasistencias, servicios más solicitados, ingresos, altas, internaciones abiertas y vacunas vencidas. Sin fechas, los últimos 30 días; máximo 366 (RN-80).",
+      "Citas por estado, inasistencias, servicios más solicitados, ingresos, altas, internaciones abiertas y vacunas vencidas. Sin fechas, los últimos 30 días; máximo 366 (RN-80). `previous` trae el periodo anterior de la misma duración para comparar (D-53).",
   }),
+  op(
+    "get",
+    "/reports/dashboard/export",
+    TAGS.reports,
+    "Exportar el tablero a CSV",
+    [ADMIN],
+    200,
+    {
+      query: dashboardQuerySchema,
+      description:
+        "Mismos parámetros y datos del tablero, como archivo CSV (UTF-8 con BOM, separado por punto y coma, coma decimal) que abre Excel. Se descarga con el token de acceso (D-53).",
+    },
+  ),
 
   // Inventario
   op("get", "/inventory/alerts", TAGS.inventory, "Ver las alertas de inventario", [ADMIN], 200, {

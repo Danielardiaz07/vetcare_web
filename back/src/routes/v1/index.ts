@@ -20,6 +20,7 @@ interface V1Modules {
   reports: Router;
   inventory: Router;
   notifications: Router;
+  myAlerts: Router;
   health: Router;
   docs: Router;
 }
@@ -44,6 +45,7 @@ export function createV1Router({
   reports,
   inventory,
   notifications,
+  myAlerts,
   health,
   docs,
 }: V1Modules): Router {
@@ -67,6 +69,7 @@ export function createV1Router({
   router.use("/me/patients", myClinical);
   router.use("/me/patients", myGrooming);
   router.use("/me/invoices", myInvoices);
+  router.use("/me/alerts", myAlerts);
   router.use("/invoices", invoices);
   router.use("/reports", reports);
   router.use("/inventory", inventory);

@@ -19,5 +19,13 @@ export function createReportsRouter(
     controller.dashboard,
   );
 
+  router.get(
+    "/dashboard/export",
+    authenticate,
+    authorize(Role.ADMIN),
+    validate({ query: dashboardQuerySchema }),
+    controller.exportDashboard,
+  );
+
   return router;
 }

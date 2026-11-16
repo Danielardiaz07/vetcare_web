@@ -58,6 +58,10 @@ export const NOTIFICATION_ERROR_MAX = 300; // mismo tope que la columna lastErro
 export const REMINDER_LEAD_HOURS = 24; // RN-36
 export const VACCINE_NOTICE_DAYS = 7; // RN-37
 
+// D-52: centro de avisos del portal. Las vacunas usan VACCINE_DUE_SOON_DAYS (RN-49).
+export const ALERT_APPOINTMENT_HOURS = 48; // citas que empiezan dentro de este plazo
+export const ALERT_INVOICE_DAYS = 7; // facturas creadas dentro de este plazo
+
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * MINUTE_MS;
 
