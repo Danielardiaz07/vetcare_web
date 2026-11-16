@@ -108,4 +108,6 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 | Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Pendiente | 21 y 22 nov |
 | Alerta de variación de peso | Hecho: `weight-trend` y aviso `WEIGHT_CHANGE` (D-55, RN-81) | Pendiente: marca en la consulta, la ficha y la campana | 20 nov |
 | VetBot con datos reales (sin IA externa) | Sin cambios: usa los endpoints existentes y `weight-trend` | Pendiente | 21 nov |
+| QR del carné de vacunación (verificable) | Hecho: tabla `CardVerification`, `GET …/vaccination-card/verification` y `GET /public/vaccination-cards/{token}` (D-56) | Pendiente: mostrar el QR al imprimir el carné y la página `/verify/[token]` | 21 nov |
+| QR de llegada a la cita | Hecho: `GET /me/appointments/{id}/check-in` y `POST /appointments/check-in` (D-56) | Pendiente: el QR en Mis citas y el lector o el campo de código en recepción | 21 nov |
 | VetBot con IA | Fuera del alcance por ahora (P-08) | — | Solo si sobra tiempo |

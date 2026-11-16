@@ -1,4 +1,4 @@
-﻿# 06 — Modelo de dominio
+# 06 — Modelo de dominio
 
 20 clases y 4+ enumeraciones derivadas del esquema de la versión de escritorio (17 tablas) más `Persona` (abstracta), la fórmula de medicamentos y `Notificacion`. **El propietario es la raíz de la cadena**: propietario → paciente → cita → consulta → factura.
 
@@ -42,6 +42,7 @@ Documentación en español; código, tablas, columnas y endpoints en inglés.
 | `GroomingService` | Baño, corte o peluquería | Paciente, estilista |
 | `Invoice` / `InvoiceItem` | Cobro con cálculo de IVA y anulación | `Invoice` se compone de 1..* `InvoiceItem`; cada ítem referencia su concepto de origen |
 | `Notification` | Correo programado o enviado | Asociada a una `Appointment` (o a una vacunación) |
+| `CardVerification` | Enlace público del carné de vacunación que lleva el QR; se puede rotar o desactivar (RN-82, D-56) | Una por `Patient` (1:1) |
 
 ## 3. Enumeraciones
 

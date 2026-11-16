@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-15 · 03, 04, 06, 07, 08, 09, 10, 12 · D-56: QR del carné de vacunación (verificación pública, RN-82) y QR de llegada a la cita (RN-83), entidad `CardVerification`, librería `qrcode` 1.5.4 solo en el backend, página `/verify/[token]` del frontend y pendiente P-20 (aplicar la migración). Swagger pasa a 97 operaciones.
 - 2026-11-15 · 03, 04, 08, 09, 10, 12 · D-55: alerta de variación de peso (RN-81: 10 % o más entre dos consultas seguidas) con `GET /patients/{id}/weight-trend`, `GET /me/patients/{id}/weight-trend` y el aviso `WEIGHT_CHANGE` en `GET /me/alerts`; VetBot con datos reales sin IA externa; P-19 resuelto. Swagger pasa a 90 operaciones.
 - 2026-11-15 · 10, 12 · Plan de mejoras para la sustentación: se agrega la sección 8 de 10 y los pendientes P-18 (mejoras del frontend) y P-19 (verificación previa), y se aclara en P-08 que VetBot con IA necesita una decisión previa. No cambia el alcance de las historias.
 - 2026-11-15 · 04, 08, 09, 12 · D-52, D-53, D-54: centro de avisos del propietario (`GET /me/alerts`), tablero con periodo anterior y exportación a CSV (`GET /reports/dashboard/export`) y datos de demostración con historia de peso y facturas. Sin tablas ni librerías nuevas.

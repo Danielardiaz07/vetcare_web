@@ -1,5 +1,5 @@
 import { AppointmentStatus, Role } from "@prisma/client";
-import { VACCINE_DUE_SOON_DAYS, WEIGHT_ALERT_PERCENT } from "@/config/constants";
+import { WEIGHT_ALERT_PERCENT } from "@/config/constants";
 import type {
   ConsultationResponseDto,
   CreateConsultationRequestDto,
@@ -18,7 +18,6 @@ import type {
   VaccinationCardEntryDto,
   VaccinationResponseDto,
   VaccineResponseDto,
-  VaccineStatus,
   WeightTrendResponseDto,
 } from "@/modules/clinical/dto/clinical.dto";
 import type {
@@ -33,6 +32,7 @@ import type {
 import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
 import { addDays, clinicDateOf, clinicInstant } from "@/shared/utils/clinic-time";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
+import { vaccineStatusOf } from "@/shared/utils/vaccine-status";
 import { weightChange } from "@/shared/utils/weight-change";
 
 export interface Actor {
@@ -359,7 +359,7 @@ export class ClinicalService {
     const today = clinicDateOf(this.clock());
     return [...latestByVaccine.values()].map((record) => {
       const response = toVaccinationResponse(record);
-      return { ...response, status: this.statusOf(response.nextDoseAt, today) };
+      return { ...response, status: vaccineStatusOf(response.nextDoseAt, today) };
     });
   }
 
@@ -393,12 +393,6 @@ export class ClinicalService {
     if (!patient) throw new NotFoundError("Paciente no encontrado");
     if (!patient.active) throw new ConflictError("El paciente esta desactivado");
     return patient;
-  }
-
-  private statusOf(nextDoseAt: string | null, today: string): VaccineStatus {
-    if (!nextDoseAt) return "UP_TO_DATE";
-    if (nextDoseAt < today) return "OVERDUE";
-    return nextDoseAt <= addDays(today, VACCINE_DUE_SOON_DAYS) ? "DUE_SOON" : "UP_TO_DATE";
   }
 
   private timestampRange(query: HistoryQueryDto): HistoryFilters {

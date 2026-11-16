@@ -3,6 +3,7 @@ import { ClinicalLimit, FieldLimit } from "@/config/constants";
 import { dateField, moneyField } from "@/shared/schemas/fields";
 import { clinicDateOf } from "@/shared/utils/clinic-time";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
+import type { VaccineStatus } from "@/shared/utils/vaccine-status";
 import type { WeightChange } from "@/shared/utils/weight-change";
 
 const requiredText = (label: string, max: number) =>
@@ -114,7 +115,7 @@ export type DischargeHospitalizationRequestDto = z.infer<
 export type ListHospitalizationsQueryDto = z.infer<typeof listHospitalizationsQuerySchema>;
 export type CreateLabExamRequestDto = z.infer<typeof createLabExamRequestSchema>;
 
-export type VaccineStatus = "UP_TO_DATE" | "DUE_SOON" | "OVERDUE"; // RN-49
+export type { VaccineStatus } from "@/shared/utils/vaccine-status"; // RN-49
 
 export interface ConsultationResponseDto {
   id: string;

@@ -21,6 +21,9 @@ interface V1Modules {
   inventory: Router;
   notifications: Router;
   myAlerts: Router;
+  publicVerification: Router;
+  myVerification: Router;
+  staffVerification: Router;
   health: Router;
   docs: Router;
 }
@@ -46,6 +49,9 @@ export function createV1Router({
   inventory,
   notifications,
   myAlerts,
+  publicVerification,
+  myVerification,
+  staffVerification,
   health,
   docs,
 }: V1Modules): Router {
@@ -68,6 +74,9 @@ export function createV1Router({
   router.use("/me/appointments", myAppointments);
   router.use("/me/patients", myClinical);
   router.use("/me/patients", myGrooming);
+  router.use("/me/patients", myVerification);
+  router.use("/patients", staffVerification);
+  router.use("/public", publicVerification);
   router.use("/me/invoices", myInvoices);
   router.use("/me/alerts", myAlerts);
   router.use("/invoices", invoices);
