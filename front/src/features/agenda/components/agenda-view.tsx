@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -11,7 +11,9 @@ import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { AgendaItem } from "@/features/agenda/components/agenda-item";
 import { AppointmentDetail } from "@/features/agenda/components/appointment-detail";
+import { DayAgendaGrid } from "@/features/agenda/components/day-agenda-grid";
 import { NewAppointmentDialog } from "@/features/agenda/components/new-appointment-dialog";
+import type { AgendaStaff } from "@/features/agenda/timeline";
 import { useAuth } from "@/features/auth/auth-provider";
 import { ownerFullName } from "@/features/owners/labels";
 import { addDays, clinicDateOf, dayParts, formatLongDate, startOfWeek } from "@/lib/clinic-time";
@@ -21,19 +23,63 @@ import {
   listProfessionals,
   type AgendaParams,
 } from "@/services/appointments";
-import type { Appointment, Professional } from "@/types/domain";
+import { getSchedule } from "@/services/staff";
+import { getMe } from "@/services/auth";
+import type { SessionUser, UserProfile } from "@/types/auth";
+import type { Appointment } from "@/types/domain";
 
-type View = "day" | "week";
+type View = "list" | "day" | "week";
 type Kind = "VET" | "GROOMER";
 
 const ALL = "ALL";
 const DAYS_IN_WEEK = 7;
+const DATE_CONTROL_CLASS = "h-11 shrink-0 border-line! text-sm hover:bg-canvas!";
 const VIEWS: { value: View; label: string }[] = [
+  { value: "list", label: "Lista" },
   { value: "day", label: "Día" },
   { value: "week", label: "Semana" },
 ];
 
-type Staff = { veterinarians: Professional[]; groomers: Professional[] };
+type Staff = AgendaStaff;
+
+async function loadStaff(): Promise<Staff> {
+  const [veterinarians, groomers] = await Promise.all([
+    listProfessionals("GENERAL_CONSULTATION"),
+    listProfessionals("GROOMING"),
+  ]);
+  const people = [
+    ...veterinarians.map((professional) => ({ professional, kind: "veterinarians" as const })),
+    ...groomers.map((professional) => ({ professional, kind: "groomers" as const })),
+  ];
+  const results = await Promise.allSettled(
+    people.map(({ professional, kind }) => getSchedule(kind, professional.id)),
+  );
+  return {
+    veterinarians,
+    groomers,
+    schedules: Object.fromEntries(
+      people.map(({ professional }, index) => {
+        const result = results[index]!;
+        return [professional.id, result.status === "fulfilled" ? result.value : null];
+      }),
+    ),
+  };
+}
+
+async function loadOwnStaff(user: SessionUser, profile: UserProfile | null): Promise<Staff> {
+  const me = profile?.id === user.id ? profile : await getMe();
+  const isVet = user.role === "VETERINARIAN";
+  const professional = isVet ? me.veterinarian : me.groomer;
+  if (!professional) throw new Error("No se encontró el perfil profesional");
+  const schedule = await getSchedule(isVet ? "veterinarians" : "groomers", professional.id).catch(
+    () => null,
+  );
+  return {
+    veterinarians: isVet ? [professional] : [],
+    groomers: isVet ? [] : [professional],
+    schedules: { [professional.id]: schedule },
+  };
+}
 
 type Load<T> = { status: "loading" } | { status: "error" } | { status: "ready"; data: T };
 
@@ -56,7 +102,7 @@ const dayMonthFormatter = new Intl.DateTimeFormat("es-CO", {
 const dayMonth = (date: string) => dayMonthFormatter.format(new Date(`${date}T12:00:00Z`));
 
 export function AgendaView() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const isReception = user?.role === "RECEPTIONIST";
   const today = useMemo(() => clinicDateOf(new Date()), []);
   const [view, setView] = useState<View>("day");
@@ -65,54 +111,13 @@ export function AgendaView() {
   const [staff, setStaff] = useState<Load<Staff>>({ status: "loading" });
   const [agenda, setAgenda] = useState<Load<Appointment[]>>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
+  const [staffReloadKey, setStaffReloadKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
+  const agendaRequestKey = useRef<string | null>(null);
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [creating, setCreating] = useState(false);
   const { show } = useToast();
-
-  const from = view === "day" ? date : startOfWeek(date);
-  const to = view === "day" ? date : addDays(from, DAYS_IN_WEEK - 1);
-
-  useEffect(() => {
-    if (!isReception) return;
-    let active = true;
-    Promise.all([listProfessionals("GENERAL_CONSULTATION"), listProfessionals("GROOMING")])
-      .then(([veterinarians, groomers]) => {
-        if (active) setStaff({ status: "ready", data: { veterinarians, groomers } });
-      })
-      .catch(() => {
-        if (active) setStaff({ status: "error" });
-      });
-    return () => {
-      active = false;
-    };
-  }, [isReception, reloadKey]);
-
-  useEffect(() => {
-    let active = true;
-    setAgenda({ status: "loading" });
-    getAgenda({ from, ...(from !== to && { to }), ...filterParams(filter) })
-      .then((data) => {
-        if (active) setAgenda({ status: "ready", data });
-      })
-      .catch(() => {
-        if (active) setAgenda({ status: "error" });
-      });
-    return () => {
-      active = false;
-    };
-  }, [from, to, filter, reloadKey]);
-
-  const reload = useCallback(() => setReloadKey((key) => key + 1), []);
-
-  useEffect(() => {
-    window.addEventListener(APPOINTMENTS_CHANGED_EVENT, reload);
-    return () => window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, reload);
-  }, [reload]);
-
-  function handleChanged(updated: Appointment, message: string) {
-    setSelected((current) => ({ ...updated, owner: updated.owner ?? current?.owner }));
-    show(message, "success");
-  }
 
   const professionals = staff.status === "ready" ? staff.data : null;
   const firstProfessional = professionals?.veterinarians[0]
@@ -121,123 +126,255 @@ export function AgendaView() {
       ? filterValue("GROOMER", professionals.groomers[0].id)
       : ALL;
 
+  const activeFilter = view === "week" && filter === ALL ? firstProfessional : filter;
+
+  const from = view === "week" ? startOfWeek(date) : date;
+  const to = view === "week" ? addDays(from, DAYS_IN_WEEK - 1) : date;
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    (isReception ? loadStaff() : loadOwnStaff(user, profile))
+      .then((data) => {
+        if (active) setStaff({ status: "ready", data });
+      })
+      .catch(() => {
+        if (active) setStaff({ status: "error" });
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, profile, isReception, staffReloadKey]);
+
+  useEffect(() => {
+    let active = true;
+    const key = `${from}:${to}:${activeFilter}`;
+    const sameRange = agendaRequestKey.current === key;
+    agendaRequestKey.current = key;
+    setAgenda((current) =>
+      sameRange && current.status === "ready" ? current : { status: "loading" },
+    );
+    setRefreshing(true);
+    setRefreshError(false);
+    getAgenda({ from, ...(from !== to && { to }), ...filterParams(activeFilter) })
+      .then((data) => {
+        if (active) setAgenda({ status: "ready", data });
+      })
+      .catch(() => {
+        if (!active) return;
+        setRefreshError(true);
+        setAgenda((current) =>
+          sameRange && current.status === "ready" ? current : { status: "error" },
+        );
+      })
+      .finally(() => {
+        if (active) setRefreshing(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [from, to, activeFilter, reloadKey]);
+
+  const refreshAgenda = useCallback(() => setReloadKey((key) => key + 1), []);
+  const reload = useCallback(() => {
+    refreshAgenda();
+    setStaffReloadKey((key) => key + 1);
+  }, [refreshAgenda]);
+
+  useEffect(() => {
+    window.addEventListener(APPOINTMENTS_CHANGED_EVENT, refreshAgenda);
+    return () => window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, refreshAgenda);
+  }, [refreshAgenda]);
+
+  function handleChanged(updated: Appointment, message: string) {
+    setAgenda((current) =>
+      current.status === "ready"
+        ? {
+            status: "ready",
+            data: current.data.map((item) =>
+              item.id === updated.id ? { ...updated, owner: updated.owner ?? item.owner } : item,
+            ),
+          }
+        : current,
+    );
+    setSelected((current) =>
+      current?.id === updated.id ? { ...updated, owner: updated.owner ?? current.owner } : current,
+    );
+    show(message, "success");
+  }
+
   function changeView(next: View) {
     setView(next);
     if (next === "week" && isReception && filter === ALL) setFilter(firstProfessional);
   }
 
   function move(direction: 1 | -1) {
-    setDate((current) => addDays(current, direction * (view === "day" ? 1 : DAYS_IN_WEEK)));
+    setDate((current) => addDays(current, direction * (view === "week" ? DAYS_IN_WEEK : 1)));
   }
 
-  const unit = view === "day" ? "Día" : "Semana";
+  const unit = view === "week" ? "Semana" : "Día";
   const heading =
-    view === "day"
+    view !== "week"
       ? capitalize(formatLongDate(date))
       : `Semana del ${dayMonth(from)} al ${dayMonth(to)}`;
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:flex sm:flex-wrap sm:justify-between sm:gap-4">
-        <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3">
-          <div role="group" aria-label="Vista" className="flex gap-2">
-            {VIEWS.map((item) => (
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div
+            role="group"
+            aria-label="Vista"
+            className="inline-flex h-11 shrink-0 rounded-control border border-line bg-surface p-0.5"
+          >
+            {VIEWS.filter((item) => !isReception || item.value !== "list").map((item) => (
               <button
                 key={item.value}
                 type="button"
                 aria-pressed={item.value === view}
                 onClick={() => changeView(item.value)}
                 className={cn(
-                  "min-h-11 rounded-control border px-3 font-semibold transition-colors duration-150 ease-out sm:px-4",
+                  "relative rounded-md px-4 text-sm font-semibold transition-colors duration-150 ease-out after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
                   item.value === view
-                    ? "border-brand-600 bg-brand-50 text-brand-700"
-                    : "border-field-border bg-surface text-ink hover:bg-brand-50",
+                    ? "bg-brand-100 text-brand-700"
+                    : "text-muted hover:bg-canvas hover:text-ink",
                 )}
               >
                 {item.label}
               </button>
             ))}
           </div>
-          <div
-            role="group"
-            aria-label="Navegación por fecha"
-            className="flex flex-wrap items-center gap-2"
-          >
+
+          {isReception && (
             <Button
-              variant="secondary"
-              className="px-3!"
-              aria-label={`${unit} anterior`}
-              onClick={() => move(-1)}
+              className="h-11 shrink-0 px-4! text-sm font-semibold sm:ml-auto"
+              onClick={() => setCreating(true)}
             >
-              <Icon name="chevron-right" className="size-5 rotate-180" />
+              <Icon name="calendar-plus" className="size-5" />
+              Nueva cita
             </Button>
-            <Button variant="secondary" className="px-3! sm:px-5!" onClick={() => setDate(today)}>
-              Hoy
-            </Button>
-            <Button
-              variant="secondary"
-              className="px-3!"
-              aria-label={`${unit} siguiente`}
-              onClick={() => move(1)}
-            >
-              <Icon name="chevron-right" className="size-5" />
-            </Button>
-            <DatePicker value={date} onChange={setDate} />
-          </div>
+          )}
         </div>
-        {isReception && (
-          <Button
-            className="order-3 px-3! sm:order-none sm:px-5!"
-            onClick={() => setCreating(true)}
-          >
-            <Icon name="calendar-plus" className="size-5" />
-            Nueva cita
-          </Button>
-        )}
-        {isReception && professionals && (
-          <div className="order-2 min-w-0 sm:order-none sm:w-72">
-            <Select
-              label="Profesional"
-              className="w-full min-w-0"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-2">
+            <h2 aria-live="polite" className="text-xl font-semibold text-ink">
+              {heading}
+            </h2>
+            <div
+              role="group"
+              aria-label="Navegación por fecha"
+              className="flex flex-wrap items-center gap-2"
             >
-              {view === "day" && <option value={ALL}>Todos los profesionales</option>}
-              <optgroup label="Veterinarios">
-                {professionals.veterinarians.map((item) => (
-                  <option key={item.id} value={filterValue("VET", item.id)}>
-                    {ownerFullName(item)}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Estilistas">
-                {professionals.groomers.map((item) => (
-                  <option key={item.id} value={filterValue("GROOMER", item.id)}>
-                    {ownerFullName(item)}
-                  </option>
-                ))}
-              </optgroup>
-            </Select>
+              <DatePicker
+                value={date}
+                onChange={setDate}
+                triggerClassName={cn(DATE_CONTROL_CLASS, "px-3!")}
+              />
+              <Button
+                variant="secondary"
+                aria-label={unit + " anterior"}
+                onClick={() => move(-1)}
+                className={cn(DATE_CONTROL_CLASS, "w-11 px-0!")}
+              >
+                <Icon name="chevron-right" className="size-5 rotate-180" />
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setDate(today)}
+                className={cn(DATE_CONTROL_CLASS, "px-3!")}
+              >
+                Hoy
+              </Button>
+              <Button
+                variant="secondary"
+                aria-label={unit + " siguiente"}
+                onClick={() => move(1)}
+                className={cn(DATE_CONTROL_CLASS, "w-11 px-0!")}
+              >
+                <Icon name="chevron-right" className="size-5" />
+              </Button>
+              <Button
+                variant="secondary"
+                aria-label="Actualizar agenda"
+                title="Actualizar agenda"
+                loading={refreshing}
+                onClick={reload}
+                className={cn(DATE_CONTROL_CLASS, "w-11 px-0!")}
+              >
+                {!refreshing && <Icon name="refresh" className="size-5" />}
+              </Button>
+            </div>
           </div>
-        )}
+          {isReception && professionals && (
+            <div className="w-full min-w-0 sm:w-72">
+              <Select
+                label="Profesional"
+                className="w-full min-w-0"
+                value={activeFilter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                {view === "day" && <option value={ALL}>Todos los profesionales</option>}
+                <optgroup label="Veterinarios">
+                  {professionals.veterinarians.map((item) => (
+                    <option key={item.id} value={filterValue("VET", item.id)}>
+                      {ownerFullName(item)}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Estilistas">
+                  {professionals.groomers.map((item) => (
+                    <option key={item.id} value={filterValue("GROOMER", item.id)}>
+                      {ownerFullName(item)}
+                    </option>
+                  ))}
+                </optgroup>
+              </Select>
+            </div>
+          )}
+        </div>
       </div>
 
-      <h2 aria-live="polite" className="text-xl font-semibold text-ink">
-        {heading}
-      </h2>
-
-      {(agenda.status === "loading" || (isReception && staff.status === "loading")) && (
+      {(agenda.status === "loading" || (view !== "list" && staff.status === "loading")) && (
         <LoadingState />
       )}
-      {(agenda.status === "error" || staff.status === "error") && <ErrorState onRetry={reload} />}
-      {agenda.status === "ready" && (!isReception || professionals) && (
+      {(agenda.status === "error" || (isReception && staff.status === "error")) && (
+        <ErrorState onRetry={reload} />
+      )}
+      {!isReception && view !== "list" && staff.status === "error" && (
+        <p role="alert" className="text-sm text-muted">
+          No pudimos cargar tu perfil para mostrar la cuadrícula. Se muestran tus citas en lista;
+          pulsa “Actualizar” para reintentar.
+        </p>
+      )}
+      {refreshError && agenda.status === "ready" && (
+        <p role="alert" className="text-sm text-danger">
+          No pudimos actualizar la agenda. Se conservan las últimas citas cargadas; pulsa
+          “Actualizar” para reintentar.
+        </p>
+      )}
+      {agenda.status === "ready" && (view === "list" || staff.status !== "loading") && (
         <>
-          {view === "day" ? (
-            <DayView
+          {view === "list" ? (
+            <AppointmentList appointments={agenda.data} onOpen={setSelected} />
+          ) : professionals ? (
+            <DayAgendaGrid
+              key={`${view}:${from}`}
+              date={from}
+              weekly={view === "week"}
               appointments={agenda.data}
-              groups={isReception && filter === ALL ? professionals : null}
+              staff={professionals}
+              professionalId={
+                isReception
+                  ? (filterParams(activeFilter).veterinarianId ??
+                    filterParams(activeFilter).groomerId)
+                  : (professionals.veterinarians[0]?.id ?? professionals.groomers[0]?.id)
+              }
+              canRegisterArrival={isReception}
               onOpen={setSelected}
+              onChanged={handleChanged}
             />
+          ) : isReception ? null : view === "day" ? (
+            <AppointmentList appointments={agenda.data} onOpen={setSelected} />
           ) : (
             <WeekView from={from} appointments={agenda.data} onOpen={setSelected} />
           )}
@@ -268,32 +405,6 @@ function AppointmentList({ appointments, onOpen }: ListProps) {
         </li>
       ))}
     </ul>
-  );
-}
-
-function DayView({ appointments, groups, onOpen }: ListProps & { groups: Staff | null }) {
-  if (!groups) return <AppointmentList appointments={appointments} onOpen={onOpen} />;
-  const listed = [...groups.veterinarians, ...groups.groomers];
-  const unlisted = appointments
-    .map((item) => item.professional)
-    .filter((pro, index, all) => all.findIndex((other) => other.id === pro.id) === index)
-    .filter((pro) => !listed.some((item) => item.id === pro.id));
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {[...listed, ...unlisted].map((professional) => (
-        <section
-          key={professional.id}
-          aria-label={ownerFullName(professional)}
-          className="flex flex-col gap-3 rounded-card border border-line bg-canvas p-4"
-        >
-          <h3 className="font-semibold text-ink">{ownerFullName(professional)}</h3>
-          <AppointmentList
-            appointments={appointments.filter((item) => item.professional.id === professional.id)}
-            onOpen={onOpen}
-          />
-        </section>
-      ))}
-    </div>
   );
 }
 

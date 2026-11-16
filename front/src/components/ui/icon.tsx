@@ -12,6 +12,7 @@ export type IconName =
   | "download"
   | "close"
   | "chevron-right"
+  | "refresh"
   | "alert"
   | "eye"
   | "eye-off"
@@ -43,6 +44,9 @@ export type IconName =
 const ICON_SIZE = 24;
 
 const PATHS: Record<IconName, ReactNode> = {
+  refresh: (
+    <path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M8 16H3v5" />
+  ),
   bell: (
     <>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />

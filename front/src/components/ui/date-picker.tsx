@@ -25,6 +25,7 @@ type DatePickerProps = {
   min?: string;
   max?: string;
   label?: string;
+  triggerClassName?: string;
   variant?: "button" | "inline";
 };
 
@@ -49,6 +50,7 @@ export function DatePicker({
   min,
   max,
   label = "Ir a fecha",
+  triggerClassName,
   variant = "button",
 }: DatePickerProps) {
   const isInline = variant === "inline";
@@ -337,6 +339,7 @@ export function DatePicker({
     <>
       <Button
         variant="secondary"
+        className={triggerClassName}
         aria-haspopup="dialog"
         aria-label={label + ", " + formatLongDate(value)}
         onClick={openCalendar}
