@@ -15,6 +15,13 @@ export interface VaccineDoseRecord {
   vaccine: { name: string };
 }
 
+export interface ConsultationWeightRecord {
+  id: string;
+  weightKg: { toNumber(): number };
+  createdAt: Date;
+  patient: { id: string; name: string };
+}
+
 export interface RecentInvoiceRecord {
   id: string;
   number: number;
@@ -29,7 +36,11 @@ export class AlertsRepository {
     return user?.ownerId ?? null;
   }
 
-  upcomingAppointments(ownerId: string, from: Date, to: Date): Promise<UpcomingAppointmentRecord[]> {
+  upcomingAppointments(
+    ownerId: string,
+    from: Date,
+    to: Date,
+  ): Promise<UpcomingAppointmentRecord[]> {
     return prisma.appointment.findMany({
       where: {
         patient: { ownerId },
@@ -62,6 +73,20 @@ export class AlertsRepository {
         nextDoseAt: true,
         patient: { select: { id: true, name: true } },
         vaccine: { select: { name: true } },
+      },
+    });
+  }
+
+  // Consultas de las mascotas activas, de la más reciente a la más antigua dentro de cada mascota (RN-81).
+  consultationWeights(ownerId: string): Promise<ConsultationWeightRecord[]> {
+    return prisma.consultation.findMany({
+      where: { patient: { ownerId, active: true } },
+      orderBy: [{ patientId: "asc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        weightKg: true,
+        createdAt: true,
+        patient: { select: { id: true, name: true } },
       },
     });
   }

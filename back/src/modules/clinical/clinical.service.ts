@@ -1,5 +1,5 @@
 import { AppointmentStatus, Role } from "@prisma/client";
-import { VACCINE_DUE_SOON_DAYS } from "@/config/constants";
+import { VACCINE_DUE_SOON_DAYS, WEIGHT_ALERT_PERCENT } from "@/config/constants";
 import type {
   ConsultationResponseDto,
   CreateConsultationRequestDto,
@@ -19,6 +19,7 @@ import type {
   VaccinationResponseDto,
   VaccineResponseDto,
   VaccineStatus,
+  WeightTrendResponseDto,
 } from "@/modules/clinical/dto/clinical.dto";
 import type {
   ClinicalRepository,
@@ -32,6 +33,7 @@ import type {
 import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
 import { addDays, clinicDateOf, clinicInstant } from "@/shared/utils/clinic-time";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
+import { weightChange } from "@/shared/utils/weight-change";
 
 export interface Actor {
   id: string;
@@ -323,6 +325,26 @@ export class ClinicalService {
       })),
     ];
     return entries.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  // RN-81: la curva sale de las consultas; el propietario solo ve sus mascotas.
+  async weightTrend(actor: Actor, patientId: string): Promise<WeightTrendResponseDto> {
+    await this.assertCanView(actor, patientId);
+    const records = await this.repository.listConsultations(patientId, {});
+    const points = records
+      .map((record) => ({
+        consultationId: record.id,
+        date: record.createdAt,
+        weightKg: record.weightKg.toNumber(),
+      }))
+      .reverse();
+
+    const [previous, current] = points.slice(-2);
+    return {
+      thresholdPercent: WEIGHT_ALERT_PERCENT,
+      points,
+      change: previous && current ? weightChange(previous.weightKg, current.weightKg) : null,
+    };
   }
 
   // RN-49: estado de la última dosis aplicada de cada vacuna.
