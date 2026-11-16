@@ -1,4 +1,4 @@
-﻿# 07 — Modelado de datos
+# 07 — Modelado de datos
 
 ## Regla fundamental: modelado de datos realista
 
@@ -21,6 +21,7 @@
 | Identificador | `UUID` nativo | 16 bytes | Frente a `VARCHAR(36)`, el índice B-tree llega a ser ~50 % menor [3] |
 | Email | `VARCHAR` | 254 | Ruta de 256 octetos (RFC 5321 §4.5.3.1.3) menos `<` y `>`; erratum 1690 de RFC 3696 [1][2] |
 | Hash bcrypt (contraseña, OTP) | `VARCHAR` | 60 | Salida siempre de 60 caracteres (`$2b$` + coste + 22 salt + 31 hash) [4] |
+| Token opaco aleatorio (enlace del QR del carné) | `VARCHAR` | 43 | 32 bytes aleatorios en base64url sin relleno: ceil(32 × 4 / 3) = 43 caracteres (D-56) |
 | Nombre / apellido | `VARCHAR` | 50 | Estándar histórico UK GDSC fija 35, pero hay nombres reales de 46; 50 es decisión de proyecto [5] |
 | Teléfono (E.164) | `VARCHAR` | 15 | Máximo de 15 dígitos de E.164, sin el `+` [6] |
 | Código postal | `VARCHAR` | 10 | Cubre formatos internacionales comunes |

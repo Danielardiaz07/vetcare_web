@@ -4,6 +4,7 @@ import type {
   AgendaQueryDto,
   AvailabilityQueryDto,
   CancelAppointmentRequestDto,
+  CheckInRequestDto,
   CreateAppointmentRequestDto,
   ListMyAppointmentsQueryDto,
   ReassignAppointmentRequestDto,
@@ -52,6 +53,14 @@ export class AppointmentsController {
 
   registerArrival: RequestHandler = async (req, res) => {
     res.json(await this.service.registerArrival(String(req.params.id)));
+  };
+
+  checkInCode: RequestHandler = async (req, res) => {
+    res.json(await this.service.checkInCode(req.user!, String(req.params.id)));
+  };
+
+  checkIn: RequestHandler = async (req, res) => {
+    res.json(await this.service.checkIn((req.body as CheckInRequestDto).code));
   };
 
   markNoShow: RequestHandler = async (req, res) => {

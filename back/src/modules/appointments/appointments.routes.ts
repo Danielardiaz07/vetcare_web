@@ -4,6 +4,7 @@ import {
   agendaQuerySchema,
   availabilityQuerySchema,
   cancelAppointmentRequestSchema,
+  checkInRequestSchema,
   createAppointmentRequestSchema,
   listMyAppointmentsQuerySchema,
   reassignAppointmentRequestSchema,
@@ -31,6 +32,13 @@ export function createAppointmentsRouter(
     "/availability",
     validate({ query: availabilityQuerySchema }),
     controller.availability,
+  );
+  // RN-83: recepción escanea el QR del propietario y la cita queda confirmada.
+  router.post(
+    "/check-in",
+    ...reception,
+    validate({ body: checkInRequestSchema }),
+    controller.checkIn,
   );
   router.get("/", ...agendaReaders, validate({ query: agendaQuerySchema }), controller.agenda);
   router.post(
@@ -85,6 +93,13 @@ export function createMyAppointmentsRouter(
     authorize(Role.OWNER),
     validate({ query: listMyAppointmentsQuerySchema }),
     controller.listMine,
+  );
+  router.get(
+    "/:id/check-in",
+    authenticate,
+    authorize(Role.OWNER),
+    validate({ params: uuidParamSchema }),
+    controller.checkInCode,
   );
 
   return router;

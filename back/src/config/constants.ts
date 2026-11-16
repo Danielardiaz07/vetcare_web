@@ -66,6 +66,11 @@ export const ALERT_INVOICE_DAYS = 7; // facturas creadas dentro de este plazo
 export const WEIGHT_ALERT_PERCENT = 10; // desde este porcentaje (subida o bajada) se marca
 export const ALERT_WEIGHT_DAYS = 30; // el aviso del portal dura este plazo desde la última consulta
 
+// D-56, RN-82, RN-83: QR del carné de vacunación y de la llegada a la cita.
+export const CARD_TOKEN_BYTES = 32; // 256 bits: imposible de adivinar
+export const CARD_TOKEN_LENGTH = 43; // 32 bytes en base64url, sin relleno; mismo tope que CardVerification.token
+export const CHECK_IN_CODE_MAX = 60; // "VC1." + UUID (36) + "." + 16 hex = 57 caracteres
+
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * MINUTE_MS;
 
