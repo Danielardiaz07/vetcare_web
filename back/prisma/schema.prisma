@@ -138,8 +138,22 @@ model Patient {
   surgeries        Surgery[]
   hospitalizations Hospitalization[]
   labExams         LabExam[]
+  cardVerification CardVerification?
 
   @@index([ownerId]) // listado de mascotas por propietario (RF-06, RF-08)
+}
+
+// D-56, RN-82: enlace público del carné de vacunación que lleva el QR. El token es opaco y no es una credencial:
+// solo permite ver el estado de las vacunas. Se puede rotar (el anterior deja de servir) o desactivar.
+model CardVerification {
+  id        String    @id @default(uuid()) @db.Uuid
+  patientId String    @unique @db.Uuid // un enlace por mascota
+  token     String    @unique @db.VarChar(43) // 32 bytes aleatorios en base64url
+  active    Boolean   @default(true) // false: el QR deja de verificar sin perder el registro
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  rotatedAt DateTime? @db.Timestamptz(3) // última vez que se cambió el token
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
 
 model Veterinarian {

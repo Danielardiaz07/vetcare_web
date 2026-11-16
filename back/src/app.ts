@@ -40,6 +40,15 @@ import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
+import { CheckInCodes } from "@/modules/appointments/check-in-codes";
+import { VerificationController } from "@/modules/verification/verification.controller";
+import { VerificationRepository } from "@/modules/verification/verification.repository";
+import {
+  createMyVerificationRouter,
+  createPublicVerificationRouter,
+  createStaffVerificationRouter,
+} from "@/modules/verification/verification.routes";
+import { VerificationService } from "@/modules/verification/verification.service";
 import { AlertsController } from "@/modules/notifications/alerts.controller";
 import { AlertsRepository } from "@/modules/notifications/alerts.repository";
 import { createMyAlertsRouter } from "@/modules/notifications/alerts.routes";
@@ -146,7 +155,11 @@ export function buildApp(overrides: AppOverrides = {}) {
       new AppointmentsRepository(),
       appointmentTypesRepository,
       notificationsService,
+      new CheckInCodes(env.JWT_ACCESS_SECRET),
     ),
+  );
+  const verificationController = new VerificationController(
+    new VerificationService(new VerificationRepository(), frontendUrl),
   );
   const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
   const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
@@ -190,6 +203,9 @@ export function buildApp(overrides: AppOverrides = {}) {
     inventory: createInventoryRouter(inventoryController, requireAuth),
     docs: createDocsRouter(),
     health: createHealthRouter(new HealthController(new HealthService(new HealthRepository()))),
+    publicVerification: createPublicVerificationRouter(verificationController),
+    myVerification: createMyVerificationRouter(verificationController, requireAuth),
+    staffVerification: createStaffVerificationRouter(verificationController, requireAuth),
     myAlerts: createMyAlertsRouter(
       new AlertsController(new AlertsService(new AlertsRepository())),
       requireAuth,

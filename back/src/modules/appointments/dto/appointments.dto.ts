@@ -1,6 +1,6 @@
 import { AppointmentStatus, AppointmentType } from "@prisma/client";
 import { z } from "zod";
-import { AGENDA_MAX_DAYS, APPOINTMENT_TEXT_MAX } from "@/config/constants";
+import { AGENDA_MAX_DAYS, APPOINTMENT_TEXT_MAX, CHECK_IN_CODE_MAX } from "@/config/constants";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
 import { daysBetween, isValidClinicDate } from "@/shared/utils/clinic-time";
 
@@ -60,6 +60,14 @@ export const agendaQuerySchema = z
     path: ["to"],
   });
 
+export const checkInRequestSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, "El codigo es obligatorio")
+    .max(CHECK_IN_CODE_MAX, `El codigo admite maximo ${CHECK_IN_CODE_MAX} caracteres`),
+});
+
 export const APPOINTMENTS_WHEN = ["upcoming", "past"] as const;
 
 export const listMyAppointmentsQuerySchema = paginationQuerySchema.extend({
@@ -73,6 +81,15 @@ export type CancelAppointmentRequestDto = z.infer<typeof cancelAppointmentReques
 export type ReassignAppointmentRequestDto = z.infer<typeof reassignAppointmentRequestSchema>;
 export type AgendaQueryDto = z.infer<typeof agendaQuerySchema>;
 export type ListMyAppointmentsQueryDto = z.infer<typeof listMyAppointmentsQuerySchema>;
+export type CheckInRequestDto = z.infer<typeof checkInRequestSchema>;
+
+// D-56, RN-83: lo que el propietario muestra en recepción el día de la cita.
+export interface CheckInCodeResponseDto {
+  appointmentId: string;
+  code: string;
+  qrSvg: string; // el QR del código, ya dibujado
+  startsAt: Date;
+}
 
 export interface ProfessionalSummaryDto {
   id: string;

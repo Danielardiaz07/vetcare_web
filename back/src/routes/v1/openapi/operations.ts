@@ -4,6 +4,7 @@ import {
   agendaQuerySchema,
   availabilityQuerySchema,
   cancelAppointmentRequestSchema,
+  checkInRequestSchema,
   createAppointmentRequestSchema,
   listMyAppointmentsQuerySchema,
   reassignAppointmentRequestSchema,
@@ -374,6 +375,51 @@ export const OPERATIONS: Operation[] = [
     [OWNER],
     200,
   ),
+  op(
+    "get",
+    "/me/patients/{id}/vaccination-card/verification",
+    TAGS.portal,
+    "Obtener el QR del carné de mi mascota",
+    [OWNER],
+    200,
+    {
+      description:
+        "Crea el enlace la primera vez. Devuelve `{ active, url, qrSvg }`: `qrSvg` es el QR ya dibujado y `url` la dirección que abre. Si el enlace está desactivado, solo `active: false` (RN-82, D-56).",
+    },
+  ),
+  op(
+    "post",
+    "/me/patients/{id}/vaccination-card/verification/rotate",
+    TAGS.portal,
+    "Cambiar el QR del carné de mi mascota",
+    [OWNER],
+    200,
+    {
+      description:
+        "Genera un enlace nuevo y reactiva el QR. El QR impreso anterior deja de servir (RN-82, D-56).",
+    },
+  ),
+  op(
+    "delete",
+    "/me/patients/{id}/vaccination-card/verification",
+    TAGS.portal,
+    "Desactivar el QR del carné de mi mascota",
+    [OWNER],
+    204,
+    { description: "El QR impreso deja de verificar hasta que se genere uno nuevo (RN-82, D-56)." },
+  ),
+  op(
+    "get",
+    "/me/appointments/{id}/check-in",
+    TAGS.portal,
+    "Obtener el QR de llegada de mi cita",
+    [OWNER],
+    200,
+    {
+      description:
+        "Devuelve `{ appointmentId, code, qrSvg, startsAt }` para una cita programada. Se muestra en recepción el día de la cita (RN-83, D-56).",
+    },
+  ),
   op("get", "/me/appointments", TAGS.portal, "Listar mis citas", [OWNER], 200, {
     query: listMyAppointmentsQuerySchema,
   }),
@@ -483,6 +529,19 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       description: "La cita pasa de SCHEDULED a CONFIRMED.",
+    },
+  ),
+  op(
+    "post",
+    "/appointments/check-in",
+    TAGS.appointments,
+    "Registrar la llegada con el código QR",
+    [RECEPTIONIST],
+    200,
+    {
+      body: checkInRequestSchema,
+      description:
+        "Recibe el `code` que trae el QR del propietario. Solo vale el día de la cita y para una cita programada; hace lo mismo que registrar la llegada a mano (RN-83, D-56).",
     },
   ),
   op(
@@ -604,6 +663,30 @@ export const OPERATIONS: Operation[] = [
     {
       description:
         "Pesos de sus consultas, de la más antigua a la más reciente, y `change` con la última frente a la anterior. `flagged` es true si varió 10 % o más (RN-81, D-55).",
+    },
+  ),
+  op(
+    "get",
+    "/patients/{id}/vaccination-card/verification",
+    TAGS.clinical,
+    "Obtener el QR del carné de una mascota",
+    [RECEPTIONIST, VETERINARIAN],
+    200,
+    {
+      description:
+        "Para imprimir el carné. Crea el enlace la primera vez y devuelve `{ active, url, qrSvg }` (RN-82, D-56).",
+    },
+  ),
+  op(
+    "get",
+    "/public/vaccination-cards/{token}",
+    TAGS.clinical,
+    "Verificar un carné de vacunación (público)",
+    "public",
+    200,
+    {
+      description:
+        "Sin sesión. Lo abre quien escanea el QR. Devuelve solo el nombre y la especie de la mascota y el estado de sus vacunas, calculado en el momento; nunca datos del propietario ni historial clínico. Un enlace desconocido o desactivado responde 404 (RN-82, D-56).",
     },
   ),
 

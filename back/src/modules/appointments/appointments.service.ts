@@ -13,6 +13,7 @@ import type {
   AvailabilityQueryDto,
   AvailabilityResponseDto,
   CancelAppointmentRequestDto,
+  CheckInCodeResponseDto,
   CreateAppointmentRequestDto,
   ListMyAppointmentsQueryDto,
   ReassignAppointmentRequestDto,
@@ -30,6 +31,7 @@ import {
 } from "@/modules/appointments/appointments.repository";
 import { professionalFor } from "@/modules/appointments/appointment-types.service";
 import type { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
+import type { CheckInCodes } from "@/modules/appointments/check-in-codes";
 import { overlapsBusy, scheduleCovers, slotsOfDay } from "@/modules/appointments/slots";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors";
 import {
@@ -41,6 +43,7 @@ import {
   minutesBetween,
 } from "@/shared/utils/clinic-time";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
+import { toQrSvg } from "@/shared/utils/qr";
 
 export interface Actor {
   id: string;
@@ -81,6 +84,7 @@ export class AppointmentsService {
     private readonly repository: AppointmentsRepository,
     private readonly types: AppointmentTypesRepository,
     private readonly notifier: IAppointmentNotifier,
+    private readonly checkInCodes: CheckInCodes,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -227,6 +231,38 @@ export class AppointmentsService {
       status: AppointmentStatus.CONFIRMED,
     });
     return toResponse(updated, true);
+  }
+
+  // RN-83: el propietario muestra el QR de su cita; recepción lo escanea y la cita queda confirmada.
+  async checkInCode(actor: Actor, id: string): Promise<CheckInCodeResponseDto> {
+    const appointment = await this.findOrFail(id);
+    await this.assertCanAccessOwner(actor, appointment.patient.ownerId);
+    if (appointment.status === AppointmentStatus.CONFIRMED) {
+      throw new ConflictError("La llegada ya esta registrada");
+    }
+    if (appointment.status !== AppointmentStatus.SCHEDULED) {
+      throw new ConflictError("La cita ya no admite llegada");
+    }
+
+    const code = this.checkInCodes.issue(appointment.id);
+    return {
+      appointmentId: appointment.id,
+      code,
+      qrSvg: await toQrSvg(code),
+      startsAt: appointment.startsAt,
+    };
+  }
+
+  // Solo el día de la cita (hora de la clínica); lo demás es igual a registrar la llegada a mano.
+  async checkIn(code: string): Promise<AppointmentResponseDto> {
+    const id = this.checkInCodes.verify(code);
+    if (!id) throw new ValidationError("Codigo de llegada invalido");
+
+    const appointment = await this.findOrFail(id);
+    if (clinicDateOf(appointment.startsAt) !== clinicDateOf(this.clock())) {
+      throw new ConflictError("La cita no es de hoy");
+    }
+    return this.registerArrival(id);
   }
 
   async markNoShow(id: string): Promise<AppointmentResponseDto> {
