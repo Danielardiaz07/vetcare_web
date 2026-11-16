@@ -2,6 +2,9 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-16 · 08, 10, 12, 13 · Integración de develop en la rama del carné imprimible: se conservan la entrada del historial desde el menú, las gráficas y alertas de peso (D-58) y el carné imprimible (D-57); se combinan documentación y seguimiento de P-18. El QR del carné continúa pendiente en el frontend (D-56).
+- 2026-11-16 · 08, 10, 12, 13 · D-57: carné de vacunación imprimible desde el portal y las fichas de recepción y veterinario, con vista previa compartida, datos de la mascota, última dosis y estado escrito de cada vacuna, impresión o guardado como PDF y estado sin vacunas. Cierre parcial de P-18; QR pendiente de integración del frontend (D-56).
+
 - 2026-11-16 · 08, 12, 13 · Integración de develop en la rama de evolución del peso: se conservan las decisiones y cambios de ambas ramas, D-56 identifica los QR y D-58 la evolución del peso para resolver la colisión de IDs; referencias actualizadas.
 - 2026-11-16 · 08, 13 · Se completa la entrada de Historial clínico desde el menú del portal: reutiliza la ficha existente, abre la primera mascota activa y permite cambiarla; contempla cuenta sin mascotas, error y reintento, conservando los enlaces directos desde Inicio (RF-09, RN-40).
 - 2026-11-16 · 08, 12, 13 · D-58: gráfica y tabla de evolución del peso en portal y panel, alerta de variación en la ficha y la consulta según RN-81 y D-55, con estados de carga, error, reintento y datos insuficientes. Carné imprimible separado como mejora pendiente de P-18.
