@@ -135,6 +135,55 @@
 }
 
 @media print {
+  /* El carné se monta en body para que la ficha no deje páginas vacías al imprimir. */
+  body:has(> dialog[open] .vaccination-card-print)
+    > :not(dialog[open]:has(.vaccination-card-print)) {
+    display: none !important;
+  }
+
+  dialog[open]:has(.vaccination-card-print) {
+    position: static;
+    inset: auto;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: white;
+    box-shadow: none;
+  }
+
+  dialog[open]:has(.vaccination-card-print)::backdrop {
+    display: none;
+  }
+
+  dialog[open]:has(.vaccination-card-print) > div {
+    display: block;
+    padding: 0;
+  }
+
+  dialog[open]:has(.vaccination-card-print) > div > :not(.vaccination-card-print) {
+    display: none;
+  }
+
+  .vaccination-card-print {
+    display: block;
+    color: black;
+    font-size: 10pt;
+  }
+
+  .vaccination-card-print > * + * {
+    margin-top: 1rem;
+  }
+
+  .vaccination-card-print header,
+  .vaccination-card-print dl,
+  .vaccination-card-print tr {
+    break-inside: avoid;
+  }
+
   body:has(dialog[open] .invoice-print) * {
     visibility: hidden;
   }

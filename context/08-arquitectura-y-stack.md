@@ -263,7 +263,7 @@ Cada ruta define su `metadata.title` y el layout raíz lo completa como “Títu
 | `/portal/appointments` | Propietario | Mis citas |
 | `/portal/appointments/new` | Propietario | Agendar cita |
 | `/portal/history` | Propietario | Historial clínico: elegir la mascota (destino del menú) |
-| `/portal/history/[petId]` | Propietario | Historial clínico de una mascota |
+| `/portal/history/[petId]` | Propietario | Historial clínico de una mascota; vista previa e impresión del carné de vacunación con `VaccinationCardPrint` (D-57) |
 | `/portal/invoices` | Propietario | Facturas y su PDF |
 | `/portal/profile` | Propietario | Mi perfil |
 | `/portal/pets/new` | Propietario | Agregar mascota |
@@ -273,7 +273,7 @@ Cada ruta define su `metadata.title` y el layout raíz lo completa como “Títu
 | `/panel/owners` | Recepcionista | Propietarios |
 | `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas, editar, desactivar y agregar mascota |
 | `/panel/patients` | Recepcionista, veterinario | Pacientes |
-| `/panel/patients/[id]` | Recepcionista, veterinario | Ficha del paciente: datos, carné, historial con notas internas y estética; el veterinario registra cirugías, exámenes e internaciones (D-34) |
+| `/panel/patients/[id]` | Recepcionista, veterinario | Ficha del paciente: datos, carné con vista previa e impresión compartida con el portal (D-57), historial con notas internas y estética; el veterinario registra cirugías, exámenes e internaciones (D-34) |
 | `/panel/attention` | Veterinario, estilista | Atención: citas confirmadas de hoy por atender (destino del menú) |
 | `/panel/attention/[appointmentId]` | Veterinario, estilista | Atención de la cita: consulta o vacuna (veterinario) o servicio estético (estilista, D-33) |
 | `/panel/invoices` | Recepcionista, administrador | Facturación: listado con filtro por estado; recepción ve “Nueva factura” y el administrador solo consulta y anula (RN-74, D-42) |

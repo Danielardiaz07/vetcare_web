@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ClinicalHistory } from "@/features/clinical/components/clinical-history";
 import { VaccineAlerts } from "@/features/clinical/components/vaccine-alerts";
+import { VaccinationCardPrint } from "@/features/clinical/components/vaccination-card-print";
 import { PatientAvatar } from "@/features/patients/components/patient-avatar";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
 import { ROUTES } from "@/lib/constants";
@@ -124,7 +125,10 @@ export function PetHistory({ petId }: PetHistoryProps) {
       </nav>
 
       <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6">
-        <h2 className="text-xl font-semibold text-ink">{pet.name}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold break-words text-ink">{pet.name}</h2>
+          <VaccinationCardPrint patient={pet} card={card} />
+        </div>
         <dl className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {details.map(([label, value]) => (
             <div key={label} className="flex flex-col gap-1">

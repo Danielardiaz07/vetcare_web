@@ -18,6 +18,7 @@ import {
   SurgeryForm,
 } from "@/features/clinical/components/procedure-forms";
 import { VaccineCard } from "@/features/clinical/components/vaccine-card";
+import { VaccinationCardPrint } from "@/features/clinical/components/vaccination-card-print";
 import { ownerFullName } from "@/features/owners/labels";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
 import { clinicDateOf, formatClinicTime } from "@/lib/clinic-time";
@@ -198,7 +199,10 @@ export function PatientRecord({ patientId }: PatientRecordProps) {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold text-ink">Carné de vacunas</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold text-ink">Carné de vacunas</h2>
+          <VaccinationCardPrint patient={patient} card={card} />
+        </div>
         {card.length === 0 ? (
           <p className="text-muted">Sin vacunas registradas.</p>
         ) : (

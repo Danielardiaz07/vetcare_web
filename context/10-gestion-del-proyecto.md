@@ -101,7 +101,7 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 
 | Mejora | Backend (Daniela) | Frontend (Kenys) | Fecha objetivo |
 |--------|-------------------|------------------|----------------|
-| Ficha de la mascota con gráfica de peso y carné imprimible | Sin cambios: el historial ya trae el peso de cada consulta | Pendiente | 18 nov |
+| Ficha de la mascota con gráfica de peso y carné imprimible | Sin cambios: el historial ya trae el peso de cada consulta | Carné imprimible hecho (D-57); gráfica pendiente de integración | 18 nov |
 | Campana de avisos del portal | Hecho: `GET /me/alerts` (D-52) | Pendiente | 18 nov |
 | Agenda de recepción en cuadrícula | Sin cambios | Pendiente: revisar qué falta de RF-16 | 20 nov |
 | Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Pendiente | 20 nov |

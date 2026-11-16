@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-16 · 08, 10, 12, 13 · D-57: carné de vacunación imprimible desde el portal y las fichas de recepción y veterinario, con vista previa compartida, datos de la mascota, última dosis y estado escrito de cada vacuna, impresión o guardado como PDF y estado sin vacunas. Cierre parcial de P-18; QR pendiente de integración del frontend (D-56).
 - 2026-11-15 · 03, 04, 06, 07, 08, 09, 10, 12 · D-56: QR del carné de vacunación (verificación pública, RN-82) y QR de llegada a la cita (RN-83), entidad `CardVerification`, librería `qrcode` 1.5.4 solo en el backend, página `/verify/[token]` del frontend y pendiente P-20 (aplicar la migración). Swagger pasa a 97 operaciones.
 - 2026-11-15 · 03, 04, 08, 09, 10, 12 · D-55: alerta de variación de peso (RN-81: 10 % o más entre dos consultas seguidas) con `GET /patients/{id}/weight-trend`, `GET /me/patients/{id}/weight-trend` y el aviso `WEIGHT_CHANGE` en `GET /me/alerts`; VetBot con datos reales sin IA externa; P-19 resuelto. Swagger pasa a 90 operaciones.
 - 2026-11-15 · 10, 12 · Plan de mejoras para la sustentación: se agrega la sección 8 de 10 y los pendientes P-18 (mejoras del frontend) y P-19 (verificación previa), y se aclara en P-08 que VetBot con IA necesita una decisión previa. No cambia el alcance de las historias.
