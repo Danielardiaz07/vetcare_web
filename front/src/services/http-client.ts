@@ -22,6 +22,9 @@ interface RequestOptions {
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
   skipAuthRefresh?: boolean;
+  auth?: boolean;
+  cache?: RequestCache;
+  signal?: AbortSignal;
 }
 
 let accessToken: string | null = null;
@@ -52,17 +55,18 @@ async function toApiError(response: Response): Promise<ApiError> {
 function send(path: string, options: RequestOptions): Promise<Response> {
   const headers = new Headers();
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  if (accessToken && options.auth !== false) headers.set("Authorization", `Bearer ${accessToken}`);
 
   return fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    credentials: "include",
+    credentials: options.auth === false ? "omit" : "include",
+    cache: options.cache,
+    signal: options.signal,
   });
 }
 
-// Las peticiones concurrentes que reciben 401 comparten un único refresh (el token rota).
 function refreshSession(): Promise<boolean> {
   refreshInFlight ??= send(API_REFRESH_PATH, { method: "POST" })
     .then(async (response) => {
@@ -81,7 +85,7 @@ function refreshSession(): Promise<boolean> {
 async function requestResponse(path: string, options: RequestOptions): Promise<Response> {
   let response = await send(path, options);
 
-  if (response.status === UNAUTHORIZED && !options.skipAuthRefresh) {
+  if (response.status === UNAUTHORIZED && options.auth !== false && !options.skipAuthRefresh) {
     if (await refreshSession()) {
       response = await send(path, options);
     } else {

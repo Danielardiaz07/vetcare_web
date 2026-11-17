@@ -268,12 +268,12 @@ Cada ruta define su `metadata.title` y el layout raíz lo completa como “Títu
 | `/login` | Cualquiera | Iniciar sesión |
 | `/register` | Cualquiera | Crear cuenta con verificación OTP |
 | `/reset-password` | Cualquiera | Crear la contraseña nueva desde el enlace del correo (`?token=`, D-31) |
-| `/verify/[token]` | Cualquiera | Verificar un carné de vacunación al escanear su QR: nombre y especie de la mascota y el estado de cada vacuna; sin datos del propietario (RN-82, D-56) |
+| `/verify/[token]` | Cualquiera | Verificar un carné: nombre, especie, últimas dosis y estados actuales, sin datos del propietario. Consulta desde el servidor sin credenciales ni caché; contenido y reintento disponibles sin JavaScript. En desarrollo se permite el host de la API configurada, sin comodines (RN-82, D-56, D-64) |
 | `/portal` | Propietario | Inicio: saludo, próxima cita y mascotas |
 | `/portal/appointments` | Propietario | Mis citas |
 | `/portal/appointments/new` | Propietario | Agendar cita |
 | `/portal/history` | Propietario | Historial clínico: abre la primera mascota activa con selector para cambiar; sin mascotas ofrece registrarlas (destino del menú) |
-| `/portal/history/[petId]` | Propietario | Historial clínico de una mascota; vista previa e impresión del carné de vacunación con `VaccinationCardPrint` (D-57) |
+| `/portal/history/[petId]` | Propietario | Historial clínico; `VaccinationCardPrint` imprime el carné y su QR. `services/card-verification` consume D-56 y permite cambiar o desactivar el enlace (D-57, D-64); requiere API real incluso con mocks |
 | `/portal/invoices` | Propietario | Facturas y su PDF |
 | `/portal/profile` | Propietario | Mi perfil |
 | `/portal/pets/new` | Propietario | Agregar mascota |
@@ -283,7 +283,7 @@ Cada ruta define su `metadata.title` y el layout raíz lo completa como “Títu
 | `/panel/owners` | Recepcionista | Propietarios |
 | `/panel/owners/[id]` | Recepcionista | Ficha del propietario: datos, mascotas, editar, desactivar y agregar mascota |
 | `/panel/patients` | Recepcionista, veterinario | Pacientes |
-| `/panel/patients/[id]` | Recepcionista, veterinario | Ficha del paciente: datos, carné con vista previa e impresión compartida con el portal (D-57), historial con notas internas y estética; el veterinario registra cirugías, exámenes e internaciones (D-34) |
+| `/panel/patients/[id]` | Recepcionista, veterinario | Ficha del paciente: datos, carné y QR con impresión compartida, sin cambiar ni desactivar el QR (D-57, D-64), historial con notas internas y estética; el veterinario registra cirugías, exámenes e internaciones (D-34) |
 | `/panel/attention` | Veterinario, estilista | Atención: citas confirmadas de hoy por atender (destino del menú) |
 | `/panel/attention/[appointmentId]` | Veterinario, estilista | Atención de la cita: consulta o vacuna (veterinario) o servicio estético (estilista, D-33) |
 | `/panel/invoices` | Recepcionista, administrador | Facturación: listado con filtro por estado; recepción ve “Nueva factura” y el administrador solo consulta y anula (RN-74, D-42) |

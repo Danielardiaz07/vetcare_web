@@ -210,7 +210,7 @@ export function PatientRecord({ patientId }: PatientRecordProps) {
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-ink">Carné de vacunas</h2>
-          <VaccinationCardPrint patient={patient} card={card} />
+          <VaccinationCardPrint patient={patient} card={card} staff />
         </div>
         {card.length === 0 ? (
           <p className="text-muted">Sin vacunas registradas.</p>
