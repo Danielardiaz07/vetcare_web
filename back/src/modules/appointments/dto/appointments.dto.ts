@@ -4,7 +4,9 @@ import {
   AGENDA_MAX_DAYS,
   APPOINTMENT_TEXT_MAX,
   CHECK_IN_CODE_MAX,
+  CHECK_IN_QR_EXTENSION,
   MANAGE_TOKEN_MAX,
+  SCANNER_TOKEN_MAX,
 } from "@/config/constants";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
 import { daysBetween, isValidClinicDate } from "@/shared/utils/clinic-time";
@@ -73,6 +75,18 @@ export const checkInRequestSchema = z.object({
     .max(CHECK_IN_CODE_MAX, `El codigo admite maximo ${CHECK_IN_CODE_MAX} caracteres`),
 });
 
+export const scannerTokenParamSchema = z.object({
+  scannerToken: z.string().trim().min(1).max(SCANNER_TOKEN_MAX),
+});
+
+export const checkInQrParamSchema = z.object({
+  file: z
+    .string()
+    .trim()
+    .min(1)
+    .max(CHECK_IN_CODE_MAX + CHECK_IN_QR_EXTENSION.length),
+});
+
 export const manageTokenParamSchema = z.object({
   token: z.string().trim().min(1).max(MANAGE_TOKEN_MAX),
 });
@@ -110,6 +124,12 @@ export interface CheckInCodeResponseDto {
   appointmentId: string;
   code: string;
   qrSvg: string; // el QR del código, ya dibujado
+  startsAt: Date;
+}
+
+// D-66, RN-85: lo que muestra la página de escaneo al registrar la llegada; solo lo necesario para confirmar.
+export interface CheckInScanResultDto {
+  patientName: string;
   startsAt: Date;
 }
 

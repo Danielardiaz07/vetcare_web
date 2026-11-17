@@ -5,12 +5,14 @@ import {
   availabilityQuerySchema,
   cancelAppointmentRequestSchema,
   cancelByLinkRequestSchema,
+  checkInQrParamSchema,
   checkInRequestSchema,
   createAppointmentRequestSchema,
   listMyAppointmentsQuerySchema,
   manageTokenParamSchema,
   reassignAppointmentRequestSchema,
   rescheduleAppointmentRequestSchema,
+  scannerTokenParamSchema,
 } from "@/modules/appointments/dto/appointments.dto";
 import type { AppointmentsController } from "@/modules/appointments/appointments.controller";
 import { publicLinkRateLimiter } from "@/config/rate-limit";
@@ -94,6 +96,26 @@ export function createPublicAppointmentsRouter(controller: AppointmentsControlle
     publicLinkRateLimiter,
     params,
     controller.managedByLink,
+  );
+  // D-66, RN-85: página de escaneo de recepción. Entra con el token del enlace, sin sesión.
+  router.get(
+    "/check-in/:scannerToken",
+    publicLinkRateLimiter,
+    validate({ params: scannerTokenParamSchema }),
+    controller.scannerStatus,
+  );
+  router.post(
+    "/check-in/:scannerToken",
+    publicLinkRateLimiter,
+    validate({ params: scannerTokenParamSchema, body: checkInRequestSchema }),
+    controller.checkInFromScanner,
+  );
+  // D-66: imagen PNG del QR de llegada, para el correo de recordatorio.
+  router.get(
+    "/check-in-qr/:file",
+    publicLinkRateLimiter,
+    validate({ params: checkInQrParamSchema }),
+    controller.checkInQrImage,
   );
   router.post(
     "/appointments/manage/:token/cancel",

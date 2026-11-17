@@ -70,7 +70,11 @@ export const ALERT_WEIGHT_DAYS = 30; // el aviso del portal dura este plazo desd
 // D-56, RN-82, RN-83: QR del carné de vacunación y de la llegada a la cita.
 export const CARD_TOKEN_BYTES = 32; // 256 bits: imposible de adivinar
 export const CARD_TOKEN_LENGTH = 43; // 32 bytes en base64url, sin relleno; mismo tope que CardVerification.token
-export const CHECK_IN_CODE_MAX = 60; // "VC1." + UUID (36) + "." + 16 hex = 57 caracteres
+export const CHECK_IN_CODE_MAX = 70; // "VC2." + UUID (36) + "." + hasta 12 dígitos + "." + 16 hex = 70 caracteres (D-66)
+export const SCANNER_TOKEN_MIN_LENGTH = 32; // el token del enlace de escaneo se adivina con la misma dificultad que una clave (RN-85)
+export const SCANNER_TOKEN_MAX = 128;
+export const CHECK_IN_QR_EXTENSION = ".png";
+export const QR_IMAGE_MAX_AGE_SECONDS = 86_400; // el código ya lleva la hora de la cita, así que su imagen no cambia
 export const MANAGE_APPOINTMENT_PATH = "/manage-appointment"; // ruta del frontend que abre el enlace del correo
 export const MANAGE_TOKEN_MAX = 60; // "MG1." + UUID + "." + 16 hex = 57 caracteres (D-65, RN-84)
 

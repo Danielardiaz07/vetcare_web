@@ -1,6 +1,11 @@
 import express from "express";
 import helmet from "helmet";
-import { API_PREFIX, JSON_BODY_LIMIT, MANAGE_APPOINTMENT_PATH } from "@/config/constants";
+import {
+  API_PREFIX,
+  CHECK_IN_QR_EXTENSION,
+  JSON_BODY_LIMIT,
+  MANAGE_APPOINTMENT_PATH,
+} from "@/config/constants";
 import { corsMiddleware } from "@/config/cors";
 import { env } from "@/config/env";
 import { globalRateLimiter } from "@/config/rate-limit";
@@ -42,6 +47,7 @@ import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
 import { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
+import { CheckInScanner } from "@/modules/appointments/check-in-scanner";
 import { VerificationController } from "@/modules/verification/verification.controller";
 import { VerificationRepository } from "@/modules/verification/verification.repository";
 import {
@@ -121,11 +127,17 @@ export function buildApp(overrides: AppOverrides = {}) {
   const frontendUrl = (env.FRONTEND_URL ?? firstCorsOrigin).replace(/\/+$/, "");
 
   const manageLinks = new ManageLinks(env.JWT_ACCESS_SECRET);
+  const checkInCodes = new CheckInCodes(env.JWT_ACCESS_SECRET);
+  const apiPublicUrl = env.API_PUBLIC_URL?.replace(/\/+$/, "");
   const notificationsService = new NotificationsService(
     new NotificationsRepository(),
     mail,
     (appointmentId) =>
       `${frontendUrl}${MANAGE_APPOINTMENT_PATH}/${manageLinks.issue(appointmentId)}`,
+    (appointmentId, startsAt) =>
+      apiPublicUrl
+        ? `${apiPublicUrl}${API_PREFIX}/public/check-in-qr/${checkInCodes.issue(appointmentId, startsAt)}${CHECK_IN_QR_EXTENSION}`
+        : null,
     overrides.clock,
   );
 
@@ -160,8 +172,9 @@ export function buildApp(overrides: AppOverrides = {}) {
       new AppointmentsRepository(),
       appointmentTypesRepository,
       notificationsService,
-      new CheckInCodes(env.JWT_ACCESS_SECRET),
+      checkInCodes,
       manageLinks,
+      new CheckInScanner(env.CHECK_IN_SCANNER_TOKEN),
     ),
   );
   const verificationController = new VerificationController(

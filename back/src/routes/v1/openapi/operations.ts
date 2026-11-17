@@ -583,7 +583,47 @@ export const OPERATIONS: Operation[] = [
     {
       body: checkInRequestSchema,
       description:
-        "Recibe el `code` que trae el QR del propietario. Solo vale el día de la cita y para una cita programada; hace lo mismo que registrar la llegada a mano (RN-83, D-56).",
+        "Recibe el `code` que trae el QR del propietario. Solo vale el día de la cita y para una cita programada; hace lo mismo que registrar la llegada a mano. El código lleva la hora de la cita: si se reprogramó, el anterior se rechaza con 409 (RN-83, D-56, D-66).",
+    },
+  ),
+  op(
+    "get",
+    "/public/check-in/{scannerToken}",
+    TAGS.appointments,
+    "Comprobar el enlace de escaneo de recepción (público)",
+    "public",
+    204,
+    {
+      rateLimited: true,
+      description:
+        "Sin sesión. Responde 204 si el `scannerToken` del enlace de escaneo es válido y 404 si no, o si la página de escaneo está desactivada (RN-85, D-66).",
+    },
+  ),
+  op(
+    "post",
+    "/public/check-in/{scannerToken}",
+    TAGS.appointments,
+    "Registrar la llegada desde la página de escaneo (público)",
+    "public",
+    200,
+    {
+      body: checkInRequestSchema,
+      rateLimited: true,
+      description:
+        "Sin sesión: la autoriza el `scannerToken` del enlace. Mismas reglas que `POST /appointments/check-in`, pero devuelve solo `{ patientName, startsAt }` (RN-83, RN-85, D-66).",
+    },
+  ),
+  op(
+    "get",
+    "/public/check-in-qr/{file}",
+    TAGS.appointments,
+    "Imagen PNG del QR de llegada (público)",
+    "public",
+    200,
+    {
+      rateLimited: true,
+      description:
+        "Sin sesión. `file` es el código de llegada con extensión `.png`; solo se dibuja si la firma es auténtica, si no responde 404. La usa el correo de recordatorio (D-66).",
     },
   ),
   op(

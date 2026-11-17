@@ -60,10 +60,12 @@ const recipientOf = (owner: Recipient): string | null => owner.email ?? owner.us
 function appointmentData(
   appointment: AppointmentForEmail,
   manageUrl: string,
+  checkInQrUrl: string | null = null,
 ): AppointmentEmailData {
   const professional = appointment.veterinarian ?? appointment.groomer;
   return {
     manageUrl,
+    checkInQrUrl,
     ownerName: appointment.patient.owner.firstNames,
     patientName: appointment.patient.name,
     type: appointment.type,
@@ -98,6 +100,7 @@ export class NotificationsService implements IAppointmentNotifier {
     private readonly repository: NotificationsRepository,
     private readonly mail: IMailProvider,
     private readonly manageUrlOf: (appointmentId: string) => string,
+    private readonly checkInQrUrlOf: (appointmentId: string, startsAt: Date) => string | null,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -158,7 +161,13 @@ export class NotificationsService implements IAppointmentNotifier {
       const row = await this.queueAppointmentNotice(
         NotificationKind.APPOINTMENT_REMINDER,
         appointment,
-        buildReminderEmail(appointmentData(appointment, this.manageUrlOf(appointment.id))),
+        buildReminderEmail(
+          appointmentData(
+            appointment,
+            this.manageUrlOf(appointment.id),
+            this.checkInQrUrlOf(appointment.id, appointment.startsAt),
+          ),
+        ),
       );
       if (row) queued += 1;
     }
