@@ -21,7 +21,7 @@ Si el código contradice `context/`, no sigas: corrige uno de los dos. **Cada ve
 Reglas en `.claude/rules/` (siempre vigentes):
 
 - `context-fuente-de-verdad.md` — cómo usar y mantener `context/`.
-- `git-flujo.md` — Git Flow, ramas, commits; el agente nunca hace commit/push/PR.
+- `git-flujo.md` — Git Flow, ramas, commits; el agente hace add/commit/push/PR solo con `_git` y nunca el merge.
 - `estructura-proyecto.md` — dónde va cada archivo en `back/` y `front/`.
 - `modelado-datos.md` — tipos y tamaños justificados (BD, DTO y formulario coinciden).
 
