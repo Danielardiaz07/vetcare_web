@@ -175,6 +175,7 @@ export function buildApp(overrides: AppOverrides = {}) {
       checkInCodes,
       manageLinks,
       new CheckInScanner(env.CHECK_IN_SCANNER_TOKEN),
+      env.FRONTEND_URL,
     ),
   );
   const verificationController = new VerificationController(

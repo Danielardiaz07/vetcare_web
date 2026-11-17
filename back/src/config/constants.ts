@@ -73,6 +73,8 @@ export const CARD_TOKEN_LENGTH = 43; // 32 bytes en base64url, sin relleno; mism
 export const CHECK_IN_CODE_MAX = 70; // "VC2." + UUID (36) + "." + hasta 12 dígitos + "." + 16 hex = 70 caracteres (D-66)
 export const SCANNER_TOKEN_MIN_LENGTH = 32; // el token del enlace de escaneo se adivina con la misma dificultad que una clave (RN-85)
 export const SCANNER_TOKEN_MAX = 128;
+export const SCANNER_PAGE_PATH = "/scan"; // ruta del frontend que abre el enlace de escaneo de recepción (D-68)
+export const HTTPS_SCHEME = "https://";
 export const CHECK_IN_QR_EXTENSION = ".png";
 export const QR_IMAGE_MAX_AGE_SECONDS = 86_400; // el código ya lleva la hora de la cita, así que su imagen no cambia
 export const MANAGE_APPOINTMENT_PATH = "/manage-appointment"; // ruta del frontend que abre el enlace del correo

@@ -84,6 +84,11 @@ export class AppointmentsController {
     res.json(await this.service.checkIn((req.body as CheckInRequestDto).code));
   };
 
+  scannerAccess: RequestHandler = async (_req, res) => {
+    res.set("Cache-Control", "no-store"); // la respuesta lleva el token secreto
+    res.json(await this.service.scannerAccess());
+  };
+
   scannerStatus: RequestHandler = (req, res) => {
     this.service.assertScannerToken(String(req.params.scannerToken));
     res.set("Cache-Control", "no-store");

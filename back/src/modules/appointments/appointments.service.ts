@@ -21,6 +21,7 @@ import type {
   ManagedAppointmentDto,
   ReassignAppointmentRequestDto,
   RescheduleAppointmentRequestDto,
+  ScannerAccessResponseDto,
 } from "@/modules/appointments/dto/appointments.dto";
 import type { IAppointmentNotifier } from "@/modules/appointments/appointment-notifier.interface";
 import {
@@ -93,6 +94,7 @@ export class AppointmentsService {
     private readonly checkInCodes: CheckInCodes,
     private readonly manageLinks: ManageLinks,
     private readonly scanner: CheckInScanner,
+    private readonly frontendUrl: string | undefined,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -333,6 +335,13 @@ export class AppointmentsService {
   // D-66, RN-85: la página de escaneo de recepción entra con el token del enlace, sin sesión.
   assertScannerToken(token: string): void {
     if (!this.scanner.accepts(token)) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
+  }
+
+  // D-68: recepción obtiene el enlace de escaneo y su QR fijo; se lee el token existente, nunca se crea ni se cambia.
+  async scannerAccess(): Promise<ScannerAccessResponseDto> {
+    const url = this.scanner.accessLink(this.frontendUrl);
+    if (!url) throw new NotFoundError("El acceso de escaneo no esta configurado");
+    return { url, qrSvg: await toQrSvg(url) };
   }
 
   async checkInFromScanner(token: string, code: string): Promise<CheckInScanResultDto> {
