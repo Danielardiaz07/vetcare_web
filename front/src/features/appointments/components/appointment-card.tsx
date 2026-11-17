@@ -6,6 +6,7 @@ import { cn } from "@/components/ui/cn";
 import { Icon } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CancelDialog } from "@/features/appointments/components/cancel-dialog";
+import { CheckInQr } from "@/features/appointments/components/check-in-qr";
 import { RescheduleForm } from "@/features/appointments/components/reschedule-form";
 import { CONTACT_CLINIC_MESSAGE } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
@@ -78,6 +79,9 @@ export function AppointmentCard({
           )}
         </div>
       </div>
+      {onChanged && status === "SCHEDULED" && !rescheduling && (
+        <CheckInQr key={startsAt} appointmentId={appointment.id} startsAt={startsAt} />
+      )}
       {onChanged && active && !rescheduling && (
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-3">

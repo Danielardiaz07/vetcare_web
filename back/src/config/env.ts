@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SCANNER_TOKEN_MIN_LENGTH } from "@/config/constants";
 
 const MIN_SECRET_LENGTH = 32;
 
@@ -20,6 +21,10 @@ const envSchema = z.object({
   MAIL_FROM_EMAIL: z.email(),
   MAIL_FROM_NAME: z.string().min(1),
   FRONTEND_URL: z.url().optional(),
+  // D-66: dirección pública de esta API; el recordatorio pide ahí la imagen del QR. Sin ella el correo no lleva el QR.
+  API_PUBLIC_URL: z.url().optional(),
+  // D-66, RN-85: token del enlace de escaneo de recepción. Sin él la página de escaneo queda desactivada.
+  CHECK_IN_SCANNER_TOKEN: z.string().min(SCANNER_TOKEN_MIN_LENGTH).optional(),
   // Solo la API desplegada corre el programador de recordatorios; en local queda apagado para no enviar correos con los datos compartidos.
   SCHEDULER_ENABLED: z.stringbool().default(false),
   CORS_ORIGINS: z

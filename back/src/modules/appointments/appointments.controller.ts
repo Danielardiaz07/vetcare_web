@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { HttpStatus } from "@/config/constants";
+import { CHECK_IN_QR_EXTENSION, HttpStatus, QR_IMAGE_MAX_AGE_SECONDS } from "@/config/constants";
 import type {
   AgendaQueryDto,
   AvailabilityQueryDto,
@@ -82,6 +82,35 @@ export class AppointmentsController {
 
   checkIn: RequestHandler = async (req, res) => {
     res.json(await this.service.checkIn((req.body as CheckInRequestDto).code));
+  };
+
+  scannerStatus: RequestHandler = (req, res) => {
+    this.service.assertScannerToken(String(req.params.scannerToken));
+    res.set("Cache-Control", "no-store");
+    res.status(HttpStatus.NO_CONTENT).end();
+  };
+
+  checkInFromScanner: RequestHandler = async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json(
+      await this.service.checkInFromScanner(
+        String(req.params.scannerToken),
+        (req.body as CheckInRequestDto).code,
+      ),
+    );
+  };
+
+  checkInQrImage: RequestHandler = async (req, res) => {
+    const file = String(req.params.file);
+    const code = file.endsWith(CHECK_IN_QR_EXTENSION)
+      ? file.slice(0, -CHECK_IN_QR_EXTENSION.length)
+      : file;
+    const image = await this.service.checkInQrImage(code);
+    res.set({
+      "Content-Type": "image/png",
+      "Cache-Control": `public, max-age=${QR_IMAGE_MAX_AGE_SECONDS}`,
+    });
+    res.send(image);
   };
 
   markNoShow: RequestHandler = async (req, res) => {

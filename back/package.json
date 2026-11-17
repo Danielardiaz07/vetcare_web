@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
-    "db:seed:demo": "tsx --env-file=.env prisma/seed-demo.ts"
+    "db:seed:demo": "tsx --env-file=.env prisma/seed-demo.ts",
+    "scanner:qr": "tsx --env-file=.env src/scripts/scanner-qr.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "^6.2.0",

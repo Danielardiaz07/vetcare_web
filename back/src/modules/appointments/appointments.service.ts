@@ -15,6 +15,7 @@ import type {
   CancelAppointmentRequestDto,
   CancelByLinkRequestDto,
   CheckInCodeResponseDto,
+  CheckInScanResultDto,
   CreateAppointmentRequestDto,
   ListMyAppointmentsQueryDto,
   ManagedAppointmentDto,
@@ -34,6 +35,7 @@ import {
 import { professionalFor } from "@/modules/appointments/appointment-types.service";
 import type { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
 import type { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
+import type { CheckInScanner } from "@/modules/appointments/check-in-scanner";
 import { overlapsBusy, scheduleCovers, slotsOfDay } from "@/modules/appointments/slots";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors";
 import {
@@ -45,7 +47,7 @@ import {
   minutesBetween,
 } from "@/shared/utils/clinic-time";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
-import { toQrSvg } from "@/shared/utils/qr";
+import { toQrPng, toQrSvg } from "@/shared/utils/qr";
 
 export interface Actor {
   id: string;
@@ -90,6 +92,7 @@ export class AppointmentsService {
     private readonly notifier: IAppointmentNotifier,
     private readonly checkInCodes: CheckInCodes,
     private readonly manageLinks: ManageLinks,
+    private readonly scanner: CheckInScanner,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -302,7 +305,7 @@ export class AppointmentsService {
       throw new ConflictError("La cita ya no admite llegada");
     }
 
-    const code = this.checkInCodes.issue(appointment.id);
+    const code = this.checkInCodes.issue(appointment.id, appointment.startsAt);
     return {
       appointmentId: appointment.id,
       code,
@@ -312,15 +315,36 @@ export class AppointmentsService {
   }
 
   // Solo el día de la cita (hora de la clínica); lo demás es igual a registrar la llegada a mano.
+  // D-66: un código de antes de reprogramar la cita ya no sirve.
   async checkIn(code: string): Promise<AppointmentResponseDto> {
-    const id = this.checkInCodes.verify(code);
-    if (!id) throw new ValidationError("Codigo de llegada invalido");
+    const payload = this.checkInCodes.verify(code);
+    if (!payload) throw new ValidationError("Codigo de llegada invalido");
 
-    const appointment = await this.findOrFail(id);
+    const appointment = await this.findOrFail(payload.appointmentId);
+    if (!this.checkInCodes.matches(payload, appointment.startsAt)) {
+      throw new ConflictError("Este codigo es de una cita reprogramada. Usa el codigo nuevo");
+    }
     if (clinicDateOf(appointment.startsAt) !== clinicDateOf(this.clock())) {
       throw new ConflictError("La cita no es de hoy");
     }
-    return this.registerArrival(id);
+    return this.registerArrival(appointment.id);
+  }
+
+  // D-66, RN-85: la página de escaneo de recepción entra con el token del enlace, sin sesión.
+  assertScannerToken(token: string): void {
+    if (!this.scanner.accepts(token)) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
+  }
+
+  async checkInFromScanner(token: string, code: string): Promise<CheckInScanResultDto> {
+    this.assertScannerToken(token);
+    const appointment = await this.checkIn(code);
+    return { patientName: appointment.patient.name, startsAt: appointment.startsAt };
+  }
+
+  // D-66: el recordatorio muestra el QR como imagen; solo se dibuja si el código es auténtico.
+  async checkInQrImage(code: string): Promise<Buffer> {
+    if (!this.checkInCodes.verify(code)) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
+    return toQrPng(code);
   }
 
   async markNoShow(id: string): Promise<AppointmentResponseDto> {

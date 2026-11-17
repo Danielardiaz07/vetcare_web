@@ -17,6 +17,7 @@ export interface AppointmentEmailData {
   reason: string | null;
   cancelReason: string | null;
   manageUrl: string; // enlace personal para cambiar o cancelar la cita (RN-84)
+  checkInQrUrl: string | null; // imagen del QR de llegada (D-66, RN-83); null si la API no tiene dirección pública
 }
 
 export interface VaccineEmailData {
@@ -60,6 +61,12 @@ const greeting = (ownerName: string) => `<p>Hola, ${escapeHtml(ownerName)}.</p>`
 const manageBlock = (manageUrl: string) =>
   `<p><a href="${escapeHtml(manageUrl)}" style="display:inline-block;padding:10px 16px;background:#0f5c63;color:#fff;border-radius:8px;text-decoration:none">Reprogramar o cancelar mi cita</a></p><p style="color:#666;font-size:12px">Este enlace es personal: quien lo tenga puede cambiar o cancelar la cita. No lo compartas.</p>`;
 
+// D-66, RN-83: con este QR recepción registra la llegada. Si la cita se reprograma, el de este correo deja de servir.
+const checkInQrBlock = (qrUrl: string | null) =>
+  qrUrl
+    ? `<p style="text-align:center"><img src="${escapeHtml(qrUrl)}" alt="QR de llegada" width="180" height="180" style="border:0"></p><p style="text-align:center;color:#666;font-size:12px">Muestra este QR en recepcion al llegar y registramos tu llegada al instante. Tambien lo encuentras en Mis citas. Si cambias la cita, usa el QR nuevo.</p>`
+    : "";
+
 export const buildConfirmedEmail = (data: AppointmentEmailData): EmailContent => ({
   subject: `${CLINIC_NAME}: cita agendada para ${data.patientName}`,
   html: emailLayout(
@@ -90,7 +97,7 @@ export const buildReminderEmail = (data: AppointmentEmailData): EmailContent => 
   subject: `${CLINIC_NAME}: recordatorio de la cita de ${data.patientName}`,
   html: emailLayout(
     "Te recordamos tu cita",
-    `${greeting(data.ownerName)}<p>Tu cita es en las proximas 24 horas:</p>${appointmentDetails(data)}<p>Si no puedes asistir, reprogramala o cancelala para liberar la franja:</p>${manageBlock(data.manageUrl)}`,
+    `${greeting(data.ownerName)}<p>Tu cita es en las proximas 24 horas:</p>${appointmentDetails(data)}${checkInQrBlock(data.checkInQrUrl)}<p>Si no puedes asistir, reprogramala o cancelala para liberar la franja:</p>${manageBlock(data.manageUrl)}`,
   ),
 });
 
