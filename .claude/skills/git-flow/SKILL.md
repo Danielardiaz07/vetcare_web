@@ -1,6 +1,6 @@
 ---
 name: git-flow
-description: Flujo de Git de VetCare-Web. Úsala cuando el desarrollador escriba `_git`, pida commit/push/PR, o antes de editar archivos para verificar y crear la rama correcta (Git Flow). El agente nunca ejecuta commit, push ni gh pr create.
+description: Flujo de Git de VetCare-Web. Úsala cuando el desarrollador escriba `_git`, pida commit/push/PR, o antes de editar archivos para verificar y crear la rama correcta (Git Flow). Con `_git` el agente ejecuta add, commit, push y gh pr create (nunca el merge).
 ---
 
 # git-flow
@@ -16,28 +16,27 @@ Fuente: `context/11-flujo-git.md` y `.claude/rules/git-flujo.md`.
 
 ## B. Al terminar una tarea
 
-No entregues comandos de git. Di solo qué cambió y recuerda que `_git` genera los comandos.
+No hagas commit, push ni PR. Di solo qué cambió y recuerda que `_git` los ejecuta.
 
 ## C. Cuando el desarrollador escribe `_git`
 
 1. Revisa **todo** lo de la rama: `git status`, `git diff`, `git diff --staged`, `git diff develop...HEAD`, `git log develop..HEAD`, `git log -8 --oneline` (para imitar el estilo).
-2. Si no hay nada que commitear ni abrir en PR, dilo en una frase. Si ya está commiteado, entrega solo push y PR.
+2. Si no hay nada que commitear ni abrir en PR, dilo en una frase. Si ya está commiteado, ejecuta solo push y PR.
 3. Propón **un** commit y **un** PR cuyo mensaje salga de lo que realmente cambió. Tipo según la rama (`feature`→`feat`, `bugfix`/`hotfix`→`fix`, el resto igual al prefijo). Alcance en `api|web|auth|users|uploads|db|shared|deps|context|<dominio>`. Descripción en imperativo, sin punto final, 50–72 caracteres.
 4. Agrega a `git add` **solo** los archivos que pertenecen al cambio (nada de `git add .` si hay archivos ajenos, p. ej. `.claude/settings.local.json`, `.env`).
-5. Entrega estos bloques (no los ejecutes):
+5. Ejecuta en orden, sin atribución a Claude en el commit ni en el PR, y confirma cada resultado:
 
 ```
-# add
 git add <archivos>
-
-# commit
 git commit -m "tipo(alcance): descripcion"
-
-# push
 git push -u origin HEAD
+gh pr create --base develop --title "tipo(alcance): descripcion" --body-file <archivo.md>
+```
 
-# pr
-gh pr create --base develop --title "tipo(alcance): descripcion" --body "## Resumen
+El cuerpo se escribe antes en un archivo (en el scratchpad) con esta estructura, para que funcione en Git Bash:
+
+```
+## Resumen
 <2-3 lineas: que se hizo y por que>
 
 ## Cambios
@@ -51,8 +50,10 @@ gh pr create --base develop --title "tipo(alcance): descripcion" --body "## Resu
 - <pasos o comandos para comprobar el cambio>
 
 ## Notas
-<decisiones, impacto en context/, pendientes o riesgos; omitir si no hay>"
+<decisiones, impacto en context/, pendientes o riesgos; omitir si no hay>
 ```
+
+Al terminar, entrega la URL del PR y recuerda que el merge lo hace el desarrollador.
 
 **Cuerpo del PR** (se redacta a partir de `git diff develop...HEAD` y `git log develop..HEAD`, no de memoria):
 
@@ -62,8 +63,9 @@ gh pr create --base develop --title "tipo(alcance): descripcion" --body "## Resu
 - Como verificar: pasos reales y ejecutables (sin pruebas automatizadas en este proyecto: comprobación manual, build, lint o typecheck). Si es solo documentación o estructura, indica qué revisar.
 - Omite las secciones que no apliquen (p. ej. Notas); el cuerpo va en español, sin emojis.
 
+Después de que el desarrollador apruebe y haga el merge del PR, la limpieza (la ejecuta el agente si se lo piden):
+
 ```
-# despues de aprobar el PR (borrar local + GitHub y volver a develop)
 git checkout develop
 git pull origin develop
 git branch -d <rama>
@@ -75,4 +77,4 @@ git push origin --delete <rama>
 
 ## Prohibido
 
-`git commit`, `git push`, `gh pr create`, `--force`, `--no-verify`, trabajar en `main`/`develop`, tipo `test`.
+Hacer merge o aprobar un PR, `--force`, `--no-verify`, trabajar en `main`/`develop`, atribución a Claude en commits o PR, tipo `test`, y ejecutar git sin que el desarrollador haya escrito `_git`.
