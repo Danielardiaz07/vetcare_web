@@ -24,15 +24,15 @@ export function PeriodFilter({ defaultValues, loading, onApply }: PeriodFilterPr
       onSubmit={handleSubmit(onApply)}
       noValidate
       aria-label="Periodo"
-      className="flex flex-col gap-4 sm:flex-row sm:items-start"
+      className="flex w-full min-w-0 flex-wrap items-end gap-3 sm:w-auto sm:flex-1"
     >
-      <div className="sm:w-48">
+      <div className="min-w-0 flex-1 basis-40 sm:max-w-48">
         <Field type="date" label="Desde" error={errors.from?.message} {...register("from")} />
       </div>
-      <div className="sm:w-48">
+      <div className="min-w-0 flex-1 basis-40 sm:max-w-48">
         <Field type="date" label="Hasta" error={errors.to?.message} {...register("to")} />
       </div>
-      <Button type="submit" loading={loading} className="sm:mt-6.5">
+      <Button type="submit" loading={loading}>
         Consultar
       </Button>
     </form>
