@@ -13,9 +13,11 @@ import type {
   AvailabilityQueryDto,
   AvailabilityResponseDto,
   CancelAppointmentRequestDto,
+  CancelByLinkRequestDto,
   CheckInCodeResponseDto,
   CreateAppointmentRequestDto,
   ListMyAppointmentsQueryDto,
+  ManagedAppointmentDto,
   ReassignAppointmentRequestDto,
   RescheduleAppointmentRequestDto,
 } from "@/modules/appointments/dto/appointments.dto";
@@ -31,7 +33,7 @@ import {
 } from "@/modules/appointments/appointments.repository";
 import { professionalFor } from "@/modules/appointments/appointment-types.service";
 import type { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
-import type { CheckInCodes } from "@/modules/appointments/check-in-codes";
+import type { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
 import { overlapsBusy, scheduleCovers, slotsOfDay } from "@/modules/appointments/slots";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors";
 import {
@@ -51,6 +53,8 @@ export interface Actor {
 }
 
 const SLOT_TAKEN_MESSAGE = "La franja ya no esta disponible"; // RN-27
+const LINK_NOT_FOUND_MESSAGE = "Enlace no valido";
+const CANCEL_BY_LINK_REASON = "Cancelada por el propietario desde el enlace del correo";
 const CONTACT_CLINIC_MESSAGE = "Comunicate con la clinica"; // RN-28
 const HOUR_MINUTES = 60;
 const DAY_HOURS = 24;
@@ -85,6 +89,7 @@ export class AppointmentsService {
     private readonly types: AppointmentTypesRepository,
     private readonly notifier: IAppointmentNotifier,
     private readonly checkInCodes: CheckInCodes,
+    private readonly manageLinks: ManageLinks,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -176,6 +181,14 @@ export class AppointmentsService {
     dto: RescheduleAppointmentRequestDto,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.findModifiable(actor, id);
+    return this.applyReschedule(appointment, dto, actor.role !== Role.OWNER);
+  }
+
+  private async applyReschedule(
+    appointment: AppointmentRecord,
+    dto: RescheduleAppointmentRequestDto,
+    withOwner: boolean,
+  ): Promise<AppointmentResponseDto> {
     this.assertBookable(dto.startsAt);
 
     const kind = kindOf(appointment);
@@ -200,7 +213,7 @@ export class AppointmentsService {
           professionalId: candidate.id,
         });
         await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
-        return toResponse(updated, actor.role !== Role.OWNER);
+        return toResponse(updated, withOwner);
       } catch (error) {
         this.rethrowUnlessProfessionalTaken(error);
       }
@@ -214,12 +227,57 @@ export class AppointmentsService {
     dto: CancelAppointmentRequestDto,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.findModifiable(actor, id);
+    return this.applyCancel(appointment, dto.reason, actor.role !== Role.OWNER);
+  }
+
+  private async applyCancel(
+    appointment: AppointmentRecord,
+    reason: string,
+    withOwner: boolean,
+  ): Promise<AppointmentResponseDto> {
     const updated = await this.repository.update(appointment.id, kindOf(appointment), {
       status: AppointmentStatus.CANCELLED,
-      cancelReason: dto.reason,
+      cancelReason: reason,
     });
     await this.notifier.appointmentEvent("CANCELLED", updated.id); // RN-35
-    return toResponse(updated, actor.role !== Role.OWNER);
+    return toResponse(updated, withOwner);
+  }
+
+  // RN-84: enlace personal de los correos. Quien lo tiene hace lo que el propietario desde su cuenta, con las mismas
+  // reglas (cita activa y más de 2 horas de anticipación). Un enlace inválido o de una cita inexistente responde igual.
+  async managedByLink(token: string): Promise<ManagedAppointmentDto> {
+    const appointment = await this.appointmentOfLink(token);
+    const blockedReason = this.blockedReasonOf(appointment);
+    return {
+      appointment: toResponse(appointment, false),
+      canChange: blockedReason === null,
+      blockedReason,
+    };
+  }
+
+  async cancelByLink(token: string, dto: CancelByLinkRequestDto): Promise<ManagedAppointmentDto> {
+    const appointment = await this.appointmentOfLink(token);
+    this.assertModifiable(appointment, true);
+    const cancelled = await this.applyCancel(
+      appointment,
+      dto.reason ?? CANCEL_BY_LINK_REASON,
+      false,
+    );
+    return {
+      appointment: cancelled,
+      canChange: false,
+      blockedReason: "La cita ya no admite cambios",
+    };
+  }
+
+  async rescheduleByLink(
+    token: string,
+    dto: RescheduleAppointmentRequestDto,
+  ): Promise<ManagedAppointmentDto> {
+    const appointment = await this.appointmentOfLink(token);
+    this.assertModifiable(appointment, true);
+    const updated = await this.applyReschedule(appointment, dto, false);
+    return { appointment: updated, canChange: true, blockedReason: null };
   }
 
   async registerArrival(id: string): Promise<AppointmentResponseDto> {
@@ -466,14 +524,28 @@ export class AppointmentsService {
   private async findModifiable(actor: Actor, id: string): Promise<AppointmentRecord> {
     const appointment = await this.findOrFail(id);
     await this.assertCanAccessOwner(actor, appointment.patient.ownerId);
+    this.assertModifiable(appointment, actor.role === Role.OWNER);
+    return appointment;
+  }
 
-    if (!ACTIVE_STATUSES.includes(appointment.status)) {
-      throw new ConflictError("La cita ya no admite cambios");
-    }
+  private assertModifiable(appointment: AppointmentRecord, enforceLead: boolean): void {
+    const blocked = this.blockedReasonOf(appointment, enforceLead);
+    if (blocked) throw new ConflictError(blocked);
+  }
+
+  // null = se puede cambiar. `enforceLead` es la restricción de 2 horas, que rige solo para el propietario.
+  private blockedReasonOf(appointment: AppointmentRecord, enforceLead = true): string | null {
+    if (!ACTIVE_STATUSES.includes(appointment.status)) return "La cita ya no admite cambios";
     const lead = addMinutes(this.clock(), MIN_APPOINTMENT_LEAD_HOURS * HOUR_MINUTES);
-    if (actor.role === Role.OWNER && appointment.startsAt <= lead) {
-      throw new ConflictError(CONTACT_CLINIC_MESSAGE);
-    }
+    if (enforceLead && appointment.startsAt <= lead) return CONTACT_CLINIC_MESSAGE;
+    return null;
+  }
+
+  private async appointmentOfLink(token: string): Promise<AppointmentRecord> {
+    const id = this.manageLinks.verify(token);
+    if (!id) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
+    const appointment = await this.repository.findById(id);
+    if (!appointment) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
     return appointment;
   }
 

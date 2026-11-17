@@ -4,6 +4,7 @@ import {
   agendaQuerySchema,
   availabilityQuerySchema,
   cancelAppointmentRequestSchema,
+  cancelByLinkRequestSchema,
   checkInRequestSchema,
   createAppointmentRequestSchema,
   listMyAppointmentsQuerySchema,
@@ -529,6 +530,47 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       description: "La cita pasa de SCHEDULED a CONFIRMED.",
+    },
+  ),
+  op(
+    "get",
+    "/public/appointments/manage/{token}",
+    TAGS.appointments,
+    "Ver la cita desde el enlace del correo (público)",
+    "public",
+    200,
+    {
+      rateLimited: true,
+      description:
+        "Sin sesión. El `token` viene en el enlace personal de los correos de la cita (`/manage-appointment/{token}`). Devuelve `{ appointment, canChange, blockedReason }`, sin datos del propietario. `canChange` es false si la cita ya no está activa o faltan 2 horas o menos (RN-28, RN-84, D-65). Un enlace inválido responde 404.",
+    },
+  ),
+  op(
+    "post",
+    "/public/appointments/manage/{token}/cancel",
+    TAGS.appointments,
+    "Cancelar la cita desde el enlace del correo (público)",
+    "public",
+    200,
+    {
+      body: cancelByLinkRequestSchema,
+      rateLimited: true,
+      description:
+        "Sin sesión. El `reason` es opcional. Aplica las mismas reglas que cancelar desde la cuenta del propietario y envía el correo de cancelación (RN-84, D-65).",
+    },
+  ),
+  op(
+    "post",
+    "/public/appointments/manage/{token}/reschedule",
+    TAGS.appointments,
+    "Reprogramar la cita desde el enlace del correo (público)",
+    "public",
+    200,
+    {
+      body: rescheduleAppointmentRequestSchema,
+      rateLimited: true,
+      description:
+        "Sin sesión. Las franjas libres salen de `GET /appointments/availability` con el tipo de la cita. Aplica las mismas reglas que reprogramar desde la cuenta del propietario (RN-84, D-65).",
     },
   ),
   op(

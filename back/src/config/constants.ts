@@ -35,6 +35,7 @@ export const RATE_LIMIT_MAX_REQUESTS = 100;
 export const LOGIN_RATE_LIMIT_MAX = 5;
 export const REGISTER_RATE_LIMIT_WINDOW_MS = 10 * MINUTE_MS;
 export const REGISTER_RATE_LIMIT_MAX = 5;
+export const PUBLIC_LINK_RATE_LIMIT_MAX = 30; // consultas y cambios por IP en REGISTER_RATE_LIMIT_WINDOW_MS (D-65)
 
 export const REFRESH_COOKIE_NAME = "refresh_token";
 export const JWT_ALGORITHM = "HS256";
@@ -70,6 +71,8 @@ export const ALERT_WEIGHT_DAYS = 30; // el aviso del portal dura este plazo desd
 export const CARD_TOKEN_BYTES = 32; // 256 bits: imposible de adivinar
 export const CARD_TOKEN_LENGTH = 43; // 32 bytes en base64url, sin relleno; mismo tope que CardVerification.token
 export const CHECK_IN_CODE_MAX = 60; // "VC1." + UUID (36) + "." + 16 hex = 57 caracteres
+export const MANAGE_APPOINTMENT_PATH = "/manage-appointment"; // ruta del frontend que abre el enlace del correo
+export const MANAGE_TOKEN_MAX = 60; // "MG1." + UUID + "." + 16 hex = 57 caracteres (D-65, RN-84)
 
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * MINUTE_MS;

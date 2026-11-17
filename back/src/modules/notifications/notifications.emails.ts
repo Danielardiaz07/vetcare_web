@@ -16,6 +16,7 @@ export interface AppointmentEmailData {
   professional: string;
   reason: string | null;
   cancelReason: string | null;
+  manageUrl: string; // enlace personal para cambiar o cancelar la cita (RN-84)
 }
 
 export interface VaccineEmailData {
@@ -54,11 +55,16 @@ function appointmentDetails(data: AppointmentEmailData): string {
 
 const greeting = (ownerName: string) => `<p>Hola, ${escapeHtml(ownerName)}.</p>`;
 
+// RN-84: el enlace abre una página con la cita; cambiarla o cancelarla es un paso aparte, así un programa que revise
+// los enlaces del correo no cancela nada.
+const manageBlock = (manageUrl: string) =>
+  `<p><a href="${escapeHtml(manageUrl)}" style="display:inline-block;padding:10px 16px;background:#0f5c63;color:#fff;border-radius:8px;text-decoration:none">Reprogramar o cancelar mi cita</a></p><p style="color:#666;font-size:12px">Este enlace es personal: quien lo tenga puede cambiar o cancelar la cita. No lo compartas.</p>`;
+
 export const buildConfirmedEmail = (data: AppointmentEmailData): EmailContent => ({
   subject: `${CLINIC_NAME}: cita agendada para ${data.patientName}`,
   html: emailLayout(
     "Tu cita esta agendada",
-    `${greeting(data.ownerName)}<p>Registramos esta cita:</p>${appointmentDetails(data)}<p>Si no puedes asistir, puedes reprogramarla o cancelarla desde tu cuenta.</p>`,
+    `${greeting(data.ownerName)}<p>Registramos esta cita:</p>${appointmentDetails(data)}<p>Si no puedes asistir, puedes reprogramarla o cancelarla desde tu cuenta o con este enlace:</p>${manageBlock(data.manageUrl)}`,
   ),
 });
 
@@ -66,7 +72,7 @@ export const buildChangedEmail = (data: AppointmentEmailData): EmailContent => (
   subject: `${CLINIC_NAME}: cita modificada para ${data.patientName}`,
   html: emailLayout(
     "Tu cita fue modificada",
-    `${greeting(data.ownerName)}<p>Estos son los datos actualizados de tu cita:</p>${appointmentDetails(data)}`,
+    `${greeting(data.ownerName)}<p>Estos son los datos actualizados de tu cita:</p>${appointmentDetails(data)}${manageBlock(data.manageUrl)}`,
   ),
 });
 
@@ -84,7 +90,7 @@ export const buildReminderEmail = (data: AppointmentEmailData): EmailContent => 
   subject: `${CLINIC_NAME}: recordatorio de la cita de ${data.patientName}`,
   html: emailLayout(
     "Te recordamos tu cita",
-    `${greeting(data.ownerName)}<p>Tu cita es en las proximas 24 horas:</p>${appointmentDetails(data)}<p>Si no puedes asistir, avisanos para liberar la franja.</p>`,
+    `${greeting(data.ownerName)}<p>Tu cita es en las proximas 24 horas:</p>${appointmentDetails(data)}<p>Si no puedes asistir, reprogramala o cancelala para liberar la franja:</p>${manageBlock(data.manageUrl)}`,
   ),
 });
 

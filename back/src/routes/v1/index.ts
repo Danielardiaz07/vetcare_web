@@ -11,6 +11,7 @@ interface V1Modules {
   appointmentTypes: Router;
   appointments: Router;
   myAppointments: Router;
+  publicAppointments: Router;
   clinical: Router;
   myClinical: Router;
   invoices: Router;
@@ -39,6 +40,7 @@ export function createV1Router({
   appointmentTypes,
   appointments,
   myAppointments,
+  publicAppointments,
   clinical,
   myClinical,
   invoices,
@@ -77,6 +79,7 @@ export function createV1Router({
   router.use("/me/patients", myVerification);
   router.use("/patients", staffVerification);
   router.use("/public", publicVerification);
+  router.use("/public", publicAppointments);
   router.use("/me/invoices", myInvoices);
   router.use("/me/alerts", myAlerts);
   router.use("/invoices", invoices);

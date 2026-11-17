@@ -2,6 +2,7 @@ import type { Request } from "express";
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
 import {
   LOGIN_RATE_LIMIT_MAX,
+  PUBLIC_LINK_RATE_LIMIT_MAX,
   RATE_LIMIT_MAX_REQUESTS,
   RATE_LIMIT_WINDOW_MS,
   REGISTER_RATE_LIMIT_MAX,
@@ -56,6 +57,13 @@ export const changePasswordRateLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
   limit: LOGIN_RATE_LIMIT_MAX,
   keyGenerator: (req: Request) => req.user?.id ?? ipKeyGenerator(req.ip ?? ""),
+});
+
+// Enlaces públicos firmados (cambiar o cancelar una cita desde el correo): frena el probar códigos al azar.
+export const publicLinkRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+  limit: PUBLIC_LINK_RATE_LIMIT_MAX,
 });
 
 export const passwordRecoveryRateLimiter = rateLimit({
