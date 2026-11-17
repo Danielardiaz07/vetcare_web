@@ -12,7 +12,7 @@ import { VaccinationCardPrint } from "@/features/clinical/components/vaccination
 import { PatientAvatar } from "@/features/patients/components/patient-avatar";
 import { WeightHistory } from "@/features/patients/components/weight-history";
 import { SEX_LABELS, SPECIES_LABELS } from "@/features/patients/labels";
-import { ROUTES } from "@/lib/constants";
+import { ROUTES, WEIGHT_HISTORY_ANCHOR } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
 import { getMyVaccinationCard } from "@/services/clinical";
 import { ApiError } from "@/services/http-client";
@@ -164,7 +164,12 @@ export function PetHistory({ petId }: PetHistoryProps) {
 
       <VaccineAlerts items={[{ pet, card }]} />
 
-      <WeightHistory key={`weight-${pet.id}`} patientId={pet.id} patientName={pet.name} />
+      <WeightHistory
+        key={`weight-${pet.id}`}
+        id={WEIGHT_HISTORY_ANCHOR}
+        patientId={pet.id}
+        patientName={pet.name}
+      />
 
       <ClinicalHistory key={`clinical-${pet.id}`} pet={pet} card={card} />
     </div>

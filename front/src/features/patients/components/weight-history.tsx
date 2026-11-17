@@ -13,6 +13,7 @@ const weightFormatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 
 type State = { status: "loading" } | { status: "error" } | { status: "ready"; data: WeightTrend };
 
 type WeightHistoryProps = {
+  id?: string;
   patientId: string;
   patientName: string;
   staff?: boolean;
@@ -21,6 +22,7 @@ type WeightHistoryProps = {
 };
 
 export function WeightHistory({
+  id,
   patientId,
   patientName,
   staff = false,
@@ -29,6 +31,7 @@ export function WeightHistory({
 }: WeightHistoryProps) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [retry, setRetry] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
   const request = useRef<{ key: string; promise: Promise<WeightTrend> } | null>(null);
 
   useEffect(() => {
@@ -49,6 +52,23 @@ export function WeightHistory({
       active = false;
     };
   }, [patientId, staff, refreshKey, retry]);
+
+  useEffect(() => {
+    if (!id || compact || state.status === "loading") return;
+    const scrollToWeight = () => {
+      if (window.location.hash !== `#${id}`) return;
+      const section = sectionRef.current;
+      if (!section) return;
+      section.scrollIntoView({ block: "start", behavior: "instant" });
+      section.focus({ preventScroll: true });
+    };
+    const frame = requestAnimationFrame(scrollToWeight);
+    window.addEventListener("hashchange", scrollToWeight);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", scrollToWeight);
+    };
+  }, [id, compact, patientId, state.status]);
 
   const loading = (
     <div
@@ -88,8 +108,11 @@ export function WeightHistory({
   const latest = state.status === "ready" ? state.data.points.at(-1) : undefined;
   return (
     <section
+      ref={sectionRef}
+      id={id}
+      tabIndex={id ? -1 : undefined}
       aria-label={`Evolución del peso de ${patientName}`}
-      className="flex min-w-0 flex-col gap-5 rounded-card border border-line bg-surface p-5 sm:p-6"
+      className="flex min-w-0 scroll-mt-24 flex-col gap-5 rounded-card border border-line bg-surface p-5 focus:outline-none sm:p-6"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h2 className="text-xl font-semibold text-ink">Evolución del peso</h2>

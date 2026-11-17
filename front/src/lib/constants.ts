@@ -1,3 +1,5 @@
+export const WEIGHT_HISTORY_ANCHOR = "evolucion-peso";
+
 export const ROUTES = {
   home: "/",
   login: "/login",
@@ -7,6 +9,7 @@ export const ROUTES = {
   portalNewAppointment: "/portal/appointments/new",
   portalHistory: "/portal/history",
   portalPetHistory: (petId: string) => `/portal/history/${petId}`,
+  portalPetWeight: (petId: string) => `/portal/history/${petId}#${WEIGHT_HISTORY_ANCHOR}`,
   portalInvoices: "/portal/invoices",
   portalProfile: "/portal/profile",
   portalNewPet: "/portal/pets/new",

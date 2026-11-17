@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { ChatWidget } from "@/features/landing/components/chat-widget";
+import { ChatWidget } from "@/features/chat/components/chat-widget";
+import { useLandingBooking } from "@/features/landing/booking-context";
 import { SectionHeading } from "@/features/landing/components/section-heading";
 import { faqReply } from "@/services/chat";
 
-// Conversación de muestra con respuestas reales de VetBot; solo ilustra, así que se oculta a los lectores de pantalla.
 const SAMPLE_CHAT: { from: "user" | "bot"; text: string }[] = [
   { from: "user", text: "Hola, ¿atienden los sábados?" },
   { from: "bot", text: faqReply("hours").text },
@@ -17,10 +17,10 @@ const SAMPLE_CHAT: { from: "user" | "bot"; text: string }[] = [
 
 export function VetBotSection() {
   const [chatOpen, setChatOpen] = useState(false);
+  const { requestBooking } = useLandingBooking();
 
   return (
     <>
-      {/* D-45: bloque arena dentro del ancho de la página, el único toque cálido de la portada. */}
       <section id="asistente" aria-labelledby="asistente-title" className="scroll-mt-header-bar">
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
           <div className="flex flex-col gap-10 rounded-block border border-sand-border bg-sand p-[clamp(1.75rem,4.5vw,3.5rem)] lg:flex-row lg:items-center">
@@ -29,8 +29,9 @@ export function VetBotSection() {
                 id="asistente-title"
                 title="¿Tienes una duda? Pregúntale a nuestro asistente."
               >
-                VetBot responde preguntas frecuentes sobre servicios, horarios y ubicación, y te
-                lleva a agendar tu cita. No reemplaza la consulta con el veterinario.
+                Consulta horarios, servicios y precios, o ve a agendar una cita. Con tu sesión de
+                propietario también puedes consultar tus citas, avisos, vacunas y pesos registrados.
+                No reemplaza la consulta con el veterinario.
               </SectionHeading>
               <Button onClick={() => setChatOpen(true)}>
                 <Icon name="message" width={20} height={20} />
@@ -71,7 +72,7 @@ export function VetBotSection() {
           </div>
         </div>
       </section>
-      <ChatWidget open={chatOpen} onOpenChange={setChatOpen} />
+      <ChatWidget open={chatOpen} onOpenChange={setChatOpen} onBooking={requestBooking} />
     </>
   );
 }
