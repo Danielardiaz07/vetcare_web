@@ -1,0 +1,74 @@
+import type { Request } from "express";
+import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+import {
+  LOGIN_RATE_LIMIT_MAX,
+  PUBLIC_LINK_RATE_LIMIT_MAX,
+  RATE_LIMIT_MAX_REQUESTS,
+  RATE_LIMIT_WINDOW_MS,
+  REGISTER_RATE_LIMIT_MAX,
+  REGISTER_RATE_LIMIT_WINDOW_MS,
+} from "@/config/constants";
+import { TooManyRequestsError } from "@/shared/errors";
+
+const baseOptions = {
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: (_req: Request, _res: unknown, next: (error: unknown) => void) =>
+    next(new TooManyRequestsError()),
+} as const;
+
+// Combina IP y correo para que un atacante no agote el límite de otros usuarios ni evada el suyo.
+const ipAndEmailKey = (req: Request): string => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  return `${ipKeyGenerator(req.ip ?? "")}|${email}`;
+};
+
+// La recuperación se pide con correo o con cédula; la clave usa el que venga para limitar por cuenta.
+const ipAndAccountKey = (req: Request): string => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const document =
+    typeof req.body?.documentNumber === "string" ? req.body.documentNumber.trim() : "";
+  return `${ipKeyGenerator(req.ip ?? "")}|${email || document}`;
+};
+
+export const globalRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  limit: RATE_LIMIT_MAX_REQUESTS,
+});
+
+export const loginRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  limit: LOGIN_RATE_LIMIT_MAX,
+  keyGenerator: ipAndEmailKey,
+});
+
+export const registerRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+  limit: REGISTER_RATE_LIMIT_MAX,
+  keyGenerator: ipAndEmailKey,
+});
+
+// Va después de authenticate: limita por usuario para frenar el adivinar la contraseña actual.
+export const changePasswordRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  limit: LOGIN_RATE_LIMIT_MAX,
+  keyGenerator: (req: Request) => req.user?.id ?? ipKeyGenerator(req.ip ?? ""),
+});
+
+// Enlaces públicos firmados (cambiar o cancelar una cita desde el correo): frena el probar códigos al azar.
+export const publicLinkRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+  limit: PUBLIC_LINK_RATE_LIMIT_MAX,
+});
+
+export const passwordRecoveryRateLimiter = rateLimit({
+  ...baseOptions,
+  windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+  limit: REGISTER_RATE_LIMIT_MAX,
+  keyGenerator: ipAndAccountKey,
+});

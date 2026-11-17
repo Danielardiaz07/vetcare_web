@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #eef7fa;
+  --color-brand-100: #e3f1f5;
+  --color-brand-200: #c5e1e9;
+  --color-brand-500: #2b87a0;
+  --color-brand-600: #1f6f85;
+  --color-brand-700: #185a6c;
+  --color-navy: #1a2e3b;
+  --color-ink: #1a2e3b;
+  --color-muted: #44535c;
+  --color-subtle: #55636b;
+  --color-surface: #ffffff;
+  --color-canvas: #f5f5f0;
+  --color-line: #e6e4dc;
+  --color-divider: #ecebe4;
+  --color-field-border: #8c8d84;
+  --color-sand: #f3e9dc;
+  --color-sand-border: #e8d5bd;
+  --color-honey: #8a4f1c;
+  --color-success: #047857;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-danger: #be123c;
+  --color-danger-bg: #fff1f2;
+  --color-danger-border: #fecdd3;
+  /* Urgencia sobre fondo navy: el rojo normal no alcanza contraste ahí. */
+  --color-danger-on-dark: #fb7185;
+  --color-info: #1f6f85;
+  --color-info-bg: #eef7fa;
+  --color-info-border: #c5e1e9;
+
+  --radius-control: 10px;
+  --radius-chip: 14px;
+  --radius-card: 24px;
+  --radius-block: 32px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* El menú fijo y los anclajes comparten estas alturas al ocultarse la franja de urgencias. */
+  --spacing-header-strip: 2.25rem;
+  --spacing-header-bar: 4.25rem;
+  --spacing-header: calc(var(--spacing-header-strip) + var(--spacing-header-bar) + 1px);
+
+  --shadow-soft: 0 1px 2px rgb(26 46 59 / 0.05), 0 12px 32px rgb(26 46 59 / 0.06);
+
+  --animate-fade-in: fade-in 300ms var(--ease-out) both;
+  --animate-fade-in-late: fade-in 400ms var(--ease-out) 180ms both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  --font-sans:
+    var(--font-ibm-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  body {
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-200);
+    color: var(--color-ink);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .rise-on-view > * {
+      animation: rise var(--ease-out) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  /* El carné se monta en body para que la ficha no deje páginas vacías al imprimir. */
+  body:has(> dialog[open] .vaccination-card-print)
+    > :not(dialog[open]:has(.vaccination-card-print)) {
+    display: none !important;
+  }
+
+  dialog[open]:has(.vaccination-card-print) {
+    position: static;
+    inset: auto;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: white;
+    box-shadow: none;
+  }
+
+  dialog[open]:has(.vaccination-card-print)::backdrop {
+    display: none;
+  }
+
+  dialog[open]:has(.vaccination-card-print) > div {
+    display: block;
+    padding: 0;
+  }
+
+  dialog[open]:has(.vaccination-card-print) > div > :not(.vaccination-card-print) {
+    display: none;
+  }
+
+  .vaccination-card-print {
+    display: block;
+    color: black;
+    font-size: 10pt;
+  }
+
+  .vaccination-card-print > * + * {
+    margin-top: 1rem;
+  }
+
+  .vaccination-card-print header,
+  .vaccination-card-print dl,
+  .vaccination-card-print tr {
+    break-inside: avoid;
+  }
+
+  body:has(dialog[open] .invoice-print) * {
+    visibility: hidden;
+  }
+
+  body:has(dialog[open] .invoice-print) .invoice-print,
+  body:has(dialog[open] .invoice-print) .invoice-print * {
+    visibility: visible;
+  }
+
+  dialog[open]:has(.invoice-print) {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  dialog[open]:has(.invoice-print)::backdrop {
+    background: transparent;
+  }
+
+  .invoice-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}

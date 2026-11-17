@@ -1,0 +1,90 @@
+export const WEIGHT_HISTORY_ANCHOR = "evolucion-peso";
+
+export const ROUTES = {
+  home: "/",
+  login: "/login",
+  register: "/register",
+  portal: "/portal",
+  portalAppointments: "/portal/appointments",
+  portalNewAppointment: "/portal/appointments/new",
+  portalHistory: "/portal/history",
+  portalPetHistory: (petId: string) => `/portal/history/${petId}`,
+  portalPetWeight: (petId: string) => `/portal/history/${petId}#${WEIGHT_HISTORY_ANCHOR}`,
+  portalInvoices: "/portal/invoices",
+  portalProfile: "/portal/profile",
+  portalNewPet: "/portal/pets/new",
+  panel: "/panel",
+  panelAgenda: "/panel/agenda",
+  panelOwners: "/panel/owners",
+  panelOwner: (ownerId: string) => `/panel/owners/${ownerId}`,
+  panelPatients: "/panel/patients",
+  panelPatient: (patientId: string) => `/panel/patients/${patientId}`,
+  panelAttention: "/panel/attention",
+  panelAppointmentAttention: (appointmentId: string) => `/panel/attention/${appointmentId}`,
+  panelInvoices: "/panel/invoices",
+  panelNewInvoice: "/panel/invoices/new",
+  panelUsers: "/panel/users",
+  panelStaff: "/panel/staff",
+  panelInventory: "/panel/inventory",
+  panelReports: "/panel/reports",
+  panelAccount: "/panel/account",
+} as const;
+
+export const PROTECTED_ROUTE_PREFIXES = [ROUTES.portal, ROUTES.panel] as const;
+
+export const REFRESH_COOKIE_NAME = "refresh_token";
+
+export const API_REFRESH_PATH = "/auth/refresh";
+
+// Los mismos límites que la API y las columnas de la BD (context/07).
+export const FIELD_LIMITS = {
+  EMAIL_MAX: 254,
+  PASSWORD_MIN: 8,
+  PASSWORD_MAX: 72,
+  DOCUMENT_NUMBER_MIN: 6,
+  DOCUMENT_NUMBER_MAX: 10,
+  NAME_MAX: 60,
+  PHONE_DIGITS: 10,
+  ADDRESS_MAX: 100,
+  PATIENT_NAME_MAX: 60,
+  BREED_MAX: 60,
+  WEIGHT_KG_MAX: 999.9,
+  SPECIALTY_MAX: 60,
+  APPOINTMENT_REASON_MAX: 200,
+  // Síntomas, diagnóstico y tratamiento; la fórmula y las notas internas admiten más.
+  CLINICAL_TEXT_MAX: 500,
+  LONG_TEXT_MAX: 1000,
+  TEMPERATURE_MAX: 99.9,
+  COST_MAX: 9_999_999_999,
+  VACCINE_LOT_MAX: 30,
+  VOID_REASON_MAX: 200,
+  GROOMING_OBSERVATIONS_MAX: 500,
+  PROCEDURE_MAX: 120,
+  EXAM_TYPE_MAX: 80,
+  MEDICATION_NAME_MAX: 80,
+  VACCINE_NAME_MAX: 60,
+  // DECIMAL(12,2): el precio del inventario admite centavos.
+  PRICE_MAX: 9_999_999_999.99,
+  PRICE_DECIMALS: 2,
+  STOCK_MAX: 1_000_000,
+} as const;
+
+// Los mismos límites de agenda que la API (RN-21, RN-22).
+export const MIN_APPOINTMENT_LEAD_HOURS = 2;
+export const MAX_APPOINTMENT_ADVANCE_DAYS = 30;
+// RN-24: citas programadas o confirmadas a futuro por mascota.
+export const MAX_ACTIVE_APPOINTMENTS_PER_PATIENT = 3;
+export const WEIGHT_ALERT_PERCENT = 10;
+// RN-31: minutos de espera antes de poder marcar "No asistió".
+export const NO_SHOW_GRACE_MINUTES = 15;
+// D-26: las franjas y los horarios son hora de Colombia.
+export const CLINIC_TIME_ZONE = "America/Bogota";
+
+export const OTP_LENGTH = 6;
+export const OTP_RESEND_SECONDS = 60;
+
+// RN-71 y D-27: todo lo facturado lleva IVA del 19 %.
+export const IVA_RATE_PERCENT = 19;
+
+// D-35: el mismo rango máximo del tablero que la API.
+export const REPORT_MAX_RANGE_DAYS = 366;

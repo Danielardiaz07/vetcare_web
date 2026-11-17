@@ -1,0 +1,254 @@
+import express from "express";
+import helmet from "helmet";
+import {
+  API_PREFIX,
+  CHECK_IN_QR_EXTENSION,
+  JSON_BODY_LIMIT,
+  MANAGE_APPOINTMENT_PATH,
+} from "@/config/constants";
+import { corsMiddleware } from "@/config/cors";
+import { env } from "@/config/env";
+import { globalRateLimiter } from "@/config/rate-limit";
+import { AppointmentTypesController } from "@/modules/appointments/appointment-types.controller";
+import { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
+import { createAppointmentTypesRouter } from "@/modules/appointments/appointment-types.routes";
+import { AppointmentTypesService } from "@/modules/appointments/appointment-types.service";
+import { AppointmentsController } from "@/modules/appointments/appointments.controller";
+import { AppointmentsRepository } from "@/modules/appointments/appointments.repository";
+import {
+  createAppointmentsRouter,
+  createMyAppointmentsRouter,
+  createPublicAppointmentsRouter,
+} from "@/modules/appointments/appointments.routes";
+import { AppointmentsService } from "@/modules/appointments/appointments.service";
+import { ClinicalController } from "@/modules/clinical/clinical.controller";
+import { ClinicalRepository } from "@/modules/clinical/clinical.repository";
+import { createClinicalRouter, createMyClinicalRouter } from "@/modules/clinical/clinical.routes";
+import { ClinicalService } from "@/modules/clinical/clinical.service";
+import { HealthController } from "@/modules/health/health.controller";
+import { HealthRepository } from "@/modules/health/health.repository";
+import { createHealthRouter } from "@/modules/health/health.routes";
+import { HealthService } from "@/modules/health/health.service";
+import { GroomingController } from "@/modules/grooming/grooming.controller";
+import { GroomingRepository } from "@/modules/grooming/grooming.repository";
+import { createGroomingRouter, createMyGroomingRouter } from "@/modules/grooming/grooming.routes";
+import { GroomingService } from "@/modules/grooming/grooming.service";
+import { InventoryController } from "@/modules/inventory/inventory.controller";
+import { InventoryRepository } from "@/modules/inventory/inventory.repository";
+import { createInventoryRouter } from "@/modules/inventory/inventory.routes";
+import { InventoryService } from "@/modules/inventory/inventory.service";
+import { InvoicesController } from "@/modules/invoices/invoices.controller";
+import { InvoicesRepository } from "@/modules/invoices/invoices.repository";
+import { createInvoicesRouter, createMyInvoicesRouter } from "@/modules/invoices/invoices.routes";
+import { InvoicesService } from "@/modules/invoices/invoices.service";
+import { AuthController } from "@/modules/auth/auth.controller";
+import { AuthRepository } from "@/modules/auth/auth.repository";
+import { createAuthRouter } from "@/modules/auth/auth.routes";
+import { AuthService } from "@/modules/auth/auth.service";
+import { OtpService } from "@/modules/auth/otp.service";
+import { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
+import { CheckInScanner } from "@/modules/appointments/check-in-scanner";
+import { VerificationController } from "@/modules/verification/verification.controller";
+import { VerificationRepository } from "@/modules/verification/verification.repository";
+import {
+  createMyVerificationRouter,
+  createPublicVerificationRouter,
+  createStaffVerificationRouter,
+} from "@/modules/verification/verification.routes";
+import { VerificationService } from "@/modules/verification/verification.service";
+import { AlertsController } from "@/modules/notifications/alerts.controller";
+import { AlertsRepository } from "@/modules/notifications/alerts.repository";
+import { createMyAlertsRouter } from "@/modules/notifications/alerts.routes";
+import { AlertsService } from "@/modules/notifications/alerts.service";
+import { NotificationsController } from "@/modules/notifications/notifications.controller";
+import { NotificationsRepository } from "@/modules/notifications/notifications.repository";
+import { createNotificationsRouter } from "@/modules/notifications/notifications.routes";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
+import { ReportsController } from "@/modules/reports/reports.controller";
+import { ReportsRepository } from "@/modules/reports/reports.repository";
+import { createReportsRouter } from "@/modules/reports/reports.routes";
+import { ReportsService } from "@/modules/reports/reports.service";
+import { OwnersController } from "@/modules/owners/owners.controller";
+import { OwnersRepository } from "@/modules/owners/owners.repository";
+import { createOwnersRouter } from "@/modules/owners/owners.routes";
+import { OwnersService } from "@/modules/owners/owners.service";
+import { PatientsController } from "@/modules/patients/patients.controller";
+import { PatientsRepository } from "@/modules/patients/patients.repository";
+import { createMyPatientsRouter, createPatientsRouter } from "@/modules/patients/patients.routes";
+import { PatientsService } from "@/modules/patients/patients.service";
+import {
+  createGroomerRequestSchema,
+  createVeterinarianRequestSchema,
+  updateGroomerRequestSchema,
+  updateVeterinarianRequestSchema,
+} from "@/modules/staff/dto/staff.dto";
+import { GroomersRepository } from "@/modules/staff/groomers.repository";
+import { StaffController } from "@/modules/staff/staff.controller";
+import { createStaffRouter } from "@/modules/staff/staff.routes";
+import { GROOMER_KIND, StaffService, VETERINARIAN_KIND } from "@/modules/staff/staff.service";
+import { StaffUsersRepository } from "@/modules/staff/staff-users.repository";
+import { VeterinariansRepository } from "@/modules/staff/veterinarians.repository";
+import { UsersController } from "@/modules/users/users.controller";
+import { UsersRepository } from "@/modules/users/users.repository";
+import { createUsersRouter } from "@/modules/users/users.routes";
+import { UsersService } from "@/modules/users/users.service";
+import { createV1Router } from "@/routes/v1";
+import { createDocsRouter } from "@/routes/v1/openapi/docs.router";
+import { errorHandler, notFoundHandler } from "@/shared/middlewares/error-handler";
+import { authenticate } from "@/shared/middlewares/authenticate";
+import { BcryptHasher } from "@/shared/providers/bcrypt-hasher";
+import type { IMailProvider } from "@/shared/providers";
+import { BrevoMailProvider } from "@/shared/providers/brevo-mail.provider";
+import { JwtTokenService } from "@/shared/providers/jwt-token.service";
+
+// Dependencias que se pueden sustituir al armar la app; en las pruebas, el correo y el reloj de las notificaciones.
+export interface AppOverrides {
+  mail?: IMailProvider;
+  clock?: () => Date;
+}
+
+export function buildApp(overrides: AppOverrides = {}) {
+  const hasher = new BcryptHasher(env.BCRYPT_COST);
+  const tokens = new JwtTokenService({
+    accessSecret: env.JWT_ACCESS_SECRET,
+    refreshSecret: env.JWT_REFRESH_SECRET,
+    accessTtl: env.JWT_ACCESS_TTL,
+    refreshTtl: env.JWT_REFRESH_TTL,
+  });
+  const mail =
+    overrides.mail ??
+    new BrevoMailProvider(env.BREVO_API_KEY, {
+      email: env.MAIL_FROM_EMAIL,
+      name: env.MAIL_FROM_NAME,
+    });
+
+  // Sin FRONTEND_URL se usa el primer origen permitido; CORS_ORIGINS exige al menos uno.
+  const [firstCorsOrigin = ""] = env.CORS_ORIGINS;
+  const frontendUrl = (env.FRONTEND_URL ?? firstCorsOrigin).replace(/\/+$/, "");
+
+  const manageLinks = new ManageLinks(env.JWT_ACCESS_SECRET);
+  const checkInCodes = new CheckInCodes(env.JWT_ACCESS_SECRET);
+  const apiPublicUrl = env.API_PUBLIC_URL?.replace(/\/+$/, "");
+  const notificationsService = new NotificationsService(
+    new NotificationsRepository(),
+    mail,
+    (appointmentId) =>
+      `${frontendUrl}${MANAGE_APPOINTMENT_PATH}/${manageLinks.issue(appointmentId)}`,
+    (appointmentId, startsAt) =>
+      apiPublicUrl
+        ? `${apiPublicUrl}${API_PREFIX}/public/check-in-qr/${checkInCodes.issue(appointmentId, startsAt)}${CHECK_IN_QR_EXTENSION}`
+        : null,
+    overrides.clock,
+  );
+
+  const authRepository = new AuthRepository();
+  const otpService = new OtpService(authRepository, hasher, env.OTP_TTL_MINUTES);
+  const authService = new AuthService(
+    authRepository,
+    otpService,
+    hasher,
+    tokens,
+    mail,
+    env.OTP_TTL_MINUTES,
+    frontendUrl,
+  );
+  const usersService = new UsersService(new UsersRepository(), hasher, tokens);
+
+  const ownersService = new OwnersService(new OwnersRepository());
+  const patientsController = new PatientsController(new PatientsService(new PatientsRepository()));
+  const requireAuth = authenticate(tokens);
+
+  const staffUsers = new StaffUsersRepository();
+  const veterinarianService = new StaffService(
+    new VeterinariansRepository(),
+    staffUsers,
+    VETERINARIAN_KIND,
+  );
+  const groomerService = new StaffService(new GroomersRepository(), staffUsers, GROOMER_KIND);
+  const appointmentTypesRepository = new AppointmentTypesRepository();
+  const appointmentTypesService = new AppointmentTypesService(appointmentTypesRepository);
+  const appointmentsController = new AppointmentsController(
+    new AppointmentsService(
+      new AppointmentsRepository(),
+      appointmentTypesRepository,
+      notificationsService,
+      checkInCodes,
+      manageLinks,
+      new CheckInScanner(env.CHECK_IN_SCANNER_TOKEN),
+    ),
+  );
+  const verificationController = new VerificationController(
+    new VerificationService(new VerificationRepository(), frontendUrl),
+  );
+  const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
+  const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
+  const inventoryController = new InventoryController(
+    new InventoryService(new InventoryRepository()),
+  );
+  const reportsController = new ReportsController(new ReportsService(new ReportsRepository()));
+  const groomingController = new GroomingController(new GroomingService(new GroomingRepository()));
+
+  const v1Router = createV1Router({
+    auth: createAuthRouter(new AuthController(authService)),
+    users: createUsersRouter(new UsersController(usersService), requireAuth),
+    owners: createOwnersRouter(new OwnersController(ownersService), requireAuth),
+    patients: createPatientsRouter(patientsController, requireAuth),
+    myPatients: createMyPatientsRouter(patientsController, requireAuth),
+    veterinarians: createStaffRouter({
+      controller: new StaffController(veterinarianService),
+      authenticate: requireAuth,
+      createSchema: createVeterinarianRequestSchema,
+      updateSchema: updateVeterinarianRequestSchema,
+    }),
+    groomers: createStaffRouter({
+      controller: new StaffController(groomerService),
+      authenticate: requireAuth,
+      createSchema: createGroomerRequestSchema,
+      updateSchema: updateGroomerRequestSchema,
+    }),
+    appointmentTypes: createAppointmentTypesRouter(
+      new AppointmentTypesController(appointmentTypesService),
+      requireAuth,
+    ),
+    appointments: createAppointmentsRouter(appointmentsController, requireAuth),
+    myAppointments: createMyAppointmentsRouter(appointmentsController, requireAuth),
+    publicAppointments: createPublicAppointmentsRouter(appointmentsController),
+    clinical: createClinicalRouter(clinicalController, requireAuth),
+    myClinical: createMyClinicalRouter(clinicalController, requireAuth),
+    invoices: createInvoicesRouter(invoicesController, requireAuth),
+    myInvoices: createMyInvoicesRouter(invoicesController, requireAuth),
+    grooming: createGroomingRouter(groomingController, requireAuth),
+    myGrooming: createMyGroomingRouter(groomingController, requireAuth),
+    reports: createReportsRouter(reportsController, requireAuth),
+    inventory: createInventoryRouter(inventoryController, requireAuth),
+    docs: createDocsRouter(),
+    health: createHealthRouter(new HealthController(new HealthService(new HealthRepository()))),
+    publicVerification: createPublicVerificationRouter(verificationController),
+    myVerification: createMyVerificationRouter(verificationController, requireAuth),
+    staffVerification: createStaffVerificationRouter(verificationController, requireAuth),
+    myAlerts: createMyAlertsRouter(
+      new AlertsController(new AlertsService(new AlertsRepository())),
+      requireAuth,
+    ),
+    notifications: createNotificationsRouter(
+      new NotificationsController(notificationsService),
+      requireAuth,
+    ),
+  });
+
+  const app = express();
+
+  // Detrás de proxies (Vercel, hosting de la API) la IP real viene en X-Forwarded-For; sin esto el rate-limit contaría a todos como una sola IP.
+  app.set("trust proxy", env.TRUST_PROXY_HOPS);
+  app.use(helmet());
+  app.use(corsMiddleware);
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
+  app.use("/api", globalRateLimiter);
+  app.use(API_PREFIX, v1Router);
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  return { app, notifications: notificationsService };
+}
+
+export const createApp = (overrides: AppOverrides = {}) => buildApp(overrides).app;

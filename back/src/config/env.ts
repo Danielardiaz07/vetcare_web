@@ -1,0 +1,54 @@
+import { z } from "zod";
+import { SCANNER_TOKEN_MIN_LENGTH } from "@/config/constants";
+
+const MIN_SECRET_LENGTH = 32;
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  PORT: z.coerce.number().int().positive().default(3001),
+  DATABASE_URL: z.string().min(1),
+  DIRECT_URL: z.string().min(1),
+  JWT_ACCESS_SECRET: z.string().min(MIN_SECRET_LENGTH),
+  JWT_REFRESH_SECRET: z.string().min(MIN_SECRET_LENGTH),
+  JWT_ACCESS_TTL: z.string().min(1).default("15m"),
+  JWT_REFRESH_TTL: z.string().min(1).default("7d"),
+  OTP_TTL_MINUTES: z.coerce.number().int().min(5).max(10).default(10),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+  BCRYPT_COST: z.coerce.number().int().min(12).max(15).default(12),
+  SUPABASE_URL: z.url(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  BREVO_API_KEY: z.string().min(1),
+  MAIL_FROM_EMAIL: z.email(),
+  MAIL_FROM_NAME: z.string().min(1),
+  FRONTEND_URL: z.url().optional(),
+  // D-66: dirección pública de esta API; el recordatorio pide ahí la imagen del QR. Sin ella el correo no lleva el QR.
+  API_PUBLIC_URL: z.url().optional(),
+  // D-66, RN-85: token del enlace de escaneo de recepción. Sin él la página de escaneo queda desactivada.
+  CHECK_IN_SCANNER_TOKEN: z.string().min(SCANNER_TOKEN_MIN_LENGTH).optional(),
+  // Solo la API desplegada corre el programador de recordatorios; en local queda apagado para no enviar correos con los datos compartidos.
+  SCHEDULER_ENABLED: z.stringbool().default(false),
+  CORS_ORIGINS: z
+    .string()
+    .min(1)
+    .transform((value) =>
+      value
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    ),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+function loadEnv(): Env {
+  const result = envSchema.safeParse(process.env);
+  if (result.success) return result.data;
+
+  const issues = result.error.issues
+    .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
+    .join("\n");
+  console.error(`Variables de entorno invalidas o faltantes:\n${issues}`);
+  process.exit(1);
+}
+
+export const env = loadEnv();

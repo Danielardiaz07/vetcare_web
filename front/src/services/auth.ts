@@ -1,0 +1,235 @@
+import { API_REFRESH_PATH } from "@/lib/constants";
+import type { LoginInput, RegisterInput, ResetPasswordInput } from "@/features/auth/schemas";
+import { request, setAccessToken } from "@/services/http-client";
+import { isMockEnabled, mockDelay, mockError, mockResponse } from "@/services/mocks";
+import {
+  MOCK_OTP_CODE,
+  MOCK_PASSWORD,
+  mockGroomers,
+  mockOwner,
+  mockProfile,
+  mockSessionUser,
+  mockStaffUsers,
+  mockUnlinkedOwner,
+  mockVeterinarians,
+} from "@/services/mocks/fixtures";
+import type {
+  LoginResponse,
+  RegisterResponse,
+  SessionUser,
+  StaffProfileSummary,
+  UserProfile,
+} from "@/types/auth";
+import type { StaffProfile } from "@/types/domain";
+
+const UNAUTHORIZED = 401;
+const CONFLICT = 409;
+const UNPROCESSABLE_ENTITY = 422;
+const MOCK_SESSION_KEY = "vetcare-mock-session";
+const MOCK_ACCESS_TOKEN = "mock-access-token";
+
+// Sin API no hay cookie de refresh; la sesión de prueba se recuerda en la pestaña para sobrevivir a una recarga.
+const mockSessionStore = {
+  email: () => sessionStorage.getItem(MOCK_SESSION_KEY),
+  save: (email: string) => sessionStorage.setItem(MOCK_SESSION_KEY, email),
+  clear: () => sessionStorage.removeItem(MOCK_SESSION_KEY),
+};
+
+// Cuentas creadas con el registro de prueba; viven solo mientras la pestaña está abierta.
+const mockAccounts = new Map<string, string>();
+
+let mockCurrentUser: SessionUser | null = null;
+
+function findMockUser(email: string): SessionUser | undefined {
+  if (email === mockSessionUser.email || mockAccounts.has(email)) {
+    return { ...mockSessionUser, email };
+  }
+  return mockStaffUsers.find((user) => user.email === email);
+}
+
+const mockPasswordFor = (email: string) => mockAccounts.get(email) ?? MOCK_PASSWORD;
+
+// El escenario network-error no corta la sesión: sin ella no se verían los errores de cada pantalla.
+async function mockSessionOf(user: SessionUser): Promise<LoginResponse> {
+  mockCurrentUser = user;
+  mockSessionStore.save(user.email);
+  await mockDelay();
+  return { accessToken: MOCK_ACCESS_TOKEN, user };
+}
+
+let restoreInFlight: Promise<SessionUser | null> | null = null;
+
+function startSession(session: LoginResponse): SessionUser {
+  setAccessToken(session.accessToken);
+  return session.user;
+}
+
+// Repite las comprobaciones de la API (RN-04, D-17, D-18) para poder ver cada mensaje sin backend.
+async function mockRegister(input: RegisterInput): Promise<RegisterResponse> {
+  const { email, documentNumber, password } = input;
+  if (email === mockOwner.email || mockAccounts.has(email)) {
+    return mockError(CONFLICT, "CONFLICT", "El correo ya esta registrado");
+  }
+  if (documentNumber === mockOwner.documentNumber) {
+    return mockError(CONFLICT, "CONFLICT", "La cedula ya tiene una cuenta registrada");
+  }
+  if (documentNumber === mockUnlinkedOwner.documentNumber && email !== mockUnlinkedOwner.email) {
+    return mockError(
+      CONFLICT,
+      "CONFLICT",
+      "La cedula ya esta registrada en la clinica con otro correo. Acercate a recepcion para actualizarlo",
+    );
+  }
+  const response = await mockResponse({
+    email,
+    message: "Te enviamos un codigo de verificacion a tu correo",
+  });
+  mockAccounts.set(email, password);
+  return response;
+}
+
+export function register(input: RegisterInput): Promise<RegisterResponse> {
+  const body = { ...input, address: input.address || undefined };
+  if (isMockEnabled) return mockRegister(input);
+  return request<RegisterResponse>("/auth/register", {
+    method: "POST",
+    body,
+    skipAuthRefresh: true,
+  });
+}
+
+export function verifyOtp(email: string, code: string): Promise<void> {
+  if (isMockEnabled) {
+    return code === MOCK_OTP_CODE
+      ? mockResponse(undefined)
+      : mockError(UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "Codigo invalido o expirado");
+  }
+  return request<void>("/auth/otp/verify", {
+    method: "POST",
+    body: { email, code },
+    skipAuthRefresh: true,
+  });
+}
+
+export function resendOtp(email: string): Promise<void> {
+  if (isMockEnabled) return mockResponse(undefined);
+  return request<void>("/auth/otp/resend", {
+    method: "POST",
+    body: { email },
+    skipAuthRefresh: true,
+  });
+}
+
+// D-31: la API responde lo mismo exista o no la cuenta, para no revelar quién está registrado.
+export type ForgotPasswordRequest = { email: string } | { documentNumber: string };
+
+const MOCK_INVALID_RESET_TOKEN = "invalido";
+
+export function forgotPassword(input: ForgotPasswordRequest): Promise<{ message: string }> {
+  if (isMockEnabled) {
+    return mockResponse({ message: "Si los datos estan registrados, te enviamos un enlace" });
+  }
+  return request<{ message: string }>("/auth/password/forgot", {
+    method: "POST",
+    body: input,
+    skipAuthRefresh: true,
+  });
+}
+
+// La API cierra todas las sesiones del usuario al cambiar la contraseña.
+export function resetPassword(token: string, input: ResetPasswordInput): Promise<void> {
+  if (isMockEnabled) {
+    return token === MOCK_INVALID_RESET_TOKEN
+      ? mockError(
+          UNPROCESSABLE_ENTITY,
+          "VALIDATION_ERROR",
+          "El enlace es invalido o ya expiro. Solicita uno nuevo",
+        )
+      : mockResponse(undefined);
+  }
+  return request<void>("/auth/password/reset", {
+    method: "POST",
+    body: { token, ...input },
+    skipAuthRefresh: true,
+  });
+}
+
+function mockLogin({ email, password }: LoginInput): Promise<LoginResponse> {
+  const user = findMockUser(email);
+  if (!user || password !== mockPasswordFor(email)) {
+    return mockError(UNAUTHORIZED, "UNAUTHORIZED", "Correo o contraseña incorrectos");
+  }
+  return mockSessionOf(user);
+}
+
+export async function login(input: LoginInput): Promise<SessionUser> {
+  const session = isMockEnabled
+    ? await mockLogin(input)
+    : await request<LoginResponse>("/auth/login", {
+        method: "POST",
+        body: input,
+        skipAuthRefresh: true,
+      });
+  return startSession(session);
+}
+
+export async function logout(): Promise<void> {
+  try {
+    if (isMockEnabled) {
+      mockCurrentUser = null;
+      mockSessionStore.clear();
+      await mockResponse(undefined);
+    } else {
+      await request<void>("/auth/logout", { method: "POST", skipAuthRefresh: true });
+    }
+  } finally {
+    setAccessToken(null);
+  }
+}
+
+function fetchSession(): Promise<LoginResponse | null> {
+  if (isMockEnabled) {
+    const email = mockSessionStore.email();
+    const user = email ? findMockUser(email) : undefined;
+    return user ? mockSessionOf(user) : Promise.resolve(null);
+  }
+  return request<LoginResponse>(API_REFRESH_PATH, { method: "POST", skipAuthRefresh: true });
+}
+
+// El refresh rota el token: dos llamadas en paralelo (React monta dos veces en desarrollo) invalidarían la sesión.
+export function restoreSession(): Promise<SessionUser | null> {
+  restoreInFlight ??= fetchSession()
+    .then((session) => session && startSession(session))
+    .catch(() => null)
+    .finally(() => {
+      restoreInFlight = null;
+    });
+  return restoreInFlight;
+}
+
+function mockStaffProfileOf(profiles: StaffProfile[], userId: string): StaffProfileSummary | null {
+  const profile = profiles.find((item) => item.userId === userId);
+  if (!profile) return null;
+  const { id, documentType, documentNumber, firstNames, lastNames, phone, specialty, active } =
+    profile;
+  return { id, documentType, documentNumber, firstNames, lastNames, phone, specialty, active };
+}
+
+// Simula /users/me con el perfil del personal ya incluido (P-16).
+function mockProfileOf({ id, email, role }: SessionUser): UserProfile {
+  if (role === "OWNER") return { ...mockProfile, id, email };
+  return {
+    id,
+    email,
+    role,
+    status: "ACTIVE",
+    owner: null,
+    veterinarian: role === "VETERINARIAN" ? mockStaffProfileOf(mockVeterinarians, id) : null,
+    groomer: role === "GROOMER" ? mockStaffProfileOf(mockGroomers, id) : null,
+  };
+}
+
+export function getMe(): Promise<UserProfile> {
+  if (isMockEnabled) return mockResponse(mockProfileOf(mockCurrentUser ?? mockSessionUser));
+  return request<UserProfile>("/users/me");
+}

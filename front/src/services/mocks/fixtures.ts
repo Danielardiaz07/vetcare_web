@@ -1,0 +1,599 @@
+import { addDays, clinicDateOf } from "@/lib/clinic-time";
+import { IVA_RATE_PERCENT } from "@/lib/constants";
+import type { SessionUser, StaffUser, UserProfile } from "@/types/auth";
+import type {
+  AppointmentTypeSetting,
+  Consultation,
+  GroomingService,
+  Hospitalization,
+  InventoryItem,
+  Invoice,
+  LabExam,
+  Owner,
+  Patient,
+  ScheduleBlock,
+  StaffProfile,
+  Surgery,
+  Vaccination,
+  Vaccine,
+} from "@/types/domain";
+
+// Datos ficticios para desarrollar sin la API; no corresponden a clientes reales.
+const MOCK_EMAIL = "laura.gomez@example.com";
+
+export const mockOwner: Owner = {
+  id: "5f0c2a8e-3b1d-4c6e-9a7f-1d2e3f4a5b6c",
+  documentType: "CC",
+  documentNumber: "1065123456",
+  firstNames: "Laura Marcela",
+  lastNames: "Gómez Pérez",
+  email: MOCK_EMAIL,
+  phone: "3001234567",
+  address: "Calle 16 # 12-45, Valledupar",
+  active: true,
+  hasAccount: true,
+};
+
+// Propietarios que ve recepción: Laura y cinco más.
+export const mockOwners: Owner[] = [
+  mockOwner,
+  ...(
+    [
+      [
+        "CC",
+        "1065765432",
+        "Carlos Andrés",
+        "Ruiz Mendoza",
+        "carlos.ruiz@example.com",
+        "3104567890",
+        false,
+      ],
+      [
+        "CC",
+        "77123456",
+        "Rosa Elena",
+        "Daza Pimienta",
+        "rosa.daza@example.com",
+        "3159876543",
+        true,
+      ],
+      [
+        "CE",
+        "4567890",
+        "Martín",
+        "Fernández López",
+        "martin.fernandez@example.com",
+        "3201112233",
+        false,
+      ],
+      [
+        "CC",
+        "1003456789",
+        "Valentina",
+        "Ortega Quintero",
+        "valentina.ortega@example.com",
+        "3014445566",
+        true,
+      ],
+      [
+        "TI",
+        "1065987654",
+        "Samuel",
+        "Pérez Arias",
+        "samuel.perez@example.com",
+        "3127778899",
+        false,
+      ],
+    ] as const
+  ).map(
+    ([documentType, documentNumber, firstNames, lastNames, email, phone, hasAccount], index) => ({
+      id: `6a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c${String(index).padStart(2, "0")}`,
+      documentType,
+      documentNumber,
+      firstNames,
+      lastNames,
+      email,
+      phone,
+      address: null,
+      active: index !== 3,
+      hasAccount,
+    }),
+  ),
+];
+
+const ownerSummary = (owner: Owner) => ({
+  id: owner.id,
+  firstNames: owner.firstNames,
+  lastNames: owner.lastNames,
+  documentNumber: owner.documentNumber,
+});
+
+export const mockPatients: Patient[] = [
+  {
+    id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    ownerId: mockOwner.id,
+    owner: ownerSummary(mockOwner),
+    name: "Luna",
+    species: "DOG",
+    breed: "Golden retriever",
+    sex: "FEMALE",
+    birthDate: "2021-03-14",
+    weightKg: 27.5,
+    photoPath: null,
+    active: true,
+  },
+  {
+    id: "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+    ownerId: mockOwner.id,
+    owner: ownerSummary(mockOwner),
+    name: "Milo",
+    species: "CAT",
+    breed: "Criollo",
+    sex: "MALE",
+    birthDate: "2023-07-02",
+    weightKg: 4.2,
+    photoPath: null,
+    active: true,
+  },
+];
+
+// Mascotas que ve el panel: las de Laura y las de otros propietarios.
+export const mockClinicPatients: Patient[] = [
+  ...mockPatients,
+  ...(
+    [
+      [1, "Rocky", "DOG", "Pastor alemán", "MALE", "2019-05-20", 34.2, true],
+      [2, "Nala", "CAT", "Siamés", "FEMALE", "2024-02-11", 3.8, true],
+      [2, "Toby", "DOG", "Beagle", "MALE", "2026-08-30", 4.5, true],
+      [3, "Kiwi", "OTHER", "Periquito", "FEMALE", "2025-06-01", 0.1, true],
+      [4, "Simba", "CAT", "Persa", "MALE", "2018-11-03", 5.1, false],
+    ] as const
+  ).map(([ownerIndex, name, species, breed, sex, birthDate, weightKg, active], index) => ({
+    id: `7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f${String(index).padStart(2, "0")}`,
+    ownerId: mockOwners[ownerIndex]?.id ?? mockOwner.id,
+    owner: ownerSummary(mockOwners[ownerIndex] ?? mockOwner),
+    name,
+    species,
+    breed,
+    sex,
+    birthDate,
+    weightKg,
+    photoPath: null,
+    active,
+  })),
+];
+
+export const MOCK_PASSWORD = "Vetcare123";
+export const MOCK_OTP_CODE = "123456";
+
+// Propietario que la clínica ya tiene registrado pero que aún no creó su cuenta (D-17).
+export const mockUnlinkedOwner = {
+  documentNumber: "1065765432",
+  email: "carlos.ruiz@example.com",
+};
+
+export const mockSessionUser: SessionUser = {
+  id: "3e7a9c1b-5d2f-4b8a-9e6c-7f1a2b3c4d5e",
+  email: MOCK_EMAIL,
+  role: "OWNER",
+  ownerId: mockOwner.id,
+};
+
+// Personal de prueba, uno por rol; entran con MOCK_PASSWORD.
+export const mockStaffUsers: SessionUser[] = [
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d41",
+    email: "recepcion@example.com",
+    role: "RECEPTIONIST",
+    ownerId: null,
+  },
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d42",
+    email: "veterinario@example.com",
+    role: "VETERINARIAN",
+    ownerId: null,
+  },
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d43",
+    email: "estilista@example.com",
+    role: "GROOMER",
+    ownerId: null,
+  },
+  {
+    id: "7b1e2c3d-4f5a-4b6c-8d7e-9f0a1b2c3d44",
+    email: "admin@example.com",
+    role: "ADMIN",
+    ownerId: null,
+  },
+];
+
+const MOCK_CREATED_AT = "2026-09-01T13:00:00.000Z";
+
+// Cuentas que ve el administrador en Usuarios: el personal de prueba más otras ocho.
+export const mockStaffAccounts: StaffUser[] = [
+  ...mockStaffUsers.map(({ id, email, role }) => ({
+    id,
+    email,
+    role: role as StaffUser["role"],
+    status: "ACTIVE" as const,
+    createdAt: MOCK_CREATED_AT,
+  })),
+  ...(
+    [
+      ["andres.mejia@example.com", "VETERINARIAN", "ACTIVE"],
+      ["camila.rojas@example.com", "VETERINARIAN", "ACTIVE"],
+      ["diana.castro@example.com", "RECEPTIONIST", "SUSPENDED"],
+      ["felipe.ortiz@example.com", "GROOMER", "ACTIVE"],
+      ["juliana.vega@example.com", "RECEPTIONIST", "ACTIVE"],
+      ["mateo.suarez@example.com", "VETERINARIAN", "SUSPENDED"],
+      ["paola.daza@example.com", "GROOMER", "ACTIVE"],
+      ["sergio.arias@example.com", "ADMIN", "ACTIVE"],
+    ] as const
+  ).map(([email, role, status], index) => ({
+    id: `9c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e${String(index).padStart(2, "0")}`,
+    email,
+    role,
+    status,
+    createdAt: MOCK_CREATED_AT,
+  })),
+];
+
+export const mockProfile: UserProfile = {
+  id: mockSessionUser.id,
+  email: mockSessionUser.email,
+  role: mockSessionUser.role,
+  status: "ACTIVE",
+  owner: {
+    id: mockOwner.id,
+    documentType: mockOwner.documentType,
+    documentNumber: mockOwner.documentNumber,
+    firstNames: mockOwner.firstNames,
+    lastNames: mockOwner.lastNames,
+    phone: mockOwner.phone,
+    address: mockOwner.address,
+  },
+};
+
+const [, mockVetUser, mockGroomerUser] = mockStaffUsers;
+
+// Perfiles de personal (D-22). Camila Rojas, Felipe Ortiz y Paola Daza tienen cuenta pero aún no perfil.
+export const mockVeterinarians: StaffProfile[] = [
+  {
+    id: "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a01",
+    userId: mockVetUser?.id ?? null,
+    documentType: "CC",
+    documentNumber: "1065432198",
+    firstNames: "Natalia",
+    lastNames: "Quintero Ramos",
+    phone: "3104567890",
+    specialty: "Medicina general",
+    active: true,
+    createdAt: MOCK_CREATED_AT,
+  },
+  {
+    id: "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a02",
+    userId: mockStaffAccounts.find((user) => user.email === "andres.mejia@example.com")?.id ?? null,
+    documentType: "CC",
+    documentNumber: "1065789012",
+    firstNames: "Andrés",
+    lastNames: "Mejía Torres",
+    phone: "3157894561",
+    specialty: "Cirugía",
+    active: true,
+    createdAt: MOCK_CREATED_AT,
+  },
+];
+
+export const mockGroomers: StaffProfile[] = [
+  {
+    id: "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b01",
+    userId: mockGroomerUser?.id ?? null,
+    documentType: "CC",
+    documentNumber: "1065345678",
+    firstNames: "Valentina",
+    lastNames: "Ospina Díaz",
+    phone: "3012345678",
+    active: true,
+    createdAt: MOCK_CREATED_AT,
+  },
+];
+
+const WEEKDAYS = [1, 2, 3, 4, 5] as const;
+
+export const mockSchedules: Record<string, ScheduleBlock[]> = {
+  "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a01": WEEKDAYS.flatMap((weekday) => [
+    { weekday, startTime: "08:00", endTime: "12:00" },
+    { weekday, startTime: "14:00", endTime: "18:00" },
+  ]),
+  "3e4f5a6b-7c8d-4e9f-8a0b-1c2d3e4f5a02": WEEKDAYS.map((weekday) => ({
+    weekday,
+    startTime: "08:00",
+    endTime: "17:00",
+  })),
+  "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b01": WEEKDAYS.map((weekday) => ({
+    weekday,
+    startTime: "09:00",
+    endTime: "17:00",
+  })),
+};
+
+// D-21: duraciones iniciales.
+export const mockAppointmentTypes: AppointmentTypeSetting[] = [
+  { type: "GENERAL_CONSULTATION", durationMinutes: 30, professional: "VETERINARIAN" },
+  { type: "VACCINATION", durationMinutes: 30, professional: "VETERINARIAN" },
+  { type: "CHECKUP", durationMinutes: 30, professional: "VETERINARIAN" },
+  { type: "GROOMING", durationMinutes: 90, professional: "GROOMER" },
+];
+
+// D-27: catálogo mínimo de vacunas, sin stock.
+export const mockVaccines: Vaccine[] = [
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e01", name: "Rabia", price: 45000, active: true },
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e02", name: "Parvovirus", price: 55000, active: true },
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e03", name: "Triple felina", price: 60000, active: true },
+  { id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e04", name: "Moquillo", price: 50000, active: true },
+];
+
+const [mockVet] = mockVeterinarians;
+const mockVetName = {
+  id: mockVet?.id ?? "",
+  firstNames: mockVet?.firstNames ?? "",
+  lastNames: mockVet?.lastNames ?? "",
+};
+const ROCKY_ID = "7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f00";
+const LUNA_ID = "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+const MILO_ID = "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f";
+// Fechas relativas a hoy para que siempre haya una vacuna vencida y otra por vencer (RN-49).
+const mockToday = clinicDateOf(new Date());
+
+// Historial de prueba: Rocky tiene cuatro consultas para ver que solo salen las tres últimas.
+export const mockConsultations: Consultation[] = (
+  [
+    [ROCKY_ID, "2026-09-28", "Otitis externa", "Limpieza y gotas óticas por 7 días", 34.2],
+    [ROCKY_ID, "2026-07-15", "Dermatitis alérgica", "Champú medicado y cambio de alimento", 33.8],
+    [ROCKY_ID, "2026-04-02", "Control general sin hallazgos", "Desparasitación interna", 33.1],
+    [ROCKY_ID, "2025-12-10", "Gastroenteritis leve", "Dieta blanda por 3 días", 32.6],
+    [LUNA_ID, "2026-08-20", "Conjuntivitis", "Colirio antibiótico por 5 días", 27.5],
+    [LUNA_ID, "2026-01-12", "Otitis leve", "Gotas óticas por 5 días", 26.9],
+  ] as const
+).map(([patientId, date, diagnosis, treatment, weightKg], index) => ({
+  id: `2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d${String(index).padStart(2, "0")}`,
+  appointmentId: `3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e${String(index).padStart(2, "0")}`,
+  patientId,
+  veterinarian: mockVetName,
+  symptoms: "Revisión de prueba",
+  weightKg,
+  temperatureC: 38.5,
+  diagnosis,
+  treatment,
+  prescription: null,
+  // Una nota interna para comprobar que el portal no la muestra (RN-42).
+  internalNotes: patientId === LUNA_ID ? "Nota interna de prueba" : null,
+  cost: 60000,
+  createdAt: `${date}T14:00:00.000Z`,
+}));
+
+export const mockVaccinations: Vaccination[] = (
+  [
+    [ROCKY_ID, 0, "2025-10-20", "2026-10-20"],
+    [ROCKY_ID, 1, "2025-08-01", "2026-08-01"],
+    [ROCKY_ID, 3, "2026-05-10", "2027-05-10"],
+    [LUNA_ID, 0, "2026-03-14", "2027-03-14"],
+    [LUNA_ID, 1, "2026-06-03", null],
+    [LUNA_ID, 3, addDays(mockToday, -380), addDays(mockToday, -15)],
+    [MILO_ID, 2, addDays(mockToday, -360), addDays(mockToday, 5)],
+  ] as [string, number, string, string | null][]
+).map(([patientId, vaccineIndex, appliedAt, nextDoseAt], index) => {
+  const vaccine = mockVaccines[vaccineIndex];
+  return {
+    id: `4d5e6f7a-8b9c-4d0e-8f1a-2b3c4d5e6f${String(index).padStart(2, "0")}`,
+    patientId,
+    vaccine: { id: vaccine?.id ?? "", name: vaccine?.name ?? "" },
+    veterinarian: mockVetName,
+    lot: `L-2026-${String(index + 1).padStart(3, "0")}`,
+    appliedAt,
+    nextDoseAt,
+    price: vaccine?.price ?? 0,
+    createdAt: `${appliedAt}T15:00:00.000Z`,
+  };
+});
+
+// D-34: cirugías, exámenes e internaciones de prueba; ninguna internación queda abierta.
+export const mockSurgeries: Surgery[] = (
+  [
+    [LUNA_ID, "Esterilización", "2025-11-20", "Recuperación sin complicaciones"],
+    [ROCKY_ID, "Extracción de pieza dental", "2026-03-15", null],
+  ] as [string, string, string, string | null][]
+).map(([patientId, procedure, performedAt, notes], index) => ({
+  id: `8a9b0c1d-2e3f-4a4b-8c5d-6e7f8a9b0c${String(index).padStart(2, "0")}`,
+  patientId,
+  veterinarian: mockVetName,
+  procedure,
+  performedAt,
+  notes,
+  createdAt: `${performedAt}T17:00:00.000Z`,
+}));
+
+export const mockLabExams: LabExam[] = (
+  [
+    [LUNA_ID, "Hemograma", "2026-08-20", "Valores dentro de los rangos normales"],
+    [
+      ROCKY_ID,
+      "Química sanguínea",
+      "2026-03-10",
+      "Creatinina levemente elevada; repetir en 3 meses",
+    ],
+  ] as [string, string, string, string][]
+).map(([patientId, examType, performedAt, results], index) => ({
+  id: `9b0c1d2e-3f4a-4b5c-9d6e-7f8a9b0c1d${String(index).padStart(2, "0")}`,
+  patientId,
+  veterinarian: mockVetName,
+  examType,
+  performedAt,
+  results,
+  createdAt: `${performedAt}T18:00:00.000Z`,
+}));
+
+export const mockHospitalizations: Hospitalization[] = [
+  {
+    id: "0c1d2e3f-4a5b-4c6d-8e7f-8a9b0c1d2e00",
+    patientId: ROCKY_ID,
+    veterinarian: mockVetName,
+    reason: "Observación después de la extracción dental",
+    status: "DISCHARGED",
+    admittedAt: "2026-03-15T19:00:00.000Z",
+    dischargedAt: "2026-03-16T15:00:00.000Z",
+    dischargeNotes: "Come bien; control en una semana",
+    createdAt: "2026-03-15T19:00:00.000Z",
+  },
+];
+
+// Servicios estéticos de prueba (D-33): Milo y Rocky quedan pendientes de facturar.
+const mockGroomerName = (() => {
+  const [groomer] = mockGroomers;
+  return {
+    id: groomer?.id ?? "",
+    firstNames: groomer?.firstNames ?? "",
+    lastNames: groomer?.lastNames ?? "",
+  };
+})();
+export const mockGroomingServices: GroomingService[] = (
+  [
+    [MILO_ID, "BATH", "2026-09-05", "Baño con champú hipoalergénico", 45000],
+    [MILO_ID, "HAIRCUT", "2026-06-18", null, 35000],
+    [ROCKY_ID, "STYLING", "2026-10-02", "Corte de uñas incluido", 70000],
+  ] as [string, GroomingService["type"], string, string | null, number][]
+).map(([patientId, type, date, observations, cost], index) => ({
+  id: `6e7f8a9b-0c1d-4e2f-9a3b-4c5d6e7f8a${String(index).padStart(2, "0")}`,
+  appointmentId: null,
+  patientId,
+  type,
+  observations,
+  cost,
+  groomer: mockGroomerName,
+  createdAt: `${date}T16:00:00.000Z`,
+}));
+
+// Facturas de prueba: una pagada y una anulada, cuya consulta vuelve a quedar pendiente (RN-73).
+const [, mockRockyOwner] = mockOwners;
+export const mockInvoices: Invoice[] = (
+  [
+    [3, "PAID", "CASH", null, "2025-12-11T15:00:00.000Z"],
+    [2, "VOIDED", "CARD", "Se facturó con el valor equivocado", "2026-04-03T15:00:00.000Z"],
+  ] as const
+).map(([consultationIndex, status, paymentMethod, voidReason, createdAt], index) => {
+  const consultation = mockConsultations[consultationIndex];
+  const amount = consultation?.cost ?? 0;
+  const tax = (amount * IVA_RATE_PERCENT) / 100;
+  return {
+    id: `6e7f8a9b-0c1d-4e2f-8a3b-4c5d6e7f8a${String(index).padStart(2, "0")}`,
+    number: `FAC-${String(index + 1).padStart(6, "0")}`,
+    status,
+    paymentMethod,
+    owner: {
+      id: mockRockyOwner?.id ?? "",
+      firstNames: mockRockyOwner?.firstNames ?? "",
+      lastNames: mockRockyOwner?.lastNames ?? "",
+      documentNumber: mockRockyOwner?.documentNumber ?? "",
+    },
+    subtotal: amount,
+    tax,
+    total: amount + tax,
+    voidReason,
+    items: [
+      {
+        id: `7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b${String(index).padStart(2, "0")}`,
+        description: "Consulta - Rocky",
+        amount,
+        taxed: true,
+        tax,
+        consultationId: consultation?.id ?? null,
+        vaccinationId: null,
+        groomingServiceId: null,
+      },
+    ],
+    createdAt,
+  };
+});
+
+// Factura pagada de la cuenta de prueba, para ver "Mis facturas" en el portal (consulta y vacuna de Luna).
+const mockLunaConsultation = mockConsultations[5];
+const mockLunaVaccination = mockVaccinations[3];
+const mockLunaItems = [
+  {
+    id: "7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b10",
+    description: "Consulta - Luna",
+    amount: mockLunaConsultation?.cost ?? 0,
+    consultationId: mockLunaConsultation?.id ?? null,
+    vaccinationId: null,
+    groomingServiceId: null,
+  },
+  {
+    id: "7f8a9b0c-1d2e-4f3a-8b4c-5d6e7f8a9b11",
+    description: `Vacuna ${mockLunaVaccination?.vaccine.name ?? ""} - Luna`,
+    amount: mockLunaVaccination?.price ?? 0,
+    consultationId: null,
+    vaccinationId: mockLunaVaccination?.id ?? null,
+    groomingServiceId: null,
+  },
+].map((item) => ({ ...item, taxed: true, tax: (item.amount * IVA_RATE_PERCENT) / 100 }));
+const mockLunaSubtotal = mockLunaItems.reduce((sum, item) => sum + item.amount, 0);
+const mockLunaTax = mockLunaItems.reduce((sum, item) => sum + item.tax, 0);
+
+mockInvoices.push({
+  id: "6e7f8a9b-0c1d-4e2f-8a3b-4c5d6e7f8a10",
+  number: `FAC-${String(mockInvoices.length + 1).padStart(6, "0")}`,
+  status: "PAID",
+  paymentMethod: "TRANSFER",
+  owner: ownerSummary(mockOwner),
+  subtotal: mockLunaSubtotal,
+  tax: mockLunaTax,
+  total: mockLunaSubtotal + mockLunaTax,
+  voidReason: null,
+  items: mockLunaItems,
+  createdAt: "2026-03-14T16:00:00.000Z",
+});
+
+// D-36: inventario de prueba; los vencimientos son relativos a hoy para ver cada alerta (RN-56).
+export type MockStockedProduct = Omit<InventoryItem, "lowStock" | "expiry">;
+
+export const mockMedications: MockStockedProduct[] = (
+  [
+    ["Amoxicilina 500 mg", 18000, 40, 10, 200],
+    ["Meloxicam 1,5 mg/ml", 32000, 4, 5, 120],
+    ["Ivermectina 1 %", 25000, 15, 5, 12],
+    ["Prednisolona 5 mg", 15000, 0, 8, -20],
+    ["Omeprazol 20 mg", 12000, 30, 10, null],
+    ["Metronidazol 250 mg", 14000, 22, 10, 400],
+    ["Tramadol 50 mg", 20000, 9, 6, 25],
+    ["Cefalexina 500 mg", 21000, 50, 15, 300],
+    ["Clorhexidina 2 %", 17500.5, 3, 4, 90],
+    ["Ketoprofeno 10 mg", 19000, 12, 4, 180],
+    ["Furosemida 40 mg", 11000, 25, 10, 500],
+    ["Enrofloxacina 50 mg", 23000, 2, 2, 60],
+  ] as [string, number, number, number, number | null][]
+).map(([name, price, stock, minStock, expiresInDays], index) => ({
+  id: `9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c${String(index).padStart(2, "0")}`,
+  name,
+  price,
+  stock,
+  minStock,
+  expiresAt: expiresInDays === null ? null : addDays(mockToday, expiresInDays),
+  active: index !== 10,
+}));
+
+const VACCINE_STOCK: [number, number, number | null][] = [
+  [12, 5, 180],
+  [3, 5, 20],
+  [8, 4, -3],
+  [0, 0, null],
+];
+
+export const mockInventoryVaccines: MockStockedProduct[] = mockVaccines.map((vaccine, index) => {
+  const [stock, minStock, expiresInDays] = VACCINE_STOCK[index] ?? [0, 0, null];
+  return {
+    ...vaccine,
+    stock,
+    minStock,
+    expiresAt: expiresInDays === null ? null : addDays(mockToday, expiresInDays),
+  };
+});
