@@ -104,7 +104,7 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 | Ficha de la mascota con gráfica de peso y carné imprimible | Sin cambios: el historial ya trae el peso de cada consulta | Hecho: gráfica de peso (D-58) y carné imprimible (D-57) | 18 nov |
 | Campana de avisos del portal | Hecho: `GET /me/alerts` (D-52) | Hecho: campana, contador y lectura por cuenta (D-59) | 18 nov |
 | Agendas del personal en cuadrícula | Sin cambios | Hecho: recepción por profesional/día y llegada con un clic; veterinario y estilista con Lista/Día/Semana de su propia agenda (D-60) | 20 nov |
-| Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Pendiente | 20 nov |
+| Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Hecho: comparación, gráfica y descarga autenticada con el rango consultado (D-61) | 20 nov |
 | Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Pendiente | 21 y 22 nov |
 | Alerta de variación de peso | Hecho: `weight-trend` y aviso `WEIGHT_CHANGE` (D-55, RN-81) | Hecho en consulta y ficha (D-58) y campana (D-59) | 20 nov |
 | VetBot con datos reales (sin IA externa) | Sin cambios: usa los endpoints existentes y `weight-trend` | Pendiente | 21 nov |

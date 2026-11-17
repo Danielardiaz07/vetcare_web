@@ -6,7 +6,10 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { PAYMENT_METHOD_LABELS } from "@/features/invoices/labels";
 import { BarList } from "@/features/reports/components/bar-list";
+import { DashboardExport } from "@/features/reports/components/dashboard-export";
+import { PeriodComparison } from "@/features/reports/components/period-comparison";
 import { PeriodFilter } from "@/features/reports/components/period-filter";
+import { RevenueChart } from "@/features/reports/components/revenue-chart";
 import { appointmentsCount, formatPercent, invoicesCount } from "@/features/reports/labels";
 import type { PeriodInput } from "@/features/reports/schemas";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
@@ -50,34 +53,56 @@ export function Dashboard() {
   }, [period, reloadKey]);
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
+  const report =
+    state.status === "ready" &&
+    state.report.range.from === period.from &&
+    state.report.range.to === period.to
+      ? state.report
+      : null;
+  const loading = state.status === "loading" || (state.status === "ready" && !report);
 
   return (
     <div className="flex flex-col gap-6">
-      <PeriodFilter
-        defaultValues={period}
-        loading={state.status === "loading"}
-        // Un objeto nuevo vuelve a consultar aunque las fechas no cambien.
-        onApply={setPeriod}
-      />
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-4">
+        <PeriodFilter defaultValues={period} loading={loading} onApply={setPeriod} />
+        <DashboardExport
+          key={`${period.from}:${period.to}`}
+          range={report?.range ?? period}
+          disabled={!report}
+        />
+      </div>
       <p className="text-muted">
         Del {formatDate(period.from)} al {formatDate(period.to)}
       </p>
 
-      {state.status === "loading" && <LoadingState rows={4} />}
+      {loading && <LoadingState rows={4} />}
       {state.status === "error" && <ErrorState onRetry={reload} />}
-      {state.status === "ready" && <Indicators report={state.report} />}
+      {report && (
+        <>
+          <IndicatorCard id="period-comparison" title="Comparación de periodos">
+            <PeriodComparison report={report} />
+          </IndicatorCard>
+          <IndicatorCard id="daily-revenue" title="Ingresos por día">
+            <RevenueChart
+              key={`${report.range.from}:${report.range.to}`}
+              range={report.range}
+              revenue={report.revenue.byDay}
+            />
+          </IndicatorCard>
+          <Indicators report={report} />
+        </>
+      )}
     </div>
   );
 }
 
-// RN-80: citas por estado, inasistencias, servicios más solicitados e ingresos.
 function Indicators({ report }: { report: DashboardReport }) {
   const { appointments, services, revenue } = report;
 
   if (appointments.total === 0 && revenue.invoices === 0) {
     return (
       <EmptyState
-        title="Sin datos en este periodo"
+        title="Sin citas ni facturas en este periodo"
         description="No hay citas ni facturas pagadas entre esas fechas. Prueba con otro periodo."
       />
     );
@@ -119,7 +144,6 @@ function Indicators({ report }: { report: DashboardReport }) {
           </p>
         ) : (
           <div className="flex flex-col gap-2">
-            {/* RN-80: el porcentaje es sobre las citas que debían atenderse, no sobre el total. */}
             <p className="text-ink">
               <span className="font-semibold">{formatPercent(appointments.noShowRate)}</span> de las
               citas que debían atenderse
@@ -201,7 +225,7 @@ function IndicatorCard({ id, title, children }: IndicatorCardProps) {
   return (
     <section
       aria-labelledby={titleId}
-      className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5"
+      className="flex min-w-0 flex-col gap-4 rounded-card border border-line bg-surface p-4 sm:p-5"
     >
       <h2 id={titleId} className="text-lg font-semibold text-ink">
         {title}

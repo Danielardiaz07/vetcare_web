@@ -261,8 +261,17 @@ export interface Invoice {
 }
 
 // D-35 y RN-80: tablero del administrador para un rango de fechas de la clínica.
+export interface DashboardPreviousPeriod {
+  range: { from: string; to: string };
+  appointments: { total: number; noShowRate: number | null };
+  revenue: { invoices: number; total: number };
+  newPatients: number;
+  newOwners: number;
+}
+
 export interface DashboardReport {
   range: { from: string; to: string };
+  previous?: DashboardPreviousPeriod;
   appointments: {
     total: number;
     byStatus: Record<AppointmentStatus, number>;

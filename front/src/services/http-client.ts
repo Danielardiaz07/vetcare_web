@@ -78,7 +78,7 @@ function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function requestResponse(path: string, options: RequestOptions): Promise<Response> {
   let response = await send(path, options);
 
   if (response.status === UNAUTHORIZED && !options.skipAuthRefresh) {
@@ -90,6 +90,16 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   if (!response.ok) throw await toApiError(response);
+  return response;
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await requestResponse(path, options);
   if (response.status === NO_CONTENT) return undefined as T;
   return (await response.json()) as T;
+}
+
+export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const response = await requestResponse(path, options);
+  return response.blob();
 }
