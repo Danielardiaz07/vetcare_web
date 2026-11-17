@@ -45,6 +45,8 @@ export function createAppointmentsRouter(
     validate({ body: checkInRequestSchema }),
     controller.checkIn,
   );
+  // D-68, RN-85: enlace y QR fijo del escáner, solo para recepción.
+  router.get("/check-in/scanner-access", ...reception, controller.scannerAccess);
   router.get("/", ...agendaReaders, validate({ query: agendaQuerySchema }), controller.agenda);
   router.post(
     "/",

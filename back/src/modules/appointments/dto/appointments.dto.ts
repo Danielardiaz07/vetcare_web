@@ -133,6 +133,12 @@ export interface CheckInScanResultDto {
   startsAt: Date;
 }
 
+// D-68, RN-85: el acceso de recepción a la página de escaneo, con su QR fijo ya dibujado.
+export interface ScannerAccessResponseDto {
+  url: string;
+  qrSvg: string;
+}
+
 export interface ProfessionalSummaryDto {
   id: string;
   firstNames: string;

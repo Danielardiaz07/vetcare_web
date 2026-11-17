@@ -588,6 +588,18 @@ export const OPERATIONS: Operation[] = [
   ),
   op(
     "get",
+    "/appointments/check-in/scanner-access",
+    TAGS.appointments,
+    "Obtener el enlace y el QR fijo del escáner de recepción",
+    [RECEPTIONIST],
+    200,
+    {
+      description:
+        "Devuelve `{ url, qrSvg }`: el enlace `<FRONTEND_URL>/scan/<token>` y su QR ya dibujado. Lee `CHECK_IN_SCANNER_TOKEN` sin crearlo ni cambiarlo; la respuesta lleva `Cache-Control: no-store`. 404 si falta el token o `FRONTEND_URL` no es HTTPS (RN-85, D-68).",
+    },
+  ),
+  op(
+    "get",
     "/public/check-in/{scannerToken}",
     TAGS.appointments,
     "Comprobar el enlace de escaneo de recepción (público)",
