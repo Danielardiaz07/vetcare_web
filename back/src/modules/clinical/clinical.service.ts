@@ -29,6 +29,7 @@ import type {
   SurgeryRecord,
   VaccinationRecord,
 } from "@/modules/clinical/clinical.repository";
+import type { IAppointmentEvents } from "@/modules/appointments/appointment-events.interface";
 import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
 import { addDays, clinicDateOf, clinicInstant } from "@/shared/utils/clinic-time";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
@@ -136,6 +137,7 @@ function toLabExamResponse(record: LabExamRecord): LabExamResponseDto {
 export class ClinicalService {
   constructor(
     private readonly repository: ClinicalRepository,
+    private readonly events: IAppointmentEvents,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -163,6 +165,7 @@ export class ClinicalService {
       patientId: appointment.patientId,
       veterinarianId,
     });
+    this.events.appointmentChanged(appointmentId); // la cita pasó a atendida
     return toConsultationResponse(record, true);
   }
 
@@ -203,6 +206,7 @@ export class ClinicalService {
       },
       dto.appointmentId,
     );
+    if (dto.appointmentId) this.events.appointmentChanged(dto.appointmentId);
     return toVaccinationResponse(record);
   }
 

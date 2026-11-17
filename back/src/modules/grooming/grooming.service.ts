@@ -3,6 +3,7 @@ import type {
   CreateGroomingServiceRequestDto,
   GroomingServiceResponseDto,
 } from "@/modules/grooming/dto/grooming.dto";
+import type { IAppointmentEvents } from "@/modules/appointments/appointment-events.interface";
 import type { GroomingRecord, GroomingRepository } from "@/modules/grooming/grooming.repository";
 import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
 
@@ -25,7 +26,10 @@ function toResponse(record: GroomingRecord): GroomingServiceResponseDto {
 }
 
 export class GroomingService {
-  constructor(private readonly repository: GroomingRepository) {}
+  constructor(
+    private readonly repository: GroomingRepository,
+    private readonly events: IAppointmentEvents,
+  ) {}
 
   // RN-51, RF-21: solo el estilista registra; con cita, debe ser la suya y estar confirmada.
   async create(
@@ -44,6 +48,7 @@ export class GroomingService {
     }
 
     const record = await this.repository.create({ ...dto, patientId: patient.id, groomerId });
+    if (dto.appointmentId) this.events.appointmentChanged(dto.appointmentId); // la cita pasó a atendida
     return toResponse(record);
   }
 

@@ -588,6 +588,18 @@ export const OPERATIONS: Operation[] = [
   ),
   op(
     "get",
+    "/appointments/events",
+    TAGS.appointments,
+    "Canal de eventos de la agenda de recepción (SSE)",
+    [RECEPTIONIST],
+    200,
+    {
+      description:
+        "Conexión `text/event-stream` autenticada con el JWT en `Authorization` (el `EventSource` del navegador no envía cabeceras: usa `fetch` con lectura de la respuesta). Emite `appointment.changed` con `{ appointmentId }` tras guardar una creación, reprogramación, cancelación, reasignación o cambio de estado (llegada manual o por QR, no asistió, consulta, vacunación o servicio de estética que cierra la cita). El cliente vuelve a consultar la agenda al recibirlo. Envía un comentario `: keep-alive` cada 25 s y cierra la conexión a los 10 minutos para que el cliente se reconecte con un token vigente; al reconectar conviene consultar la agenda, porque los avisos perdidos no se reenvían (D-69).",
+    },
+  ),
+  op(
+    "get",
     "/appointments/check-in/scanner-access",
     TAGS.appointments,
     "Obtener el enlace y el QR fijo del escáner de recepción",

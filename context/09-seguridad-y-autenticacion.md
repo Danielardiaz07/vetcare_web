@@ -93,6 +93,7 @@ Consultas públicas de agendamiento (D-50, D-51): GET /appointment-types, GET /a
 | Mostrar el QR de llegada (propietario) y escanearlo (recepción) (RN-83, D-56) | ✔ (solo sus citas) | ✔ | | | |
 | Registrar llegadas desde la página `/scan/<token>`, sin sesión (RN-85, D-66) | | ✔ (quien tenga el enlace o su QR fijo) | | | |
 | Ver el enlace y el QR fijo del escáner de recepción (RN-85, D-68) | | ✔ | | | |
+| Recibir en vivo los cambios de la agenda por el canal de eventos (D-69) | | ✔ | | | |
 | Reprogramar o cancelar una cita con el enlace personal del correo, sin sesión (RN-84, D-65) | ✔ (quien tenga el enlace, solo esa cita) | | | | |
 
 > La matriz deriva de los RF y actores de `specs.pdf`. Los matices no especificados (p. ej. si el veterinario puede ver propietarios, o recepción ver el historial clínico completo) se afinan al implementar el módulo y se registran aquí.

@@ -23,6 +23,10 @@ import type {
   RescheduleAppointmentRequestDto,
   ScannerAccessResponseDto,
 } from "@/modules/appointments/dto/appointments.dto";
+import type {
+  AppointmentChangeListener,
+  IAppointmentEvents,
+} from "@/modules/appointments/appointment-events.interface";
 import type { IAppointmentNotifier } from "@/modules/appointments/appointment-notifier.interface";
 import {
   ACTIVE_STATUSES,
@@ -91,6 +95,7 @@ export class AppointmentsService {
     private readonly repository: AppointmentsRepository,
     private readonly types: AppointmentTypesRepository,
     private readonly notifier: IAppointmentNotifier,
+    private readonly events: IAppointmentEvents,
     private readonly checkInCodes: CheckInCodes,
     private readonly manageLinks: ManageLinks,
     private readonly scanner: CheckInScanner,
@@ -171,6 +176,7 @@ export class AppointmentsService {
           endsAt,
           reason: dto.reason,
         });
+        this.events.appointmentChanged(created.id);
         await this.notifier.appointmentEvent("CONFIRMED", created.id); // RN-35
         return toResponse(created, actor.role !== Role.OWNER);
       } catch (error) {
@@ -217,6 +223,7 @@ export class AppointmentsService {
           endsAt,
           professionalId: candidate.id,
         });
+        this.events.appointmentChanged(updated.id);
         await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
         return toResponse(updated, withOwner);
       } catch (error) {
@@ -244,6 +251,7 @@ export class AppointmentsService {
       status: AppointmentStatus.CANCELLED,
       cancelReason: reason,
     });
+    this.events.appointmentChanged(updated.id);
     await this.notifier.appointmentEvent("CANCELLED", updated.id); // RN-35
     return toResponse(updated, withOwner);
   }
@@ -293,6 +301,7 @@ export class AppointmentsService {
     const updated = await this.repository.update(id, kindOf(appointment), {
       status: AppointmentStatus.CONFIRMED,
     });
+    this.events.appointmentChanged(updated.id);
     return toResponse(updated, true);
   }
 
@@ -332,6 +341,11 @@ export class AppointmentsService {
     return this.registerArrival(appointment.id);
   }
 
+  // D-69: la agenda de recepción se suscribe a los cambios de citas; devuelve la función que cancela la suscripción.
+  subscribeToChanges(listener: AppointmentChangeListener): () => void {
+    return this.events.subscribe(listener);
+  }
+
   // D-66, RN-85: la página de escaneo de recepción entra con el token del enlace, sin sesión.
   assertScannerToken(token: string): void {
     if (!this.scanner.accepts(token)) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
@@ -369,6 +383,7 @@ export class AppointmentsService {
     const updated = await this.repository.update(id, kindOf(appointment), {
       status: AppointmentStatus.NO_SHOW,
     });
+    this.events.appointmentChanged(updated.id);
     return toResponse(updated, true);
   }
 
@@ -390,6 +405,7 @@ export class AppointmentsService {
 
     try {
       const updated = await this.repository.update(id, kind, { professionalId: candidate.id });
+      this.events.appointmentChanged(updated.id);
       await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
       return toResponse(updated, true);
     } catch (error) {
