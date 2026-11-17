@@ -13,6 +13,7 @@ import { AppointmentTypesController } from "@/modules/appointments/appointment-t
 import { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
 import { createAppointmentTypesRouter } from "@/modules/appointments/appointment-types.routes";
 import { AppointmentTypesService } from "@/modules/appointments/appointment-types.service";
+import { AppointmentEventsHub } from "@/modules/appointments/appointment-events.hub";
 import { AppointmentsController } from "@/modules/appointments/appointments.controller";
 import { AppointmentsRepository } from "@/modules/appointments/appointments.repository";
 import {
@@ -167,11 +168,13 @@ export function buildApp(overrides: AppOverrides = {}) {
   const groomerService = new StaffService(new GroomersRepository(), staffUsers, GROOMER_KIND);
   const appointmentTypesRepository = new AppointmentTypesRepository();
   const appointmentTypesService = new AppointmentTypesService(appointmentTypesRepository);
+  const appointmentEvents = new AppointmentEventsHub();
   const appointmentsController = new AppointmentsController(
     new AppointmentsService(
       new AppointmentsRepository(),
       appointmentTypesRepository,
       notificationsService,
+      appointmentEvents,
       checkInCodes,
       manageLinks,
       new CheckInScanner(env.CHECK_IN_SCANNER_TOKEN),
@@ -181,13 +184,17 @@ export function buildApp(overrides: AppOverrides = {}) {
   const verificationController = new VerificationController(
     new VerificationService(new VerificationRepository(), frontendUrl),
   );
-  const clinicalController = new ClinicalController(new ClinicalService(new ClinicalRepository()));
+  const clinicalController = new ClinicalController(
+    new ClinicalService(new ClinicalRepository(), appointmentEvents),
+  );
   const invoicesController = new InvoicesController(new InvoicesService(new InvoicesRepository()));
   const inventoryController = new InventoryController(
     new InventoryService(new InventoryRepository()),
   );
   const reportsController = new ReportsController(new ReportsService(new ReportsRepository()));
-  const groomingController = new GroomingController(new GroomingService(new GroomingRepository()));
+  const groomingController = new GroomingController(
+    new GroomingService(new GroomingRepository(), appointmentEvents),
+  );
 
   const v1Router = createV1Router({
     auth: createAuthRouter(new AuthController(authService)),

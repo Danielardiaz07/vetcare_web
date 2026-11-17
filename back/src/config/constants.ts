@@ -73,6 +73,11 @@ export const CARD_TOKEN_LENGTH = 43; // 32 bytes en base64url, sin relleno; mism
 export const CHECK_IN_CODE_MAX = 70; // "VC2." + UUID (36) + "." + hasta 12 dígitos + "." + 16 hex = 70 caracteres (D-66)
 export const SCANNER_TOKEN_MIN_LENGTH = 32; // el token del enlace de escaneo se adivina con la misma dificultad que una clave (RN-85)
 export const SCANNER_TOKEN_MAX = 128;
+// D-69: canal de eventos (SSE) de la agenda de recepción.
+export const APPOINTMENT_CHANGED_EVENT = "appointment.changed";
+export const EVENT_STREAM_HEARTBEAT_MS = 25_000; // por debajo del tiempo que el proxy de Render deja una conexión sin tráfico
+export const EVENT_STREAM_RETRY_MS = 3_000; // espera sugerida al cliente antes de reconectar
+export const EVENT_STREAM_MAX_AGE_MS = 10 * MINUTE_MS; // menos que el JWT de acceso (15 min): al reconectar se vuelve a autenticar
 export const SCANNER_PAGE_PATH = "/scan"; // ruta del frontend que abre el enlace de escaneo de recepción (D-68)
 export const HTTPS_SCHEME = "https://";
 export const CHECK_IN_QR_EXTENSION = ".png";

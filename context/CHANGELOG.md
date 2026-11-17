@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-17 · 08, 09, 12 · D-69: `GET /appointments/events` (SSE, solo recepción, JWT en `Authorization`) emite `appointment.changed` con el id de la cita tras crear, reprogramar, cancelar, reasignar o cambiar su estado (llegada manual o por QR incluida); `keep-alive` cada 25 s y cierre a los 10 minutos para reconectar con token vigente. En memoria, para una instancia de la API.
 - 2026-11-17 · 04, 08, 09, 12 · D-68: `GET /appointments/check-in/scanner-access` (solo recepción, `no-store`) devuelve `{ url, qrSvg }` con el token existente y `FRONTEND_URL` por HTTPS, y 404 si no está configurado; cambia lo descartado en D-66 (RN-85); documentado en Swagger.
 - 2026-11-17 · 11, 12 · D-67: con `_git` el agente ejecuta add, commit, push y PR (cuerpo con `--body-file`, sin atribución a Claude) en lugar de entregar los comandos; el merge, los releases, los tags y los hotfix siguen siendo del desarrollador.
 - 2026-11-17 · 04, 08, 09, 10, 12 · D-66: QR de llegada sin doble sesión. Recepción escanea desde `/scan/<token>` sin iniciar sesión (RN-85), con un enlace y un QR fijo que genera `npm run scanner:qr`; el código de llegada pasa a `VC2` y lleva la hora de la cita, así reprogramar lo invalida (RN-83); el recordatorio trae el QR como imagen PNG y el propietario lo ve en Mis citas; librería `jsqr` en el front.
