@@ -57,9 +57,13 @@ interface Recipient {
 // El correo del propietario; si no tiene, el de su cuenta.
 const recipientOf = (owner: Recipient): string | null => owner.email ?? owner.user?.email ?? null;
 
-function appointmentData(appointment: AppointmentForEmail): AppointmentEmailData {
+function appointmentData(
+  appointment: AppointmentForEmail,
+  manageUrl: string,
+): AppointmentEmailData {
   const professional = appointment.veterinarian ?? appointment.groomer;
   return {
+    manageUrl,
     ownerName: appointment.patient.owner.firstNames,
     patientName: appointment.patient.name,
     type: appointment.type,
@@ -93,6 +97,7 @@ export class NotificationsService implements IAppointmentNotifier {
   constructor(
     private readonly repository: NotificationsRepository,
     private readonly mail: IMailProvider,
+    private readonly manageUrlOf: (appointmentId: string) => string,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -105,7 +110,7 @@ export class NotificationsService implements IAppointmentNotifier {
       const queued = await this.queueAppointmentNotice(
         EVENT_KIND[event],
         appointment,
-        EVENT_TEMPLATE[event](appointmentData(appointment)),
+        EVENT_TEMPLATE[event](appointmentData(appointment, this.manageUrlOf(appointment.id))),
       );
       if (queued) void this.deliver(queued);
     } catch (error) {
@@ -153,7 +158,7 @@ export class NotificationsService implements IAppointmentNotifier {
       const row = await this.queueAppointmentNotice(
         NotificationKind.APPOINTMENT_REMINDER,
         appointment,
-        buildReminderEmail(appointmentData(appointment)),
+        buildReminderEmail(appointmentData(appointment, this.manageUrlOf(appointment.id))),
       );
       if (row) queued += 1;
     }

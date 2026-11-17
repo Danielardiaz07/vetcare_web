@@ -110,4 +110,5 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 | VetBot con datos reales (sin IA externa) | Sin cambios: usa los endpoints existentes y `weight-trend` | Hecho: contenido publicado y consultas propias de citas, avisos, vacunas y peso desde la portada, con sesión para datos propios (D-63) | 21 nov |
 | QR del carné de vacunación (verificable) | Hecho: tabla `CardVerification`, `GET …/vaccination-card/verification` y `GET /public/vaccination-cards/{token}` (D-56) | Hecho: QR imprimible, gestión por el propietario y página `/verify/[token]` (D-64); migración y validación en producción en P-20 | 21 nov |
 | QR de llegada a la cita | Hecho: `GET /me/appointments/{id}/check-in` y `POST /appointments/check-in` (D-56) | Pendiente: el QR en Mis citas y el lector o el campo de código en recepción | 21 nov |
+| Cambiar o cancelar la cita desde el correo | Hecho: enlace en los correos y `GET` y `POST …/cancel` y `…/reschedule` en `/public/appointments/manage/{token}` (D-65) | Pendiente: la página `/manage-appointment/[token]` | 21 nov |
 | VetBot con IA | Fuera del alcance por ahora (P-08) | — | Solo si sobra tiempo |

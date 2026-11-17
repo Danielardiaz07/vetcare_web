@@ -1,6 +1,11 @@
 import { AppointmentStatus, AppointmentType } from "@prisma/client";
 import { z } from "zod";
-import { AGENDA_MAX_DAYS, APPOINTMENT_TEXT_MAX, CHECK_IN_CODE_MAX } from "@/config/constants";
+import {
+  AGENDA_MAX_DAYS,
+  APPOINTMENT_TEXT_MAX,
+  CHECK_IN_CODE_MAX,
+  MANAGE_TOKEN_MAX,
+} from "@/config/constants";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
 import { daysBetween, isValidClinicDate } from "@/shared/utils/clinic-time";
 
@@ -68,6 +73,15 @@ export const checkInRequestSchema = z.object({
     .max(CHECK_IN_CODE_MAX, `El codigo admite maximo ${CHECK_IN_CODE_MAX} caracteres`),
 });
 
+export const manageTokenParamSchema = z.object({
+  token: z.string().trim().min(1).max(MANAGE_TOKEN_MAX),
+});
+
+// RN-84: el motivo es opcional al cancelar desde el correo; sin él se usa uno por defecto.
+export const cancelByLinkRequestSchema = z.object({
+  reason: textField("El motivo").min(1).optional(),
+});
+
 export const APPOINTMENTS_WHEN = ["upcoming", "past"] as const;
 
 export const listMyAppointmentsQuerySchema = paginationQuerySchema.extend({
@@ -82,6 +96,14 @@ export type ReassignAppointmentRequestDto = z.infer<typeof reassignAppointmentRe
 export type AgendaQueryDto = z.infer<typeof agendaQuerySchema>;
 export type ListMyAppointmentsQueryDto = z.infer<typeof listMyAppointmentsQuerySchema>;
 export type CheckInRequestDto = z.infer<typeof checkInRequestSchema>;
+export type CancelByLinkRequestDto = z.infer<typeof cancelByLinkRequestSchema>;
+
+// D-65, RN-84: lo que ve quien abre el enlace del correo. Sin datos del propietario.
+export interface ManagedAppointmentDto {
+  appointment: AppointmentResponseDto;
+  canChange: boolean; // false si la cita ya no está activa o faltan 2 horas o menos
+  blockedReason: string | null; // el motivo, listo para mostrar, cuando canChange es false
+}
 
 // D-56, RN-83: lo que el propietario muestra en recepción el día de la cita.
 export interface CheckInCodeResponseDto {

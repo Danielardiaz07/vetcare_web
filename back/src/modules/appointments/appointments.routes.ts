@@ -4,13 +4,16 @@ import {
   agendaQuerySchema,
   availabilityQuerySchema,
   cancelAppointmentRequestSchema,
+  cancelByLinkRequestSchema,
   checkInRequestSchema,
   createAppointmentRequestSchema,
   listMyAppointmentsQuerySchema,
+  manageTokenParamSchema,
   reassignAppointmentRequestSchema,
   rescheduleAppointmentRequestSchema,
 } from "@/modules/appointments/dto/appointments.dto";
 import type { AppointmentsController } from "@/modules/appointments/appointments.controller";
+import { publicLinkRateLimiter } from "@/config/rate-limit";
 import { authorize } from "@/shared/middlewares/authorize";
 import { validate } from "@/shared/middlewares/validate";
 import { uuidParamSchema } from "@/shared/schemas/fields";
@@ -76,6 +79,33 @@ export function createAppointmentsRouter(
     ...reception,
     validate({ params: uuidParamSchema, body: reassignAppointmentRequestSchema }),
     controller.reassign,
+  );
+
+  return router;
+}
+
+// Se monta en /public (D-65, RN-84): enlace personal de los correos, sin sesión y con límite de peticiones por IP.
+export function createPublicAppointmentsRouter(controller: AppointmentsController): Router {
+  const router = Router();
+  const params = validate({ params: manageTokenParamSchema });
+
+  router.get(
+    "/appointments/manage/:token",
+    publicLinkRateLimiter,
+    params,
+    controller.managedByLink,
+  );
+  router.post(
+    "/appointments/manage/:token/cancel",
+    publicLinkRateLimiter,
+    validate({ params: manageTokenParamSchema, body: cancelByLinkRequestSchema }),
+    controller.cancelByLink,
+  );
+  router.post(
+    "/appointments/manage/:token/reschedule",
+    publicLinkRateLimiter,
+    validate({ params: manageTokenParamSchema, body: rescheduleAppointmentRequestSchema }),
+    controller.rescheduleByLink,
   );
 
   return router;

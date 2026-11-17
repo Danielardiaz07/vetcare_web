@@ -1,6 +1,6 @@
 import express from "express";
 import helmet from "helmet";
-import { API_PREFIX, JSON_BODY_LIMIT } from "@/config/constants";
+import { API_PREFIX, JSON_BODY_LIMIT, MANAGE_APPOINTMENT_PATH } from "@/config/constants";
 import { corsMiddleware } from "@/config/cors";
 import { env } from "@/config/env";
 import { globalRateLimiter } from "@/config/rate-limit";
@@ -13,6 +13,7 @@ import { AppointmentsRepository } from "@/modules/appointments/appointments.repo
 import {
   createAppointmentsRouter,
   createMyAppointmentsRouter,
+  createPublicAppointmentsRouter,
 } from "@/modules/appointments/appointments.routes";
 import { AppointmentsService } from "@/modules/appointments/appointments.service";
 import { ClinicalController } from "@/modules/clinical/clinical.controller";
@@ -40,7 +41,7 @@ import { AuthRepository } from "@/modules/auth/auth.repository";
 import { createAuthRouter } from "@/modules/auth/auth.routes";
 import { AuthService } from "@/modules/auth/auth.service";
 import { OtpService } from "@/modules/auth/otp.service";
-import { CheckInCodes } from "@/modules/appointments/check-in-codes";
+import { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
 import { VerificationController } from "@/modules/verification/verification.controller";
 import { VerificationRepository } from "@/modules/verification/verification.repository";
 import {
@@ -114,15 +115,19 @@ export function buildApp(overrides: AppOverrides = {}) {
       email: env.MAIL_FROM_EMAIL,
       name: env.MAIL_FROM_NAME,
     });
-  const notificationsService = new NotificationsService(
-    new NotificationsRepository(),
-    mail,
-    overrides.clock,
-  );
 
   // Sin FRONTEND_URL se usa el primer origen permitido; CORS_ORIGINS exige al menos uno.
   const [firstCorsOrigin = ""] = env.CORS_ORIGINS;
   const frontendUrl = (env.FRONTEND_URL ?? firstCorsOrigin).replace(/\/+$/, "");
+
+  const manageLinks = new ManageLinks(env.JWT_ACCESS_SECRET);
+  const notificationsService = new NotificationsService(
+    new NotificationsRepository(),
+    mail,
+    (appointmentId) =>
+      `${frontendUrl}${MANAGE_APPOINTMENT_PATH}/${manageLinks.issue(appointmentId)}`,
+    overrides.clock,
+  );
 
   const authRepository = new AuthRepository();
   const otpService = new OtpService(authRepository, hasher, env.OTP_TTL_MINUTES);
@@ -156,6 +161,7 @@ export function buildApp(overrides: AppOverrides = {}) {
       appointmentTypesRepository,
       notificationsService,
       new CheckInCodes(env.JWT_ACCESS_SECRET),
+      manageLinks,
     ),
   );
   const verificationController = new VerificationController(
@@ -193,6 +199,7 @@ export function buildApp(overrides: AppOverrides = {}) {
     ),
     appointments: createAppointmentsRouter(appointmentsController, requireAuth),
     myAppointments: createMyAppointmentsRouter(appointmentsController, requireAuth),
+    publicAppointments: createPublicAppointmentsRouter(appointmentsController),
     clinical: createClinicalRouter(clinicalController, requireAuth),
     myClinical: createMyClinicalRouter(clinicalController, requireAuth),
     invoices: createInvoicesRouter(invoicesController, requireAuth),

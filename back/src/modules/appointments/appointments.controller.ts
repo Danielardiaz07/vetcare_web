@@ -4,6 +4,7 @@ import type {
   AgendaQueryDto,
   AvailabilityQueryDto,
   CancelAppointmentRequestDto,
+  CancelByLinkRequestDto,
   CheckInRequestDto,
   CreateAppointmentRequestDto,
   ListMyAppointmentsQueryDto,
@@ -57,6 +58,26 @@ export class AppointmentsController {
 
   checkInCode: RequestHandler = async (req, res) => {
     res.json(await this.service.checkInCode(req.user!, String(req.params.id)));
+  };
+
+  managedByLink: RequestHandler = async (req, res) => {
+    res.set("Cache-Control", "no-store"); // el estado de la cita cambia
+    res.json(await this.service.managedByLink(String(req.params.token)));
+  };
+
+  cancelByLink: RequestHandler = async (req, res) => {
+    res.json(
+      await this.service.cancelByLink(String(req.params.token), req.body as CancelByLinkRequestDto),
+    );
+  };
+
+  rescheduleByLink: RequestHandler = async (req, res) => {
+    res.json(
+      await this.service.rescheduleByLink(
+        String(req.params.token),
+        req.body as RescheduleAppointmentRequestDto,
+      ),
+    );
   };
 
   checkIn: RequestHandler = async (req, res) => {
