@@ -4,7 +4,6 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { Icon } from "@/components/ui/icon";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
@@ -28,6 +27,20 @@ const WEEK_COLUMN_WIDTH_REM = 10;
 const DEFAULT_FONT_SIZE = 16;
 const TIME_AXIS_WIDTH_REM = 5;
 const ROW_HEIGHT_REM = 6;
+const TILE_STATUS_CLASSES: Record<Appointment["status"], string> = {
+  SCHEDULED: "text-brand-700",
+  CONFIRMED: "text-success",
+  ATTENDED: "text-muted",
+  CANCELLED: "text-danger",
+  NO_SHOW: "text-warning",
+};
+const TILE_SURFACE_CLASSES: Record<Appointment["status"], string> = {
+  SCHEDULED: "border-brand-200 bg-brand-50",
+  CONFIRMED: "border-success-border bg-success-bg",
+  ATTENDED: "border-line bg-canvas",
+  CANCELLED: "border-danger-border bg-danger-bg",
+  NO_SHOW: "border-warning-border bg-warning-bg",
+};
 
 type AgendaTimeGridProps = {
   date: string;
@@ -217,12 +230,12 @@ export function AgendaTimeGrid({
     );
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p id={`${id}-hint`} className="text-sm text-muted">
+    <div className="flex min-w-0 flex-col gap-5">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <p id={`${id}-hint`} className="max-w-prose flex-1 text-sm leading-relaxed text-muted">
           {canRegisterArrival && !weekly
-            ? "Franjas de 30 minutos. Abre una cita para ver su detalle o pulsa “Llegó” para registrar la llegada."
-            : "Franjas de 30 minutos. Abre una cita para ver su detalle y gestionar la atención."}
+            ? "Abre una cita para ver el detalle o pulsa “Registrar llegada”."
+            : "Abre una cita para ver el detalle y gestionar la atención."}
         </p>
         <button
           type="button"
@@ -234,10 +247,11 @@ export function AgendaTimeGrid({
             viewportRef.current?.focus({ preventScroll: true });
           }}
           className={cn(
-            "relative shrink-0 rounded-xs text-sm leading-5 font-medium text-brand-700 underline-offset-4 after:absolute after:inset-x-0 after:-inset-y-3 after:content-[''] hover:underline",
+            "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xs text-sm font-medium text-brand-700 underline-offset-4 hover:underline",
             !canReturnToNow && "invisible",
           )}
         >
+          <Icon name="clock" className="size-5" />
           Volver a hora actual
         </button>
       </div>
@@ -312,7 +326,7 @@ export function AgendaTimeGrid({
           >
             <div
               ref={headerRef}
-              className="sticky top-0 left-0 z-30 flex items-center border-r border-b border-line bg-canvas px-3 text-xs font-semibold text-muted"
+              className="sticky top-0 left-0 z-30 flex items-center border-r border-b border-line bg-canvas px-3 text-xs font-semibold text-ink"
             >
               Hora
             </div>
@@ -321,8 +335,8 @@ export function AgendaTimeGrid({
                 key={column.key}
                 aria-current={weekly && column.date === today ? "date" : undefined}
                 className={cn(
-                  "sticky top-0 z-20 flex min-w-0 flex-col justify-center gap-1 border-r border-b border-line px-3 py-3",
-                  weekly && column.date === today ? "bg-brand-50 text-brand-700" : "bg-canvas",
+                  "sticky top-0 z-20 flex min-w-0 flex-col justify-center gap-1 border-r border-b border-line bg-canvas px-3 py-3",
+                  weekly && column.date === today && "border-b-brand-500 text-brand-700",
                 )}
               >
                 <h3
@@ -345,11 +359,11 @@ export function AgendaTimeGrid({
                 aria-hidden="true"
                 style={{ gridColumn: 1, gridRow: index + 2 }}
                 className={cn(
-                  "relative border-r border-b border-line bg-canvas px-3 py-2 text-xs font-medium text-muted tabular-nums",
+                  "relative border-r border-b border-line bg-surface px-3 py-2 text-xs font-semibold text-ink tabular-nums",
                   weekly && "sticky left-0 z-20",
                 )}
               >
-                <span className="relative z-20 -mx-1 inline-block bg-canvas px-1 leading-none [text-box:trim-both_cap_alphabetic]">
+                <span className="relative z-20 -mx-1 inline-block bg-surface px-1 leading-none [text-box:trim-both_cap_alphabetic]">
                   {timeOfMinutes(minute)}
                 </span>
               </div>
@@ -472,48 +486,64 @@ function AppointmentTile({
   const status = APPOINTMENT_STATUS[appointment.status];
   const time = formatClinicTime(appointment.startsAt);
   const type = APPOINTMENT_TYPE_LABELS[appointment.type];
+  const inactive = appointment.status === "CANCELLED" || appointment.status === "NO_SHOW";
+  const confirmed = appointment.status === "CONFIRMED";
+  const canArrive = Boolean(onArrive) && appointment.status === "SCHEDULED";
   return (
     <div
       className={cn(
-        "flex h-full min-w-0 rounded-control border bg-surface",
-        appointment.status === "CONFIRMED" ? "border-success-border" : "border-line",
-        (appointment.status === "CANCELLED" || appointment.status === "NO_SHOW") && "opacity-70",
+        "h-full min-w-0 rounded-control border px-2.5 py-1",
+        TILE_SURFACE_CLASSES[appointment.status],
       )}
     >
-      <button
-        type="button"
-        onClick={() => onOpen(appointment)}
-        aria-label={`${time}, ${appointment.patient.name}, ${type}, ${status.label}. Ver detalle`}
-        className="flex min-h-11 min-w-0 flex-1 flex-col justify-start gap-1 rounded-control p-2 text-left hover:bg-brand-50"
-      >
-        <span className="sticky top-[calc(var(--agenda-header-height,0px)+0.5rem)] flex w-full min-w-0 flex-col items-start gap-1">
+      <div className="sticky top-[calc(var(--agenda-header-height,0px)+0.5rem)] flex min-w-0 flex-col gap-0.5">
+        <button
+          type="button"
+          onClick={() => onOpen(appointment)}
+          aria-label={`${time}, ${appointment.patient.name}, ${type}, ${status.label}. Ver detalle`}
+          className="flex min-h-11 w-full min-w-0 flex-col items-start justify-center gap-1 rounded-md text-left transition-colors hover:bg-ink/5"
+        >
+          <span className={cn("w-full truncate text-sm font-semibold", inactive && "text-muted")}>
+            {appointment.patient.name}
+          </span>
           <span className="w-full truncate text-xs text-muted">
             {time} · {type}
           </span>
-          <span className="w-full truncate text-sm font-semibold">{appointment.patient.name}</span>
-          <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-        </span>
-      </button>
-      {onArrive && appointment.status === "SCHEDULED" && (
-        <button
-          type="button"
-          disabled={busy}
-          aria-busy={busy || undefined}
-          aria-label={`Registrar llegada de ${appointment.patient.name}, ${time}`}
-          onClick={onArrive}
-          className="sticky top-[calc(var(--agenda-header-height,0px)+0.5rem)] m-1 flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-1 self-start rounded-control px-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:cursor-wait disabled:opacity-60"
-        >
-          {busy ? (
-            <span
-              aria-hidden="true"
-              className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
-            />
-          ) : (
-            <Icon name="check" className="size-4" />
-          )}
-          <span>{busy ? "Guardando" : "Llegó"}</span>
         </button>
-      )}
+        <div className="flex min-h-8 min-w-0 items-center justify-between gap-1">
+          <span
+            className={cn("shrink-0 text-xs font-medium", TILE_STATUS_CLASSES[appointment.status])}
+          >
+            {status.label}
+          </span>
+          {canArrive && (
+            <button
+              type="button"
+              disabled={busy}
+              aria-busy={busy || undefined}
+              aria-label={`${busy ? "Registrando" : "Registrar"} llegada de ${appointment.patient.name}, ${time}`}
+              onClick={onArrive}
+              className="inline-flex min-h-[22px] w-27 shrink-0 items-center justify-center gap-1 rounded-md border border-brand-500 bg-surface px-1 text-[11px] font-medium whitespace-nowrap text-brand-700 transition-colors hover:bg-brand-100 disabled:cursor-wait disabled:opacity-60"
+            >
+              {busy ? (
+                <span
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+                />
+              ) : (
+                <Icon name="log-in" className="size-3.5" />
+              )}
+              {busy ? "Registrando" : "Registrar llegada"}
+            </button>
+          )}
+          {confirmed && (
+            <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-success">
+              <Icon name="check" className="size-3" />
+              En sala
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

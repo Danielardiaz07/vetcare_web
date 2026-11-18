@@ -25,6 +25,7 @@ interface RequestOptions {
   auth?: boolean;
   cache?: RequestCache;
   signal?: AbortSignal;
+  accept?: string;
 }
 
 let accessToken: string | null = null;
@@ -54,6 +55,7 @@ async function toApiError(response: Response): Promise<ApiError> {
 
 function send(path: string, options: RequestOptions): Promise<Response> {
   const headers = new Headers();
+  if (options.accept) headers.set("Accept", options.accept);
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
   if (accessToken && options.auth !== false) headers.set("Authorization", `Bearer ${accessToken}`);
 
@@ -107,3 +109,6 @@ export async function requestBlob(path: string, options: RequestOptions = {}): P
   const response = await requestResponse(path, options);
   return response.blob();
 }
+
+export const requestStream = (path: string, signal: AbortSignal) =>
+  requestResponse(path, { signal, cache: "no-store", accept: "text/event-stream" });
