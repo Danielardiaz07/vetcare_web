@@ -30,6 +30,7 @@ import {
   dischargeHospitalizationRequestSchema,
   historyQuerySchema,
   listHospitalizationsQuerySchema,
+  loadLabResultsRequestSchema,
 } from "@/modules/clinical/dto/clinical.dto";
 import { createGroomingServiceRequestSchema } from "@/modules/grooming/dto/grooming.dto";
 import {
@@ -478,7 +479,7 @@ export const OPERATIONS: Operation[] = [
     {
       query: availabilityQuerySchema,
       description:
-        "Pública (D-51). Si ese día no hay franjas, sugiere hasta 3 fechas cercanas (RN-33). Crear la cita sigue exigiendo sesión.",
+        "Pública (D-51). Si ese día no hay franjas, sugiere hasta 3 fechas cercanas (RN-33). Crear la cita sigue exigiendo sesión. Para `SURGERY` y `LAB_EXAM` (D-70) `durationMinutes` es obligatorio (múltiplo de 30, hasta 480); para los demás tipos no se envía.",
     },
   ),
   op(
@@ -497,7 +498,7 @@ export const OPERATIONS: Operation[] = [
   op("post", "/appointments", TAGS.appointments, "Agendar una cita", [OWNER, RECEPTIONIST], 201, {
     body: createAppointmentRequestSchema,
     description:
-      "Con 2 horas de anticipación como mínimo, hasta 30 días y máximo 3 citas activas por mascota. Sin `professionalId` se asigna cualquiera disponible. Envía el correo de confirmación (RN-35).",
+      "Con 2 horas de anticipación como mínimo, hasta 30 días y máximo 3 citas activas por mascota. Sin `professionalId` se asigna cualquiera disponible. Envía el correo de confirmación (RN-35). `SURGERY` y `LAB_EXAM` (D-70) los agenda solo recepción (403 al propietario) y exigen `procedureName` y `durationMinutes`; admiten `instructions` para el propietario, no cuentan en el máximo de 3 citas activas y la API valida los cruces del veterinario y de la mascota (409). La respuesta trae `durationMinutes`, `procedureName`, `instructions` y `clinicalRecord` (el registro clínico vinculado cuando existe; en el examen incluye `status`).",
   }),
   op(
     "put",
@@ -508,6 +509,8 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       body: rescheduleAppointmentRequestSchema,
+      description:
+        "Las cirugías y los exámenes (D-70) solo los reprograma recepción: el propietario recibe 403 desde el portal y 409 desde el enlace del correo. En ellos `durationMinutes` cambia la duración; sin él se conserva.",
     },
   ),
   op(
@@ -519,6 +522,8 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       body: cancelAppointmentRequestSchema,
+      description:
+        "Las cirugías y los exámenes (D-70) solo los cancela recepción: el propietario recibe 403 desde el portal y 409 desde el enlace del correo.",
     },
   ),
   op(
@@ -692,6 +697,8 @@ export const OPERATIONS: Operation[] = [
   }),
   op("post", "/surgeries", TAGS.clinical, "Registrar una cirugía", [VETERINARIAN], 201, {
     body: createSurgeryRequestSchema,
+    description:
+      "Desde la ficha (sin `appointmentId`) `procedure` y `performedAt` son obligatorios. Con `appointmentId` (D-70) la cita debe ser de cirugía, de la misma mascota, estar CONFIRMED y asignada al veterinario: el registro queda vinculado, la cita pasa a ATTENDED y `procedure` y `performedAt` salen de la cita si no se envían.",
   }),
   op(
     "post",
@@ -702,6 +709,21 @@ export const OPERATIONS: Operation[] = [
     201,
     {
       body: createLabExamRequestSchema,
+      description:
+        "Desde la ficha (sin `appointmentId`) `examType`, `performedAt` y `results` son obligatorios y el examen nace WITH_RESULTS. Con `appointmentId` (D-70) la cita debe ser de examen, de la misma mascota, estar CONFIRMED y asignada al veterinario: la cita pasa a ATTENDED y, sin `results`, el examen queda PENDING_RESULTS (en espera de resultados).",
+    },
+  ),
+  op(
+    "put",
+    "/lab-exams/{id}/results",
+    TAGS.clinical,
+    "Cargar los resultados de un examen en espera",
+    [VETERINARIAN],
+    200,
+    {
+      body: loadLabResultsRequestSchema,
+      description:
+        "Solo el veterinario que registró el examen (403 si es otro) y solo mientras esté PENDING_RESULTS (409 si ya tiene resultados). Pasa a WITH_RESULTS y el propietario los ve en el historial (D-70).",
     },
   ),
   op(

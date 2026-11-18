@@ -1,5 +1,6 @@
 import type { AppointmentType } from "@prisma/client";
 import { CLINIC_TIME_ZONE } from "@/config/constants";
+import { isProcedure } from "@/modules/appointments/procedures";
 import { CLINIC_NAME, emailLayout } from "@/shared/utils/email-layout";
 import { escapeHtml } from "@/shared/utils/html";
 
@@ -16,6 +17,8 @@ export interface AppointmentEmailData {
   professional: string;
   reason: string | null;
   cancelReason: string | null;
+  procedureName: string | null; // D-70: solo cirugía y examen
+  instructions: string | null; // D-70: indicaciones para el propietario
   manageUrl: string; // enlace personal para cambiar o cancelar la cita (RN-84)
   checkInQrUrl: string | null; // imagen del QR de llegada (D-66, RN-83); null si la API no tiene dirección pública
 }
@@ -32,6 +35,8 @@ const TYPE_LABEL: Record<AppointmentType, string> = {
   VACCINATION: "Vacunacion",
   CHECKUP: "Control",
   GROOMING: "Estetica",
+  SURGERY: "Cirugia",
+  LAB_EXAM: "Examen de laboratorio",
 };
 
 const dateTime = new Intl.DateTimeFormat("es-CO", {
@@ -47,7 +52,12 @@ const row = (label: string, value: string) =>
 function appointmentDetails(data: AppointmentEmailData): string {
   return `<table>${[
     row("Mascota", data.patientName),
-    row("Servicio", TYPE_LABEL[data.type]),
+    row(
+      "Servicio",
+      data.procedureName
+        ? `${TYPE_LABEL[data.type]}: ${data.procedureName}`
+        : TYPE_LABEL[data.type],
+    ),
     row("Cuando", dateTime.format(data.startsAt)),
     row("Atiende", data.professional),
     ...(data.reason ? [row("Motivo", data.reason)] : []),
@@ -56,10 +66,16 @@ function appointmentDetails(data: AppointmentEmailData): string {
 
 const greeting = (ownerName: string) => `<p>Hola, ${escapeHtml(ownerName)}.</p>`;
 
+// D-70: lo que el propietario debe hacer antes del procedimiento (p. ej. ayuno); recepción lo escribe al agendar.
+const instructionsBlock = (data: AppointmentEmailData) =>
+  data.instructions ? `<p><strong>Indicaciones:</strong> ${escapeHtml(data.instructions)}</p>` : "";
+
 // RN-84: el enlace abre una página con la cita; cambiarla o cancelarla es un paso aparte, así un programa que revise
-// los enlaces del correo no cancela nada.
-const manageBlock = (manageUrl: string) =>
-  `<p><a href="${escapeHtml(manageUrl)}" style="display:inline-block;padding:10px 16px;background:#0f5c63;color:#fff;border-radius:8px;text-decoration:none">Reprogramar o cancelar mi cita</a></p><p style="color:#666;font-size:12px">Este enlace es personal: quien lo tenga puede cambiar o cancelar la cita. No lo compartas.</p>`;
+// los enlaces del correo no cancela nada. D-70: las cirugías y los exámenes solo los cambia la clínica.
+const manageBlock = (data: AppointmentEmailData) =>
+  isProcedure(data.type)
+    ? `<p>Para reprogramar o cancelar esta cita, comunicate con la clinica.</p>`
+    : `<p><a href="${escapeHtml(data.manageUrl)}" style="display:inline-block;padding:10px 16px;background:#0f5c63;color:#fff;border-radius:8px;text-decoration:none">Reprogramar o cancelar mi cita</a></p><p style="color:#666;font-size:12px">Este enlace es personal: quien lo tenga puede cambiar o cancelar la cita. No lo compartas.</p>`;
 
 // D-66, RN-83: con este QR recepción registra la llegada. Si la cita se reprograma, el de este correo deja de servir.
 const checkInQrBlock = (qrUrl: string | null) =>
@@ -71,7 +87,11 @@ export const buildConfirmedEmail = (data: AppointmentEmailData): EmailContent =>
   subject: `${CLINIC_NAME}: cita agendada para ${data.patientName}`,
   html: emailLayout(
     "Tu cita esta agendada",
-    `${greeting(data.ownerName)}<p>Registramos esta cita:</p>${appointmentDetails(data)}<p>Si no puedes asistir, puedes reprogramarla o cancelarla desde tu cuenta o con este enlace:</p>${manageBlock(data.manageUrl)}`,
+    `${greeting(data.ownerName)}<p>Registramos esta cita:</p>${appointmentDetails(data)}${instructionsBlock(data)}${
+      isProcedure(data.type)
+        ? ""
+        : "<p>Si no puedes asistir, puedes reprogramarla o cancelarla desde tu cuenta o con este enlace:</p>"
+    }${manageBlock(data)}`,
   ),
 });
 
@@ -79,7 +99,7 @@ export const buildChangedEmail = (data: AppointmentEmailData): EmailContent => (
   subject: `${CLINIC_NAME}: cita modificada para ${data.patientName}`,
   html: emailLayout(
     "Tu cita fue modificada",
-    `${greeting(data.ownerName)}<p>Estos son los datos actualizados de tu cita:</p>${appointmentDetails(data)}${manageBlock(data.manageUrl)}`,
+    `${greeting(data.ownerName)}<p>Estos son los datos actualizados de tu cita:</p>${appointmentDetails(data)}${instructionsBlock(data)}${manageBlock(data)}`,
   ),
 });
 
@@ -97,7 +117,11 @@ export const buildReminderEmail = (data: AppointmentEmailData): EmailContent => 
   subject: `${CLINIC_NAME}: recordatorio de la cita de ${data.patientName}`,
   html: emailLayout(
     "Te recordamos tu cita",
-    `${greeting(data.ownerName)}<p>Tu cita es en las proximas 24 horas:</p>${appointmentDetails(data)}${checkInQrBlock(data.checkInQrUrl)}<p>Si no puedes asistir, reprogramala o cancelala para liberar la franja:</p>${manageBlock(data.manageUrl)}`,
+    `${greeting(data.ownerName)}<p>Tu cita es en las proximas 24 horas:</p>${appointmentDetails(data)}${instructionsBlock(data)}${checkInQrBlock(data.checkInQrUrl)}${
+      isProcedure(data.type)
+        ? ""
+        : "<p>Si no puedes asistir, reprogramala o cancelala para liberar la franja:</p>"
+    }${manageBlock(data)}`,
   ),
 });
 

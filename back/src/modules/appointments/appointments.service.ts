@@ -17,6 +17,7 @@ import type {
   CheckInCodeResponseDto,
   CheckInScanResultDto,
   CreateAppointmentRequestDto,
+  LinkedClinicalRecordDto,
   ListMyAppointmentsQueryDto,
   ManagedAppointmentDto,
   ReassignAppointmentRequestDto,
@@ -41,6 +42,7 @@ import { professionalFor } from "@/modules/appointments/appointment-types.servic
 import type { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
 import type { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
 import type { CheckInScanner } from "@/modules/appointments/check-in-scanner";
+import { isProcedure, PROCEDURE_RECEPTION_ONLY_MESSAGE } from "@/modules/appointments/procedures";
 import { overlapsBusy, scheduleCovers, slotsOfDay } from "@/modules/appointments/slots";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors";
 import {
@@ -69,6 +71,17 @@ const DAY_HOURS = 24;
 const professionalOf = (record: AppointmentRecord) => record.veterinarian ?? record.groomer;
 const kindOf = (record: AppointmentRecord): ProfessionalKind => professionalFor(record.type);
 
+// D-70: a lo sumo un registro clínico por cita (cada uno es único por cita).
+function linkedRecordOf(record: AppointmentRecord): LinkedClinicalRecordDto | null {
+  if (record.consultation) return { kind: "CONSULTATION", id: record.consultation.id };
+  if (record.grooming) return { kind: "GROOMING", id: record.grooming.id };
+  if (record.surgery) return { kind: "SURGERY", id: record.surgery.id };
+  if (record.labExam) {
+    return { kind: "LAB_EXAM", id: record.labExam.id, status: record.labExam.status };
+  }
+  return null;
+}
+
 function toResponse(record: AppointmentRecord, withOwner: boolean): AppointmentResponseDto {
   const professional = professionalOf(record);
   if (!professional) throw new Error(`La cita ${record.id} no tiene profesional`);
@@ -78,8 +91,12 @@ function toResponse(record: AppointmentRecord, withOwner: boolean): AppointmentR
     status: record.status,
     startsAt: record.startsAt,
     endsAt: record.endsAt,
+    durationMinutes: minutesBetween(record.startsAt, record.endsAt),
     reason: record.reason,
     cancelReason: record.cancelReason,
+    procedureName: record.procedureName,
+    instructions: record.instructions,
+    clinicalRecord: linkedRecordOf(record),
     patient: { id: record.patient.id, name: record.patient.name },
     professional: {
       id: professional.id,
@@ -105,7 +122,7 @@ export class AppointmentsService {
 
   async availability(query: AvailabilityQueryDto): Promise<AvailabilityResponseDto> {
     const kind = professionalFor(query.type);
-    const durationMinutes = await this.durationOf(query.type);
+    const durationMinutes = await this.durationFor(query.type, query.durationMinutes);
     const professionals = await this.repository.findProfessionals(kind, query.professionalId);
     if (query.professionalId && professionals.length === 0) {
       throw new NotFoundError("Profesional no encontrado");
@@ -150,12 +167,18 @@ export class AppointmentsService {
     if (!patient) throw new NotFoundError("Paciente no encontrado");
     await this.assertCanAccessOwner(actor, patient.ownerId);
     if (!patient.active) throw new ConflictError("El paciente esta desactivado");
+    if (isProcedure(dto.type) && actor.role !== Role.RECEPTIONIST) {
+      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-70
+    }
 
-    const durationMinutes = await this.durationOf(dto.type);
+    const durationMinutes = await this.durationFor(dto.type, dto.durationMinutes);
     const endsAt = addMinutes(dto.startsAt, durationMinutes);
     this.assertBookable(dto.startsAt);
 
-    const activeCount = await this.repository.countActiveFuture(patient.id, this.clock());
+    // RN-24 frena que un propietario acapare franjas; las cirugías y exámenes los agenda recepción y no cuentan.
+    const activeCount = isProcedure(dto.type)
+      ? 0
+      : await this.repository.countActiveFuture(patient.id, this.clock());
     if (activeCount >= MAX_ACTIVE_APPOINTMENTS_PER_PATIENT) {
       throw new ConflictError(
         `Esta mascota ya tiene ${MAX_ACTIVE_APPOINTMENTS_PER_PATIENT} citas activas`,
@@ -175,6 +198,8 @@ export class AppointmentsService {
           startsAt: dto.startsAt,
           endsAt,
           reason: dto.reason,
+          procedureName: dto.procedureName,
+          instructions: dto.instructions,
         });
         this.events.appointmentChanged(created.id);
         await this.notifier.appointmentEvent("CONFIRMED", created.id); // RN-35
@@ -201,11 +226,14 @@ export class AppointmentsService {
     withOwner: boolean,
   ): Promise<AppointmentResponseDto> {
     this.assertBookable(dto.startsAt);
+    if (dto.durationMinutes !== undefined && !isProcedure(appointment.type)) {
+      throw new ValidationError("La duracion solo se cambia en cirugias y examenes");
+    }
 
     const kind = kindOf(appointment);
     const endsAt = addMinutes(
       dto.startsAt,
-      minutesBetween(appointment.startsAt, appointment.endsAt),
+      dto.durationMinutes ?? minutesBetween(appointment.startsAt, appointment.endsAt),
     );
     const currentId = professionalOf(appointment)?.id;
     const candidates = await this.freeCandidates(
@@ -461,6 +489,15 @@ export class AppointmentsService {
     throw new ForbiddenError();
   }
 
+  // D-70: cirugías y exámenes llevan la duración de la cita; el resto, la configurada por tipo (RN-19).
+  private async durationFor(type: AppointmentType, requested: number | undefined): Promise<number> {
+    if (!isProcedure(type)) return this.durationOf(type);
+    if (requested === undefined) {
+      throw new ValidationError("La duracion es obligatoria para cirugias y examenes");
+    }
+    return requested;
+  }
+
   private async durationOf(type: AppointmentType): Promise<number> {
     const setting = await this.types.find(type);
     if (!setting) throw new NotFoundError("Tipo de cita no encontrado");
@@ -573,6 +610,9 @@ export class AppointmentsService {
   private async findModifiable(actor: Actor, id: string): Promise<AppointmentRecord> {
     const appointment = await this.findOrFail(id);
     await this.assertCanAccessOwner(actor, appointment.patient.ownerId);
+    if (actor.role === Role.OWNER && isProcedure(appointment.type)) {
+      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-70
+    }
     this.assertModifiable(appointment, actor.role === Role.OWNER);
     return appointment;
   }
@@ -585,6 +625,8 @@ export class AppointmentsService {
   // null = se puede cambiar. `enforceLead` es la restricción de 2 horas, que rige solo para el propietario.
   private blockedReasonOf(appointment: AppointmentRecord, enforceLead = true): string | null {
     if (!ACTIVE_STATUSES.includes(appointment.status)) return "La cita ya no admite cambios";
+    // D-70: quien llega por el enlace del correo (enforceLead) es el propietario y no cambia cirugías ni exámenes.
+    if (enforceLead && isProcedure(appointment.type)) return PROCEDURE_RECEPTION_ONLY_MESSAGE;
     const lead = addMinutes(this.clock(), MIN_APPOINTMENT_LEAD_HOURS * HOUR_MINUTES);
     if (enforceLead && appointment.startsAt <= lead) return CONTACT_CLINIC_MESSAGE;
     return null;

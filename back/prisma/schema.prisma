@@ -48,6 +48,14 @@ enum AppointmentType {
   VACCINATION
   CHECKUP
   GROOMING
+  SURGERY // D-70: solo la agenda recepción; la duración la fija cada cita, no AppointmentTypeSetting
+  LAB_EXAM // D-70
+}
+
+// D-70: un examen agendado queda en espera hasta que el veterinario carga los resultados en el mismo registro.
+enum LabExamStatus {
+  PENDING_RESULTS
+  WITH_RESULTS
 }
 
 enum AppointmentStatus {
@@ -234,6 +242,8 @@ model Appointment {
   status         AppointmentStatus @default(SCHEDULED) // RN-25
   reason         String?           @db.VarChar(200) // motivo libre del propietario o de recepción
   cancelReason   String?           @db.VarChar(200) // RN-30: obligatorio al cancelar
+  procedureName  String?           @db.VarChar(80) // D-70: solo cirugía y examen; cabe en Surgery.procedure (120) y LabExam.examType (80)
+  instructions   String?           @db.VarChar(500) // D-70: indicaciones para el propietario (p. ej. ayuno); mismo tope que los textos clínicos
   createdAt      DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
 
@@ -242,6 +252,8 @@ model Appointment {
   groomer       Groomer?         @relation(fields: [groomerId], references: [id], onDelete: Restrict)
   consultation  Consultation?
   grooming      GroomingService?
+  surgery       Surgery?
+  labExam       LabExam?
   notifications Notification[]
 
   @@index([patientId, startsAt]) // "mis citas" y límite de citas activas por mascota (RN-24)
@@ -276,9 +288,11 @@ model Consultation {
   @@index([patientId, createdAt]) // historial (RN-41)
 }
 
-// RN-50, D-34: procedimiento quirúrgico hecho por un veterinario; sin cita obligatoria ni costo (RF-20 no lo pide).
+// RN-50, D-34: procedimiento quirúrgico hecho por un veterinario; sin costo (RF-20 no lo pide). La cita es opcional:
+// si viene (D-70), es única por cita y la cierra como ATENDIDA.
 model Surgery {
   id             String   @id @default(uuid()) @db.Uuid
+  appointmentId  String?  @unique @db.Uuid
   patientId      String   @db.Uuid
   veterinarianId String   @db.Uuid
   procedure      String   @db.VarChar(120) // nombre del procedimiento, texto libre
@@ -286,6 +300,7 @@ model Surgery {
   notes          String?  @db.VarChar(1000) // mismo tope que la fórmula y las notas de la consulta
   createdAt      DateTime @default(now()) @db.Timestamptz(3)
 
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
   patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
   veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
 
@@ -310,16 +325,22 @@ model Hospitalization {
   @@index([patientId, admittedAt]) // historial (RN-41)
 }
 
-// RN-50, D-34: examen de laboratorio con sus resultados en texto libre (sin archivos adjuntos).
+// RN-50, D-34: examen de laboratorio con sus resultados en texto libre (sin archivos adjuntos). D-70: con cita, nace
+// PENDING_RESULTS sin resultados y pasa a WITH_RESULTS cuando el veterinario los carga (CHECK en la migración:
+// status, results y resultsAt van juntos).
 model LabExam {
-  id             String   @id @default(uuid()) @db.Uuid
-  patientId      String   @db.Uuid
-  veterinarianId String   @db.Uuid
-  examType       String   @db.VarChar(80) // p. ej. "Hemograma"
-  performedAt    DateTime @db.Date
-  results        String   @db.VarChar(1000)
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  id             String        @id @default(uuid()) @db.Uuid
+  appointmentId  String?       @unique @db.Uuid
+  patientId      String        @db.Uuid
+  veterinarianId String        @db.Uuid
+  examType       String        @db.VarChar(80) // p. ej. "Hemograma"
+  performedAt    DateTime      @db.Date
+  status         LabExamStatus @default(WITH_RESULTS)
+  results        String?       @db.VarChar(1000)
+  resultsAt      DateTime?     @db.Timestamptz(3) // cuándo se cargaron los resultados
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
 
+  appointment  Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
   patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
   veterinarian Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Restrict)
 

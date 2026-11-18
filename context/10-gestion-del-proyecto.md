@@ -60,6 +60,7 @@ Una historia está **hecha** cuando:
 | HU-22 | Como propietario, quiero actualizar mi perfil y registrar una nueva mascota | RF-15 | S | 3 | 3 |
 | HU-23 | Como estilista, quiero registrar los servicios estéticos realizados | RF-21 | C | 3 | 3 |
 | HU-24 | Como administrador, quiero un tablero de indicadores para tomar decisiones | RF-24 | C | 5 | 3 |
+| HU-25 | Como recepcionista, quiero agendar cirugías y exámenes de laboratorio para que el veterinario y el propietario los vean | RF-25 | S | 5 | 3 |
 
 ## 5. Sprint Backlog (objetivos)
 

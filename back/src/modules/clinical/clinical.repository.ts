@@ -1,4 +1,9 @@
-import { AppointmentStatus, Prisma } from "@prisma/client";
+import {
+  AppointmentStatus,
+  type AppointmentType,
+  type LabExamStatus,
+  Prisma,
+} from "@prisma/client";
 import { ConflictError } from "@/shared/errors";
 import { prisma } from "@/shared/prisma";
 
@@ -25,6 +30,7 @@ export type HospitalizationRecord = Prisma.HospitalizationGetPayload<{
 export type LabExamRecord = Prisma.LabExamGetPayload<{ include: typeof consultationInclude }>;
 
 export interface NewSurgeryData {
+  appointmentId?: string;
   patientId: string;
   veterinarianId: string;
   procedure: string;
@@ -40,11 +46,14 @@ export interface NewHospitalizationData {
 }
 
 export interface NewLabExamData {
+  appointmentId?: string;
   patientId: string;
   veterinarianId: string;
   examType: string;
   performedAt: Date;
-  results: string;
+  status: LabExamStatus;
+  results?: string; // sin resultados el examen queda PENDING_RESULTS (D-70)
+  resultsAt?: Date;
 }
 
 export interface HospitalizationListFilters {
@@ -56,9 +65,11 @@ export interface HospitalizationListFilters {
 
 export interface AppointmentForConsultation {
   id: string;
+  type: AppointmentType;
   status: AppointmentStatus;
   patientId: string;
   veterinarianId: string | null;
+  procedureName: string | null;
 }
 
 export interface NewConsultationData {
@@ -99,7 +110,14 @@ export class ClinicalRepository {
   findAppointment(id: string): Promise<AppointmentForConsultation | null> {
     return prisma.appointment.findUnique({
       where: { id },
-      select: { id: true, status: true, patientId: true, veterinarianId: true },
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        patientId: true,
+        veterinarianId: true,
+        procedureName: true,
+      },
     });
   }
 
@@ -198,12 +216,61 @@ export class ClinicalRepository {
     });
   }
 
+  // D-70: con cita, el procedimiento y el paso de la cita a ATENDIDA van en una sola transacción (RN-46).
   createSurgery(data: NewSurgeryData): Promise<SurgeryRecord> {
-    return prisma.surgery.create({ data, include: consultationInclude });
+    const { appointmentId } = data;
+    if (!appointmentId) return prisma.surgery.create({ data, include: consultationInclude });
+    return this.closingAppointment(appointmentId, "La cita ya tiene una cirugia registrada", (tx) =>
+      tx.surgery.create({ data, include: consultationInclude }),
+    );
   }
 
   createLabExam(data: NewLabExamData): Promise<LabExamRecord> {
-    return prisma.labExam.create({ data, include: consultationInclude });
+    const { appointmentId } = data;
+    if (!appointmentId) return prisma.labExam.create({ data, include: consultationInclude });
+    return this.closingAppointment(appointmentId, "La cita ya tiene un examen registrado", (tx) =>
+      tx.labExam.create({ data, include: consultationInclude }),
+    );
+  }
+
+  findLabExam(id: string): Promise<LabExamRecord | null> {
+    return prisma.labExam.findUnique({ where: { id }, include: consultationInclude });
+  }
+
+  // D-70: solo pasa de PENDING_RESULTS a WITH_RESULTS; false si otra petición ya cargó los resultados.
+  async loadLabExamResults(id: string, results: string, at: Date): Promise<LabExamRecord | null> {
+    const loaded = await prisma.labExam.updateMany({
+      where: { id, status: "PENDING_RESULTS" },
+      data: { status: "WITH_RESULTS", results, resultsAt: at },
+    });
+    return loaded.count === 0 ? null : this.findLabExam(id);
+  }
+
+  private closingAppointment<T>(
+    appointmentId: string,
+    duplicateMessage: string,
+    create: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return prisma
+      .$transaction(async (tx) => {
+        const closed = await tx.appointment.updateMany({
+          where: { id: appointmentId, status: AppointmentStatus.CONFIRMED },
+          data: { status: AppointmentStatus.ATTENDED },
+        });
+        if (closed.count === 0) {
+          throw new ConflictError("Solo se registra el procedimiento sobre una cita confirmada");
+        }
+        return create(tx);
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === UNIQUE_VIOLATION
+        ) {
+          throw new ConflictError(duplicateMessage);
+        }
+        throw error;
+      });
   }
 
   // RN-50: el índice único parcial de la migración impide dos internaciones abiertas de la misma mascota.

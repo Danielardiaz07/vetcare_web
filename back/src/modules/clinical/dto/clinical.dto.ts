@@ -1,3 +1,4 @@
+import type { LabExamStatus } from "@prisma/client";
 import { z } from "zod";
 import { ClinicalLimit, FieldLimit } from "@/config/constants";
 import { dateField, moneyField } from "@/shared/schemas/fields";
@@ -53,12 +54,35 @@ const pastOrTodayDateField = dateField.refine(
   "La fecha no puede ser futura",
 );
 
-export const createSurgeryRequestSchema = z.object({
-  patientId: z.uuid("Identificador invalido"),
-  procedure: requiredText("El procedimiento", ClinicalLimit.PROCEDURE_MAX),
-  performedAt: pastOrTodayDateField,
-  notes: optionalText("Las notas", ClinicalLimit.LONG_TEXT_MAX),
-});
+const requiredWithoutAppointment = (
+  dto: { appointmentId?: string },
+  values: Record<string, unknown>,
+  ctx: z.RefinementCtx,
+) => {
+  if (dto.appointmentId) return;
+  for (const [field, value] of Object.entries(values)) {
+    if (value === undefined) {
+      ctx.addIssue({ code: "custom", path: [field], message: "El campo es obligatorio" });
+    }
+  }
+};
+
+// D-70: con cita, el procedimiento y la fecha salen de ella si no se envían; desde la ficha (sin cita) son obligatorios.
+export const createSurgeryRequestSchema = z
+  .object({
+    patientId: z.uuid("Identificador invalido"),
+    appointmentId: z.uuid("Identificador invalido").optional(),
+    procedure: requiredText("El procedimiento", ClinicalLimit.PROCEDURE_MAX).optional(),
+    performedAt: pastOrTodayDateField.optional(),
+    notes: optionalText("Las notas", ClinicalLimit.LONG_TEXT_MAX),
+  })
+  .superRefine((dto, ctx) =>
+    requiredWithoutAppointment(
+      dto,
+      { procedure: dto.procedure, performedAt: dto.performedAt },
+      ctx,
+    ),
+  );
 
 // El ingreso y el egreso toman la hora del servidor.
 export const createHospitalizationRequestSchema = z.object({
@@ -77,12 +101,26 @@ export const listHospitalizationsQuerySchema = paginationQuerySchema.extend({
   patientId: z.uuid("Identificador invalido").optional(),
 });
 
-export const createLabExamRequestSchema = z.object({
-  patientId: z.uuid("Identificador invalido"),
-  examType: requiredText("El tipo de examen", ClinicalLimit.EXAM_TYPE_MAX),
-  performedAt: pastOrTodayDateField,
-  results: requiredText("Los resultados", ClinicalLimit.LONG_TEXT_MAX),
-});
+const resultsField = requiredText("Los resultados", ClinicalLimit.LONG_TEXT_MAX);
+
+// D-70: con cita, sin resultados el examen queda en espera de resultados; desde la ficha (sin cita) todo es obligatorio.
+export const createLabExamRequestSchema = z
+  .object({
+    patientId: z.uuid("Identificador invalido"),
+    appointmentId: z.uuid("Identificador invalido").optional(),
+    examType: requiredText("El tipo de examen", ClinicalLimit.EXAM_TYPE_MAX).optional(),
+    performedAt: pastOrTodayDateField.optional(),
+    results: resultsField.optional(),
+  })
+  .superRefine((dto, ctx) =>
+    requiredWithoutAppointment(
+      dto,
+      { examType: dto.examType, performedAt: dto.performedAt, results: dto.results },
+      ctx,
+    ),
+  );
+
+export const loadLabResultsRequestSchema = z.object({ results: resultsField });
 
 export const HISTORY_TYPES = [
   "CONSULTATION",
@@ -114,6 +152,7 @@ export type DischargeHospitalizationRequestDto = z.infer<
 >;
 export type ListHospitalizationsQueryDto = z.infer<typeof listHospitalizationsQuerySchema>;
 export type CreateLabExamRequestDto = z.infer<typeof createLabExamRequestSchema>;
+export type LoadLabResultsRequestDto = z.infer<typeof loadLabResultsRequestSchema>;
 
 export type { VaccineStatus } from "@/shared/utils/vaccine-status"; // RN-49
 
@@ -154,6 +193,7 @@ export interface VaccineResponseDto {
 
 export interface SurgeryResponseDto {
   id: string;
+  appointmentId: string | null;
   patientId: string;
   veterinarian: { id: string; firstNames: string; lastNames: string };
   procedure: string;
@@ -185,11 +225,14 @@ export interface HospitalizationResponseDto {
 
 export interface LabExamResponseDto {
   id: string;
+  appointmentId: string | null;
   patientId: string;
   veterinarian: { id: string; firstNames: string; lastNames: string };
   examType: string;
   performedAt: string;
-  results: string;
+  status: LabExamStatus; // D-70: PENDING_RESULTS mientras el veterinario no cargue los resultados
+  results: string | null;
+  resultsAt: Date | null;
   createdAt: Date;
 }
 

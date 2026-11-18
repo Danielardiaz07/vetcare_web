@@ -1,4 +1,9 @@
-import { AppointmentStatus, Prisma, type AppointmentType, type PaymentMethod } from "@prisma/client";
+import {
+  AppointmentStatus,
+  Prisma,
+  type AppointmentType,
+  type PaymentMethod,
+} from "@prisma/client";
 import { VACCINE_DUE_SOON_DAYS } from "@/config/constants";
 import type {
   DashboardQueryDto,
@@ -21,6 +26,8 @@ const TYPE_LABEL: Record<AppointmentType, string> = {
   VACCINATION: "Vacunación",
   CHECKUP: "Control",
   GROOMING: "Estética",
+  SURGERY: "Cirugía",
+  LAB_EXAM: "Examen de laboratorio",
 };
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   CASH: "Efectivo",
