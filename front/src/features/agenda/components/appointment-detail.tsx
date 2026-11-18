@@ -9,10 +9,13 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { durationOf } from "@/features/agenda/components/agenda-item";
 import { BookingDetails } from "@/features/appointments/components/booking-details";
+import { CancelForm } from "@/features/appointments/components/cancel-dialog";
+import { RescheduleForm } from "@/features/appointments/components/reschedule-form";
 import { appointmentErrorMessage, isSlotTaken } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
 import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
+import { appointmentLabStatus, isProcedureAppointment } from "@/lib/appointment-procedures";
 import { clinicDateOf, formatClinicTime, formatLongDate, noShowFrom } from "@/lib/clinic-time";
 import { NO_SHOW_GRACE_MINUTES, ROUTES } from "@/lib/constants";
 import {
@@ -43,6 +46,10 @@ export function AppointmentDetail({
   onClose,
   onChanged,
 }: AppointmentDetailProps) {
+  const pendingResults =
+    appointment?.status === "ATTENDED" &&
+    appointment.clinicalRecord?.kind === "LAB_EXAM" &&
+    appointment.clinicalRecord.status === "PENDING_RESULTS";
   return (
     <Modal open={appointment !== null} title="Detalle de la cita" onClose={onClose}>
       {appointment && (
@@ -51,12 +58,12 @@ export function AppointmentDetail({
           {canManage && isActive(appointment) && (
             <Actions key={appointment.id} appointment={appointment} onChanged={onChanged} />
           )}
-          {canAttend && appointment.status === "CONFIRMED" && (
+          {canAttend && (appointment.status === "CONFIRMED" || pendingResults) && (
             <Link
               href={`${ROUTES.panelAppointmentAttention(appointment.id)}?date=${clinicDateOf(new Date(appointment.startsAt))}`}
               className="inline-flex min-h-11 items-center justify-center self-start rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
             >
-              Registrar atención
+              {pendingResults ? "Cargar resultados" : "Registrar atención"}
             </Link>
           )}
         </div>
@@ -79,7 +86,7 @@ function useNow(): Date {
   return now;
 }
 
-type Mode = "actions" | "no-show" | "reassign";
+type Mode = "actions" | "no-show" | "reassign" | "reschedule" | "cancel";
 
 type ActionsProps = {
   appointment: Appointment;
@@ -93,18 +100,46 @@ function Actions({ appointment, onChanged }: ActionsProps) {
   const now = useNow();
   const noShowAt = noShowFrom(appointment.startsAt);
   const canMarkNoShow = now >= new Date(noShowAt);
+  const isProcedure = isProcedureAppointment(appointment.type);
+
+  function finish(updated: Appointment, message: string) {
+    onChanged(updated, message);
+    setMode("actions");
+  }
 
   async function run(action: () => Promise<Appointment>, message: string) {
     setBusy(true);
     setError(null);
     try {
-      onChanged(await action(), message);
-      setMode("actions");
+      finish(await action(), message);
     } catch (failure) {
       setError(appointmentErrorMessage(failure));
     } finally {
       setBusy(false);
     }
+  }
+
+  if (mode === "reschedule") {
+    return (
+      <RescheduleForm
+        appointment={appointment}
+        onCancel={() => setMode("actions")}
+        onRescheduled={(updated) => finish(updated, "Cita reprogramada")}
+      />
+    );
+  }
+
+  if (mode === "cancel") {
+    return (
+      <section className="flex flex-col gap-4 border-t border-line pt-4">
+        <h3 className="font-semibold text-ink">¿Cancelar esta cita?</h3>
+        <CancelForm
+          appointment={appointment}
+          onClose={() => setMode("actions")}
+          onCancelled={(updated) => finish(updated, "Cita cancelada")}
+        />
+      </section>
+    );
   }
 
   if (mode === "reassign") {
@@ -170,6 +205,16 @@ function Actions({ appointment, onChanged }: ActionsProps) {
         <Button variant="secondary" disabled={busy} onClick={() => setMode("reassign")}>
           Reasignar profesional
         </Button>
+        {isProcedure && (
+          <>
+            <Button variant="secondary" disabled={busy} onClick={() => setMode("reschedule")}>
+              Reprogramar
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => setMode("cancel")}>
+              Cancelar cita
+            </Button>
+          </>
+        )}
       </div>
       {!canMarkNoShow && (
         <p id="no-show-hint" className="text-sm text-muted">
@@ -286,7 +331,9 @@ function ReassignForm({ appointment, onBack, onChanged }: ReassignFormProps) {
 }
 
 function detailRows(appointment: Appointment) {
-  const { startsAt, endsAt, owner, reason, cancelReason } = appointment;
+  const { startsAt, endsAt, owner, reason, cancelReason, procedureName, instructions } =
+    appointment;
+  const labStatus = appointmentLabStatus(appointment);
   return [
     { label: "Mascota", value: appointment.patient.name },
     ...(owner
@@ -296,12 +343,15 @@ function detailRows(appointment: Appointment) {
         ]
       : []),
     { label: "Tipo de cita", value: APPOINTMENT_TYPE_LABELS[appointment.type] },
+    ...(procedureName ? [{ label: "Procedimiento", value: procedureName }] : []),
     { label: "Profesional", value: ownerFullName(appointment.professional) },
     { label: "Estado", value: APPOINTMENT_STATUS[appointment.status].label },
+    ...(labStatus ? [{ label: "Laboratorio", value: labStatus.label }] : []),
     { label: "Fecha", value: formatLongDate(clinicDateOf(new Date(startsAt))) },
     { label: "Hora", value: `${formatClinicTime(startsAt)} a ${formatClinicTime(endsAt)}` },
     { label: "Duración", value: durationLabel(durationOf(appointment)) },
     ...(reason ? [{ label: "Motivo", value: reason }] : []),
+    ...(instructions ? [{ label: "Indicaciones para el propietario", value: instructions }] : []),
     ...(cancelReason ? [{ label: "Motivo de la cancelación", value: cancelReason }] : []),
   ];
 }

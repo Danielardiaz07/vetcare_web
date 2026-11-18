@@ -138,12 +138,23 @@ export function ManageAppointment({ token }: { token: string }) {
             <BookingDetails
               rows={[
                 { label: "Servicio", value: APPOINTMENT_TYPE_LABELS[state.data.appointment.type] },
+                ...(state.data.appointment.procedureName
+                  ? [{ label: "Procedimiento", value: state.data.appointment.procedureName }]
+                  : []),
                 { label: "Profesional", value: ownerFullName(state.data.appointment.professional) },
                 {
                   label: "Fecha",
                   value: formatLongDate(clinicDateOf(new Date(state.data.appointment.startsAt))),
                 },
                 { label: "Hora", value: formatClinicTime(state.data.appointment.startsAt) },
+                ...(state.data.appointment.instructions
+                  ? [
+                      {
+                        label: "Indicaciones de la clínica",
+                        value: state.data.appointment.instructions,
+                      },
+                    ]
+                  : []),
               ]}
             />
           </div>

@@ -5,13 +5,13 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Select } from "@/components/ui/select";
 import { BookingReceipt } from "@/features/appointments/components/booking-receipt";
 import { ChoiceButton } from "@/features/appointments/components/choice-button";
 import { DateTimeAvailability } from "@/features/appointments/components/date-time-availability";
+import { NewPetButton } from "@/features/appointments/components/new-pet-button";
 import { ReviewStep } from "@/features/appointments/components/review-step";
 import {
   appointmentErrorMessage,
@@ -41,7 +41,7 @@ import { listAppointmentTypes } from "@/services/staff";
 import type { Appointment, AppointmentTypeSetting, Patient, Professional } from "@/types/domain";
 
 type Load<T> = { status: "loading" | "ready" | "error"; items: T[]; key?: string };
-type Phase = "form" | "pet" | "review";
+type Phase = "form" | "pet" | "new-pet" | "review";
 type GuestPet = Pick<PatientFormInput, "name" | "species">;
 const guestSchema = patientSchema.pick({ name: true, species: true });
 const normalizedPetName = (name: string) =>
@@ -195,7 +195,7 @@ export function LandingBookingForm() {
   ]);
 
   useEffect(() => {
-    if (phase !== "form") headingRef.current?.focus({ preventScroll: true });
+    if (phase !== "form") headingRef.current?.focus({ preventScroll: phase !== "new-pet" });
   }, [phase]);
 
   if (!draft || status === "loading") return <LoadingState rows={3} />;
@@ -233,10 +233,7 @@ export function LandingBookingForm() {
         ? ownerFullName(professional)
         : "Por elegir";
   const petName = pet?.name ?? draft.petName.trim();
-  const hasNewPet =
-    !user ||
-    draft.petId === NEW_PET ||
-    (pets.status === "ready" && pets.key === ownerId && mine.length === 0);
+  const registeringPet = phase === "new-pet";
 
   function edit() {
     setPhase("form");
@@ -255,17 +252,17 @@ export function LandingBookingForm() {
       (current) =>
         current && { ...current, petId: saved.id, petName: saved.name, species: saved.species },
     );
-    setPhase("review");
+    setPhase(registeringPet ? "form" : "review");
   }
 
   async function review(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    if (user && !pet && !hasNewPet) {
+    if (user && !pet) {
       setError("Elige una mascota de tu cuenta o registra una nueva para continuar.");
       return;
     }
-    if (hasNewPet && !(await trigger())) return;
+    if (!user && !(await trigger())) return;
     if (!setting || !draft?.professionalId || !draft.slot) {
       setError("Elige el tipo de cita, el profesional y una hora disponible para continuar.");
       return;
@@ -279,7 +276,7 @@ export function LandingBookingForm() {
       openLogin();
       return;
     }
-    setPhase(pet ? "review" : "pet");
+    setPhase("review");
   }
 
   async function confirm(text: string) {
@@ -386,40 +383,55 @@ export function LandingBookingForm() {
   const ambiguous = phase === "pet" && matchingPets.length > 1 && draft.petId !== NEW_PET;
   const choices = ambiguous ? matchingPets : mine;
   const petChoices = (
-    <div role="group" aria-label="Mascotas registradas" className="grid gap-2 sm:grid-cols-2">
-      {choices.map((item) => (
-        <ChoiceButton
-          key={item.id}
-          selected={draft.petId === item.id}
-          label={item.name}
-          detail={`${SPECIES_LABELS[item.species]} · ${item.breed} · ${SEX_LABELS[item.sex]} · ${formatDate(item.birthDate)}`}
-          onSelect={() => {
-            setDraft((current) => current && { ...current, petId: item.id });
-            setError(null);
-          }}
-        />
-      ))}
+    <div className="flex flex-col gap-3">
+      {choices.length > 0 && (
+        <div role="group" aria-label="Mascotas registradas" className="grid gap-2 sm:grid-cols-2">
+          {choices.map((item) => (
+            <ChoiceButton
+              key={item.id}
+              selected={draft.petId === item.id}
+              label={item.name}
+              detail={`${SPECIES_LABELS[item.species]} · ${item.breed} · ${SEX_LABELS[item.sex]} · ${formatDate(item.birthDate)}`}
+              onSelect={() => {
+                setDraft((current) => current && { ...current, petId: item.id });
+                setError(null);
+              }}
+            />
+          ))}
+        </div>
+      )}
       {!ambiguous && (
-        <ChoiceButton
-          selected={draft.petId === NEW_PET}
-          label="Registrar una nueva mascota"
-          onSelect={() => setDraft((current) => current && { ...current, petId: NEW_PET })}
+        <NewPetButton
+          onClick={() => {
+            setError(null);
+            if (phase === "pet") {
+              setDraft((current) => current && { ...current, petId: NEW_PET });
+            } else {
+              setPhase("new-pet");
+            }
+          }}
         />
       )}
     </div>
   );
 
-  if (phase === "pet") {
+  if (phase === "pet" || registeringPet) {
     return (
       <section className="flex flex-col gap-4 rounded-card bg-surface p-5 shadow-soft sm:p-6">
         <h3 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">
-          {draft.petId === NEW_PET ? "Completa la ficha de tu mascota" : "Elige tu mascota"}
+          {registeringPet
+            ? "Nueva mascota"
+            : draft.petId === NEW_PET
+              ? "Completa la ficha de tu mascota"
+              : "Elige tu mascota"}
         </h3>
-        <p className="text-sm text-muted">
-          {ambiguous
-            ? "Tienes más de una mascota con ese nombre y especie. Elige la correcta para continuar."
-            : "Conservamos los datos de tu cita. Completa la ficha de tu mascota para pasar al resumen y confirmar."}
-        </p>
+        {!registeringPet && (
+          <p className="text-sm text-muted">
+            {ambiguous
+              ? "Tienes más de una mascota con ese nombre y especie. Elige la correcta para continuar."
+              : "Conservamos los datos de tu cita. Completa la ficha de tu mascota para pasar al resumen y confirmar."}
+          </p>
+        )}
         {pets.status === "loading" || pets.key !== ownerId ? (
           <LoadingState rows={2} />
         ) : pets.status === "error" ? (
@@ -430,12 +442,16 @@ export function LandingBookingForm() {
           </>
         ) : (
           <>
-            {draft.petId === NEW_PET || mine.length === 0 ? (
+            {registeringPet || draft.petId === NEW_PET || mine.length === 0 ? (
               <PatientForm
-                initialValues={{
-                  name: draft.petName,
-                  ...(draft.species && { species: draft.species }),
-                }}
+                initialValues={
+                  registeringPet
+                    ? undefined
+                    : {
+                        name: draft.petName,
+                        ...(draft.species && { species: draft.species }),
+                      }
+                }
                 createMine={createMyPatient}
                 onCancel={edit}
                 onSaved={markPet}
@@ -479,7 +495,7 @@ export function LandingBookingForm() {
         ) : (
           user && <>{petChoices}</>
         )}
-        {hasNewPet && (
+        {!user && (
           <div className="grid items-start gap-3 @min-[28rem]:grid-cols-2">
             <Field
               label="Nombre de tu mascota"
@@ -612,45 +628,29 @@ export function LandingBookingForm() {
       </fieldset>
       <fieldset className="min-w-0">
         <legend className="mb-3 font-semibold">4. Fecha y hora</legend>
-        {draft.type && draft.professionalId ? (
-          <DateTimeAvailability
-            type={draft.type}
-            {...(draft.professionalId !== ANY_PROFESSIONAL && {
-              professionalId: draft.professionalId,
-            })}
-            dates={dates}
-            date={draft.date}
-            slot={draft.slot}
-            refreshKey={refreshKey}
-            onChange={(date, slot) => {
-              setDraft(
-                (current) =>
-                  current && {
-                    ...current,
-                    date,
-                    slot: slot && { startsAt: slot.startsAt, endsAt: slot.endsAt },
-                  },
-              );
-              setError(null);
-            }}
-          />
-        ) : (
-          <div className="grid items-start gap-5 @min-[30rem]:grid-cols-2">
-            <DatePicker
-              variant="inline"
-              label="Fecha"
-              value={draft.date}
-              min={dates[0]}
-              max={dates.at(-1)}
-              onChange={(date) =>
-                setDraft((current) => current && { ...current, date, slot: null })
-              }
-            />
-            <p className="text-sm text-muted">
-              Elige el tipo de cita y el profesional para consultar las horas disponibles.
-            </p>
-          </div>
-        )}
+        <DateTimeAvailability
+          type={draft.professionalId ? draft.type : null}
+          professionalId={
+            draft.professionalId === ANY_PROFESSIONAL
+              ? undefined
+              : (draft.professionalId ?? undefined)
+          }
+          dates={dates}
+          date={draft.date}
+          slot={draft.slot}
+          refreshKey={refreshKey}
+          onChange={(date, slot) => {
+            setDraft(
+              (current) =>
+                current && {
+                  ...current,
+                  date,
+                  slot: slot && { startsAt: slot.startsAt, endsAt: slot.endsAt },
+                },
+            );
+            setError(null);
+          }}
+        />
       </fieldset>
       {errorNotice}
       <div className="flex flex-col gap-3 border-t border-line pt-4">

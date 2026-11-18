@@ -10,6 +10,7 @@ export type IconName =
   | "receipt"
   | "user"
   | "paw"
+  | "plus"
   | "download"
   | "close"
   | "chevron-right"
@@ -45,6 +46,7 @@ export type IconName =
 const ICON_SIZE = 24;
 
 const PATHS: Record<IconName, ReactNode> = {
+  plus: <path d="M12 5v14M5 12h14" />,
   "qr-code": (
     <>
       <rect x="3" y="3" width="6" height="6" rx="1" />

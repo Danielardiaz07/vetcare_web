@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
+import { appointmentLabStatus } from "@/lib/appointment-procedures";
 import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
 import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
 import { registerArrival } from "@/services/appointments";
@@ -486,6 +487,8 @@ function AppointmentTile({
   const status = APPOINTMENT_STATUS[appointment.status];
   const time = formatClinicTime(appointment.startsAt);
   const type = APPOINTMENT_TYPE_LABELS[appointment.type];
+  const service = appointment.procedureName ? `${type} · ${appointment.procedureName}` : type;
+  const labStatus = appointmentLabStatus(appointment);
   const inactive = appointment.status === "CANCELLED" || appointment.status === "NO_SHOW";
   const confirmed = appointment.status === "CONFIRMED";
   const canArrive = Boolean(onArrive) && appointment.status === "SCHEDULED";
@@ -500,14 +503,15 @@ function AppointmentTile({
         <button
           type="button"
           onClick={() => onOpen(appointment)}
-          aria-label={`${time}, ${appointment.patient.name}, ${type}, ${status.label}. Ver detalle`}
+          aria-label={`${time}, ${appointment.patient.name}, ${service}, ${status.label}${labStatus ? `, ${labStatus.label}` : ""}. Ver detalle`}
+          title={appointment.procedureName ? service : undefined}
           className="flex min-h-11 w-full min-w-0 flex-col items-start justify-center gap-1 rounded-md text-left transition-colors hover:bg-ink/5"
         >
           <span className={cn("w-full truncate text-sm font-semibold", inactive && "text-muted")}>
             {appointment.patient.name}
           </span>
           <span className="w-full truncate text-xs text-muted">
-            {time} · {type}
+            {time} · {appointment.procedureName ?? type}
           </span>
         </button>
         <div className="flex min-h-8 min-w-0 items-center justify-between gap-1">
@@ -540,6 +544,11 @@ function AppointmentTile({
             <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-success">
               <Icon name="check" className="size-3" />
               En sala
+            </span>
+          )}
+          {labStatus && (
+            <span title={labStatus.label} className="truncate text-xs text-muted">
+              {labStatus.label}
             </span>
           )}
         </div>

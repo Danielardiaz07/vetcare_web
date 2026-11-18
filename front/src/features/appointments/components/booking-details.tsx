@@ -7,7 +7,7 @@ export function BookingDetails({ rows }: { rows: DetailRow[] }) {
       {rows.map(({ label, value }) => (
         <div key={label} className="flex flex-col gap-1">
           <dt className="text-sm text-subtle">{label}</dt>
-          <dd className="font-semibold text-ink">{value}</dd>
+          <dd className="font-semibold whitespace-pre-line break-words text-ink">{value}</dd>
         </div>
       ))}
     </dl>
