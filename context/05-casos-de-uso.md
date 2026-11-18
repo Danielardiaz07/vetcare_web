@@ -37,6 +37,8 @@ Módulos: M1 Seguridad y acceso · M2 Portal del propietario · M3 Gestión · M
 | CU-27 | Gestionar inventario | Administrador | RF-22 |
 | CU-28 | Generar factura | Recepcionista | RF-23 |
 | CU-29 | Consultar reportes e indicadores | Administrador | RF-24 |
+| CU-30 | Programar cirugía o examen de laboratorio | Recepcionista | RF-25 |
+| CU-31 | Cargar resultados de un examen en espera | Veterinario | RF-25 |
 
 ## Especificación de los CU principales
 

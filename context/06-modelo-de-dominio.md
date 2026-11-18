@@ -38,7 +38,7 @@ Documentación en español; código, tablas, columnas y endpoints en inglés.
 | `PrescriptionItem` | Medicamento formulado con cantidad | Referencia `Medication` |
 | `Medication` / `Vaccine` | Inventario con stock y vencimiento | Referenciados por fórmulas, vacunaciones y detalles de factura |
 | `Vaccination` | Vacuna aplicada, lote, fecha, próxima dosis | Paciente, veterinario, `Vaccine` |
-| `Surgery` / `Hospitalization` / `LabExam` | Procedimientos, ingreso/egreso, resultados | Asociados al paciente |
+| `Surgery` / `Hospitalization` / `LabExam` | Procedimientos, ingreso/egreso, resultados | Asociados al paciente; `Surgery` y `LabExam` pueden vincularse a una `Appointment` de cirugía o examen, y `LabExam` guarda su `LabExamStatus` (D-71) |
 | `GroomingService` | Baño, corte o peluquería | Paciente, estilista |
 | `Invoice` / `InvoiceItem` | Cobro con cálculo de IVA y anulación | `Invoice` se compone de 1..* `InvoiceItem`; cada ítem referencia su concepto de origen |
 | `Notification` | Correo programado o enviado | Asociada a una `Appointment` (o a una vacunación) |
@@ -53,7 +53,8 @@ Valores cerrados → `enum` (o catálogo). Derivadas de `specs.pdf`; confirmar a
 | `Role` | `OWNER`, `RECEPTIONIST`, `VETERINARIAN`, `GROOMER`, `ADMIN` |
 | `UserStatus` | `PENDING`, `ACTIVE`, `SUSPENDED` (+ bloqueo temporal por intentos, RN-08) |
 | `AppointmentStatus` | `SCHEDULED` (PROGRAMADA), `CONFIRMED` (CONFIRMADA), `ATTENDED` (ATENDIDA), `CANCELLED` (CANCELADA), `NO_SHOW` (NO_ASISTIO) |
-| `AppointmentType` | `GENERAL_CONSULTATION`, `VACCINATION`, `CHECKUP` (control), `GROOMING` |
+| `AppointmentType` | `GENERAL_CONSULTATION`, `VACCINATION`, `CHECKUP` (control), `GROOMING`, `SURGERY`, `LAB_EXAM` (solo recepción y con duración propia, RN-86, D-71) |
+| `LabExamStatus` | `PENDING_RESULTS` (en espera de resultados), `WITH_RESULTS` (con resultados); un examen con cita nace en espera (RN-87, D-71) |
 | `PaymentMethod` | `CASH`, `CARD`, `TRANSFER` |
 | `InvoiceStatus` | `PAID`, `VOIDED` |
 | `VaccineStatus` | `UP_TO_DATE`, `DUE_SOON`, `OVERDUE` (**derivado**, no se persiste: se calcula con la próxima dosis, RN-49) |

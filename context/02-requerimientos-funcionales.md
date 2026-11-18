@@ -30,6 +30,7 @@
 | RF-22 | Inventario | Gestionar medicamentos y vacunas | CRUD con stock, precio y vencimiento; alerta de stock crítico y productos por vencer | Administrador | S |
 | RF-23 | Facturación | Generar factura | Factura de un propietario con detalle de consultas, servicios y medicamentos; subtotal, IVA y total; método de pago | Recepcionista (D-42) | M |
 | RF-24 | Reportes | Consultar reportes e indicadores | Tablero: citas por estado, inasistencias, servicios más solicitados, ingresos por periodo | Administrador | C |
+| RF-25 | Citas | Programar cirugías y exámenes de laboratorio | Recepción agenda, reprograma y cancela citas de cirugía y de examen (mascota, procedimiento, fecha, hora, duración y veterinario); aparecen en la agenda de recepción, en la del veterinario y en Mis citas, con indicaciones por correo; el veterinario registra el procedimiento desde la cita y el examen pasa de en espera a con resultados (D-71) | Recepcionista, veterinario | S |
 
 ## 2. Especificación detallada de los RF principales
 
@@ -121,3 +122,4 @@ Flujo central: **cuenta → cita → atención → factura**.
 | RF-22 | HU-18 | CU-27 | 3 |
 | RF-23 | HU-16 | CU-28 | 3 |
 | RF-24 | HU-24 | CU-29 | 3 |
+| RF-25 | HU-25 | CU-30, CU-31 | 3 |

@@ -10,6 +10,7 @@ import type {
   DischargeHospitalizationRequestDto,
   HistoryQueryDto,
   ListHospitalizationsQueryDto,
+  LoadLabResultsRequestDto,
 } from "@/modules/clinical/dto/clinical.dto";
 import type { ClinicalService } from "@/modules/clinical/clinical.service";
 
@@ -53,6 +54,16 @@ export class ClinicalController {
   createLabExam: RequestHandler = async (req, res) => {
     const exam = await this.service.createLabExam(req.user!, req.body as CreateLabExamRequestDto);
     res.status(HttpStatus.CREATED).json(exam);
+  };
+
+  loadLabResults: RequestHandler = async (req, res) => {
+    res.json(
+      await this.service.loadLabResults(
+        req.user!,
+        String(req.params.id),
+        req.body as LoadLabResultsRequestDto,
+      ),
+    );
   };
 
   admit: RequestHandler = async (req, res) => {

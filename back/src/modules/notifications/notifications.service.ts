@@ -73,6 +73,8 @@ function appointmentData(
     professional: professional ? `${professional.firstNames} ${professional.lastNames}` : "",
     reason: appointment.reason,
     cancelReason: appointment.cancelReason,
+    procedureName: appointment.procedureName,
+    instructions: appointment.instructions,
   };
 }
 

@@ -49,6 +49,11 @@ const appointmentInclude = {
   },
   veterinarian: { select: professionalSelect },
   groomer: { select: professionalSelect },
+  // D-71: el registro clínico vinculado, para que la agenda y "Mis citas" lo enlacen sin otra consulta.
+  consultation: { select: { id: true } },
+  grooming: { select: { id: true } },
+  surgery: { select: { id: true } },
+  labExam: { select: { id: true, status: true } },
 } satisfies Prisma.AppointmentInclude;
 
 export type AppointmentRecord = Prisma.AppointmentGetPayload<{
@@ -88,6 +93,8 @@ export interface NewAppointmentData {
   startsAt: Date;
   endsAt: Date;
   reason?: string;
+  procedureName?: string;
+  instructions?: string;
 }
 
 export interface AppointmentChanges {

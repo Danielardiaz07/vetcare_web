@@ -1,4 +1,4 @@
-import { AppointmentStatus, Role } from "@prisma/client";
+import { AppointmentStatus, LabExamStatus, Role } from "@prisma/client";
 import { WEIGHT_ALERT_PERCENT } from "@/config/constants";
 import type {
   ConsultationResponseDto,
@@ -14,6 +14,7 @@ import type {
   HospitalizationResponseDto,
   LabExamResponseDto,
   ListHospitalizationsQueryDto,
+  LoadLabResultsRequestDto,
   SurgeryResponseDto,
   VaccinationCardEntryDto,
   VaccinationResponseDto,
@@ -21,6 +22,7 @@ import type {
   WeightTrendResponseDto,
 } from "@/modules/clinical/dto/clinical.dto";
 import type {
+  AppointmentForConsultation,
   ClinicalRepository,
   ConsultationRecord,
   HistoryFilters,
@@ -30,7 +32,8 @@ import type {
   VaccinationRecord,
 } from "@/modules/clinical/clinical.repository";
 import type { IAppointmentEvents } from "@/modules/appointments/appointment-events.interface";
-import { ConflictError, ForbiddenError, NotFoundError } from "@/shared/errors";
+import { isProcedure } from "@/modules/appointments/procedures";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors";
 import { addDays, clinicDateOf, clinicInstant } from "@/shared/utils/clinic-time";
 import { paginate, skipOf, type Paginated } from "@/shared/utils/pagination";
 import { vaccineStatusOf } from "@/shared/utils/vaccine-status";
@@ -41,6 +44,8 @@ export interface Actor {
   role: Role;
 }
 
+const PROCEDURE_APPOINTMENT_MESSAGE =
+  "La cita es de cirugia o examen: registra el procedimiento desde la cita"; // D-71
 const ISO_DATE_LENGTH = 10;
 const isoDate = (value: Date) => value.toISOString().slice(0, ISO_DATE_LENGTH);
 const utcMidnight = (date: string) => new Date(`${date}T00:00:00.000Z`);
@@ -99,6 +104,7 @@ function toVaccineResponse(record: {
 function toSurgeryResponse(record: SurgeryRecord): SurgeryResponseDto {
   return {
     id: record.id,
+    appointmentId: record.appointmentId,
     patientId: record.patientId,
     veterinarian: record.veterinarian,
     procedure: record.procedure,
@@ -125,11 +131,14 @@ function toHospitalizationResponse(record: HospitalizationRecord): Hospitalizati
 function toLabExamResponse(record: LabExamRecord): LabExamResponseDto {
   return {
     id: record.id,
+    appointmentId: record.appointmentId,
     patientId: record.patientId,
     veterinarian: record.veterinarian,
     examType: record.examType,
     performedAt: isoDate(record.performedAt),
+    status: record.status,
     results: record.results,
+    resultsAt: record.resultsAt,
     createdAt: record.createdAt,
   };
 }
@@ -153,6 +162,7 @@ export class ClinicalService {
     if (!veterinarianId || appointment.veterinarianId !== veterinarianId) {
       throw new ForbiddenError("Solo el veterinario asignado puede registrar la consulta");
     }
+    if (isProcedure(appointment.type)) throw new ConflictError(PROCEDURE_APPOINTMENT_MESSAGE);
     // RN-43
     if (appointment.status !== AppointmentStatus.CONFIRMED) {
       throw new ConflictError("Solo se registra una consulta sobre una cita confirmada");
@@ -210,31 +220,82 @@ export class ClinicalService {
     return toVaccinationResponse(record);
   }
 
-  // RN-50: cirugías, internaciones y exámenes los registra solo un veterinario, sin cita obligatoria.
+  // RN-50: cirugías, internaciones y exámenes los registra solo un veterinario. D-71: con cita, la registra el
+  // veterinario asignado, queda vinculada y la cita pasa a ATENDIDA; sin cita (desde la ficha) sigue como antes.
   async createSurgery(actor: Actor, dto: CreateSurgeryRequestDto): Promise<SurgeryResponseDto> {
     const veterinarianId = await this.requireVeterinarian(actor);
     const patient = await this.requireActivePatient(dto.patientId);
+    const appointment = dto.appointmentId
+      ? await this.requireProcedureAppointment(
+          dto.appointmentId,
+          "SURGERY",
+          patient.id,
+          veterinarianId,
+        )
+      : null;
+
+    const procedure = dto.procedure ?? appointment?.procedureName;
+    if (!procedure) throw new ValidationError("El procedimiento es obligatorio");
     const record = await this.repository.createSurgery({
+      appointmentId: appointment?.id,
       patientId: patient.id,
       veterinarianId,
-      procedure: dto.procedure,
-      performedAt: utcMidnight(dto.performedAt),
+      procedure,
+      performedAt: dto.performedAt ? utcMidnight(dto.performedAt) : this.today(),
       notes: dto.notes,
     });
+    if (appointment) this.events.appointmentChanged(appointment.id);
     return toSurgeryResponse(record);
   }
 
+  // D-71: con cita y sin resultados, el examen queda en espera de resultados (PENDING_RESULTS).
   async createLabExam(actor: Actor, dto: CreateLabExamRequestDto): Promise<LabExamResponseDto> {
     const veterinarianId = await this.requireVeterinarian(actor);
     const patient = await this.requireActivePatient(dto.patientId);
+    const appointment = dto.appointmentId
+      ? await this.requireProcedureAppointment(
+          dto.appointmentId,
+          "LAB_EXAM",
+          patient.id,
+          veterinarianId,
+        )
+      : null;
+
+    const examType = dto.examType ?? appointment?.procedureName;
+    if (!examType) throw new ValidationError("El tipo de examen es obligatorio");
     const record = await this.repository.createLabExam({
+      appointmentId: appointment?.id,
       patientId: patient.id,
       veterinarianId,
-      examType: dto.examType,
-      performedAt: utcMidnight(dto.performedAt),
+      examType,
+      performedAt: dto.performedAt ? utcMidnight(dto.performedAt) : this.today(),
+      status: dto.results ? LabExamStatus.WITH_RESULTS : LabExamStatus.PENDING_RESULTS,
       results: dto.results,
+      resultsAt: dto.results ? this.clock() : undefined,
     });
+    if (appointment) this.events.appointmentChanged(appointment.id);
     return toLabExamResponse(record);
+  }
+
+  // D-71: el veterinario que tomó la muestra carga los resultados en el mismo registro; solo una vez.
+  async loadLabResults(
+    actor: Actor,
+    id: string,
+    dto: LoadLabResultsRequestDto,
+  ): Promise<LabExamResponseDto> {
+    const veterinarianId = await this.requireVeterinarian(actor);
+    const exam = await this.repository.findLabExam(id);
+    if (!exam) throw new NotFoundError("Examen no encontrado");
+    if (exam.veterinarianId !== veterinarianId) {
+      throw new ForbiddenError("Solo el veterinario que registro el examen carga los resultados");
+    }
+    if (exam.status !== LabExamStatus.PENDING_RESULTS) {
+      throw new ConflictError("El examen ya tiene resultados");
+    }
+
+    const loaded = await this.repository.loadLabExamResults(id, dto.results, this.clock());
+    if (!loaded) throw new ConflictError("El examen ya tiene resultados");
+    return toLabExamResponse(loaded);
   }
 
   async admit(
@@ -367,6 +428,37 @@ export class ClinicalService {
     });
   }
 
+  // D-71: la cita de cirugía o examen se cierra con su procedimiento. Mismas reglas que la consulta: RN-44
+  // (veterinario asignado) y RN-43 (cita confirmada).
+  private async requireProcedureAppointment(
+    appointmentId: string,
+    type: "SURGERY" | "LAB_EXAM",
+    patientId: string,
+    veterinarianId: string,
+  ): Promise<AppointmentForConsultation> {
+    const appointment = await this.repository.findAppointment(appointmentId);
+    if (!appointment) throw new NotFoundError("Cita no encontrada");
+    if (appointment.type !== type) {
+      throw new ConflictError(
+        type === "SURGERY" ? "La cita no es de cirugia" : "La cita no es de examen de laboratorio",
+      );
+    }
+    if (appointment.veterinarianId !== veterinarianId) {
+      throw new ForbiddenError("Solo el veterinario asignado puede registrar el procedimiento");
+    }
+    if (appointment.patientId !== patientId) {
+      throw new ConflictError("La cita no corresponde a esa mascota");
+    }
+    if (appointment.status !== AppointmentStatus.CONFIRMED) {
+      throw new ConflictError("Solo se registra el procedimiento sobre una cita confirmada");
+    }
+    return appointment;
+  }
+
+  private today(): Date {
+    return utcMidnight(clinicDateOf(this.clock()));
+  }
+
   // Mismas reglas que la consulta: RN-44 (veterinario asignado) y RN-43 (cita confirmada).
   private async assertCanCloseAppointment(
     appointmentId: string,
@@ -375,6 +467,7 @@ export class ClinicalService {
   ): Promise<void> {
     const appointment = await this.repository.findAppointment(appointmentId);
     if (!appointment) throw new NotFoundError("Cita no encontrada");
+    if (isProcedure(appointment.type)) throw new ConflictError(PROCEDURE_APPOINTMENT_MESSAGE);
     if (appointment.veterinarianId !== veterinarianId) {
       throw new ForbiddenError("Solo el veterinario asignado puede registrar la vacunacion");
     }

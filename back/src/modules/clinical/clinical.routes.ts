@@ -10,6 +10,7 @@ import {
   dischargeHospitalizationRequestSchema,
   historyQuerySchema,
   listHospitalizationsQuerySchema,
+  loadLabResultsRequestSchema,
 } from "@/modules/clinical/dto/clinical.dto";
 import type { ClinicalController } from "@/modules/clinical/clinical.controller";
 import { authorize } from "@/shared/middlewares/authorize";
@@ -56,6 +57,13 @@ export function createClinicalRouter(
     ...veterinarian,
     validate({ body: createLabExamRequestSchema }),
     controller.createLabExam,
+  );
+  // D-71: el veterinario carga los resultados en el mismo registro del examen en espera.
+  router.put(
+    "/lab-exams/:id/results",
+    ...veterinarian,
+    validate({ params: uuidParamSchema, body: loadLabResultsRequestSchema }),
+    controller.loadLabResults,
   );
   router.post(
     "/hospitalizations",
