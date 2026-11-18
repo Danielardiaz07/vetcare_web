@@ -71,7 +71,7 @@ const DAY_HOURS = 24;
 const professionalOf = (record: AppointmentRecord) => record.veterinarian ?? record.groomer;
 const kindOf = (record: AppointmentRecord): ProfessionalKind => professionalFor(record.type);
 
-// D-70: a lo sumo un registro clínico por cita (cada uno es único por cita).
+// D-71: a lo sumo un registro clínico por cita (cada uno es único por cita).
 function linkedRecordOf(record: AppointmentRecord): LinkedClinicalRecordDto | null {
   if (record.consultation) return { kind: "CONSULTATION", id: record.consultation.id };
   if (record.grooming) return { kind: "GROOMING", id: record.grooming.id };
@@ -168,7 +168,7 @@ export class AppointmentsService {
     await this.assertCanAccessOwner(actor, patient.ownerId);
     if (!patient.active) throw new ConflictError("El paciente esta desactivado");
     if (isProcedure(dto.type) && actor.role !== Role.RECEPTIONIST) {
-      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-70
+      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-71
     }
 
     const durationMinutes = await this.durationFor(dto.type, dto.durationMinutes);
@@ -489,7 +489,7 @@ export class AppointmentsService {
     throw new ForbiddenError();
   }
 
-  // D-70: cirugías y exámenes llevan la duración de la cita; el resto, la configurada por tipo (RN-19).
+  // D-71: cirugías y exámenes llevan la duración de la cita; el resto, la configurada por tipo (RN-19).
   private async durationFor(type: AppointmentType, requested: number | undefined): Promise<number> {
     if (!isProcedure(type)) return this.durationOf(type);
     if (requested === undefined) {
@@ -611,7 +611,7 @@ export class AppointmentsService {
     const appointment = await this.findOrFail(id);
     await this.assertCanAccessOwner(actor, appointment.patient.ownerId);
     if (actor.role === Role.OWNER && isProcedure(appointment.type)) {
-      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-70
+      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-71
     }
     this.assertModifiable(appointment, actor.role === Role.OWNER);
     return appointment;
@@ -625,7 +625,7 @@ export class AppointmentsService {
   // null = se puede cambiar. `enforceLead` es la restricción de 2 horas, que rige solo para el propietario.
   private blockedReasonOf(appointment: AppointmentRecord, enforceLead = true): string | null {
     if (!ACTIVE_STATUSES.includes(appointment.status)) return "La cita ya no admite cambios";
-    // D-70: quien llega por el enlace del correo (enforceLead) es el propietario y no cambia cirugías ni exámenes.
+    // D-71: quien llega por el enlace del correo (enforceLead) es el propietario y no cambia cirugías ni exámenes.
     if (enforceLead && isProcedure(appointment.type)) return PROCEDURE_RECEPTION_ONLY_MESSAGE;
     const lead = addMinutes(this.clock(), MIN_APPOINTMENT_LEAD_HOURS * HOUR_MINUTES);
     if (enforceLead && appointment.startsAt <= lead) return CONTACT_CLINIC_MESSAGE;

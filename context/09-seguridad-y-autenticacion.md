@@ -78,10 +78,10 @@ Consultas públicas de agendamiento (D-50, D-51): GET /appointment-types, GET /a
 | Gestionar agenda (RF-16) | | ✔ | consulta de la suya | consulta de la suya | |
 | Consultar mis facturas (RF-14) | ✔ (solo las suyas) | | | | |
 | Perfil (RF-15) | ✔ | | | | |
-| Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (consulta: cita asignada; cirugía y examen: con cita, solo el veterinario asignado y la cita confirmada, o sin cita desde la ficha; internación sin cita, D-34, D-70) | | |
-| Agendar, reprogramar y cancelar cirugías y exámenes de laboratorio (RN-86, D-70) | | ✔ | | | |
-| Cargar los resultados de un examen en espera (RN-87, D-70) | | | ✔ (solo quien lo registró) | | |
-| Ver mis cirugías y exámenes agendados, con las indicaciones y el estado de los resultados (RN-86, D-70) | ✔ (solo los suyos) | | | | |
+| Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (consulta: cita asignada; cirugía y examen: con cita, solo el veterinario asignado y la cita confirmada, o sin cita desde la ficha; internación sin cita, D-34, D-71) | | |
+| Agendar, reprogramar y cancelar cirugías y exámenes de laboratorio (RN-86, D-71) | | ✔ | | | |
+| Cargar los resultados de un examen en espera (RN-87, D-71) | | | ✔ (solo quien lo registró) | | |
+| Ver mis cirugías y exámenes agendados, con las indicaciones y el estado de los resultados (RN-86, D-71) | ✔ (solo los suyos) | | | | |
 | Registrar servicio estético (RF-21) | | | | ✔ | |
 | Ver los servicios estéticos de una mascota (D-33) | ✔ (solo las suyas) | ✔ | ✔ | ✔ | |
 | Gestionar inventario (RF-22) | | | | | ✔ |

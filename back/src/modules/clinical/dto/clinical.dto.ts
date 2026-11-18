@@ -67,7 +67,7 @@ const requiredWithoutAppointment = (
   }
 };
 
-// D-70: con cita, el procedimiento y la fecha salen de ella si no se envían; desde la ficha (sin cita) son obligatorios.
+// D-71: con cita, el procedimiento y la fecha salen de ella si no se envían; desde la ficha (sin cita) son obligatorios.
 export const createSurgeryRequestSchema = z
   .object({
     patientId: z.uuid("Identificador invalido"),
@@ -103,7 +103,7 @@ export const listHospitalizationsQuerySchema = paginationQuerySchema.extend({
 
 const resultsField = requiredText("Los resultados", ClinicalLimit.LONG_TEXT_MAX);
 
-// D-70: con cita, sin resultados el examen queda en espera de resultados; desde la ficha (sin cita) todo es obligatorio.
+// D-71: con cita, sin resultados el examen queda en espera de resultados; desde la ficha (sin cita) todo es obligatorio.
 export const createLabExamRequestSchema = z
   .object({
     patientId: z.uuid("Identificador invalido"),
@@ -230,7 +230,7 @@ export interface LabExamResponseDto {
   veterinarian: { id: string; firstNames: string; lastNames: string };
   examType: string;
   performedAt: string;
-  status: LabExamStatus; // D-70: PENDING_RESULTS mientras el veterinario no cargue los resultados
+  status: LabExamStatus; // D-71: PENDING_RESULTS mientras el veterinario no cargue los resultados
   results: string | null;
   resultsAt: Date | null;
   createdAt: Date;

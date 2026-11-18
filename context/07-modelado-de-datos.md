@@ -64,9 +64,9 @@ Detalles verificados:
 | Estado de la cita | `ENUM` | — | 🔧 | `SCHEDULED`, `CONFIRMED`, `ATTENDED`, `CANCELLED`, `NO_SHOW` (RN-34, D-26) |
 | Inicio / fin de la cita | `TIMESTAMPTZ(3)` | — | 🔧 | UTC; `CHECK` inicio < fin; exclusión GiST contra el cruce de franjas activas del mismo veterinario, estilista o mascota (RN-23, RN-27, RN-32, D-26) |
 | Motivo de la cita / de la cancelación | `VARCHAR` | 200 | 🔧 | Frase corta libre; el de cancelación es obligatorio (RN-30, D-26) |
-| Nombre del procedimiento de la cita | `VARCHAR` | 80 | 🔧 | Solo cirugía y examen; cabe en el nombre de la cirugía (120) y en el tipo de examen (80); `CHECK` en BD: solo esos tipos de cita lo llevan (RN-86, D-70) |
-| Indicaciones de la cita | `VARCHAR` | 500 | 🔧 | Texto libre para el propietario (p. ej. ayuno); mismo tope que los textos clínicos (RN-86, D-70) |
-| Estado del examen de laboratorio | `ENUM` | — | 🔧 | `PENDING_RESULTS`, `WITH_RESULTS`; los resultados pasan a ser opcionales y un `CHECK` en BD mantiene juntos estado, resultados y fecha de carga (RN-87, D-70) |
+| Nombre del procedimiento de la cita | `VARCHAR` | 80 | 🔧 | Solo cirugía y examen; cabe en el nombre de la cirugía (120) y en el tipo de examen (80); `CHECK` en BD: solo esos tipos de cita lo llevan (RN-86, D-71) |
+| Indicaciones de la cita | `VARCHAR` | 500 | 🔧 | Texto libre para el propietario (p. ej. ayuno); mismo tope que los textos clínicos (RN-86, D-71) |
+| Estado del examen de laboratorio | `ENUM` | — | 🔧 | `PENDING_RESULTS`, `WITH_RESULTS`; los resultados pasan a ser opcionales y un `CHECK` en BD mantiene juntos estado, resultados y fecha de carga (RN-87, D-71) |
 | Nombre del paciente | `VARCHAR` | 60 | 🔧 | Un nombre de mascota; mismo tope que los nombres de persona (D-19) |
 | Ruta de la foto del paciente | `VARCHAR` | 100 | 🔧 | Ruta del objeto en Storage `patients/<uuid>/<uuid>.<ext>` (~90 caracteres) (D-19) |
 | Especie del paciente | `ENUM` | — | 🔧 | `DOG`, `CAT`, `OTHER`; catálogo cerrado (D-19) |

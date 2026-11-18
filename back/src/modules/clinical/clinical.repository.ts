@@ -52,7 +52,7 @@ export interface NewLabExamData {
   examType: string;
   performedAt: Date;
   status: LabExamStatus;
-  results?: string; // sin resultados el examen queda PENDING_RESULTS (D-70)
+  results?: string; // sin resultados el examen queda PENDING_RESULTS (D-71)
   resultsAt?: Date;
 }
 
@@ -216,7 +216,7 @@ export class ClinicalRepository {
     });
   }
 
-  // D-70: con cita, el procedimiento y el paso de la cita a ATENDIDA van en una sola transacción (RN-46).
+  // D-71: con cita, el procedimiento y el paso de la cita a ATENDIDA van en una sola transacción (RN-46).
   createSurgery(data: NewSurgeryData): Promise<SurgeryRecord> {
     const { appointmentId } = data;
     if (!appointmentId) return prisma.surgery.create({ data, include: consultationInclude });
@@ -237,7 +237,7 @@ export class ClinicalRepository {
     return prisma.labExam.findUnique({ where: { id }, include: consultationInclude });
   }
 
-  // D-70: solo pasa de PENDING_RESULTS a WITH_RESULTS; false si otra petición ya cargó los resultados.
+  // D-71: solo pasa de PENDING_RESULTS a WITH_RESULTS; false si otra petición ya cargó los resultados.
   async loadLabExamResults(id: string, results: string, at: Date): Promise<LabExamRecord | null> {
     const loaded = await prisma.labExam.updateMany({
       where: { id, status: "PENDING_RESULTS" },

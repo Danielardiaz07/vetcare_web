@@ -122,7 +122,7 @@ export const NO_SHOW_GRACE_MINUTES = 15; // RN-31
 export const SUGGESTED_DATES_COUNT = 3; // RN-33
 export const AGENDA_MAX_DAYS = 7; // RF-16: vista diaria o semanal
 export const APPOINTMENT_TEXT_MAX = 200; // motivo y motivo de cancelación
-// D-70: cirugías y exámenes agendados por recepción.
+// D-71: cirugías y exámenes agendados por recepción.
 export const PROCEDURE_NAME_MAX = 80; // cabe en Surgery.procedure (120) y en LabExam.examType (80)
 export const APPOINTMENT_INSTRUCTIONS_MAX = 500; // mismo tope que los textos clínicos
 export const PROCEDURE_MAX_DURATION_MINUTES = 480; // una jornada; la duración es múltiplo de la franja (SLOT_MINUTES)

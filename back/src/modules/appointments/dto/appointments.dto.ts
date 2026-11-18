@@ -28,7 +28,7 @@ const textField = (label: string) =>
     .trim()
     .max(APPOINTMENT_TEXT_MAX, `${label} admite maximo ${APPOINTMENT_TEXT_MAX} caracteres`);
 
-// D-70: la duración de una cirugía o un examen la fija cada cita, en múltiplos de la franja.
+// D-71: la duración de una cirugía o un examen la fija cada cita, en múltiplos de la franja.
 const durationField = z
   .number()
   .int("La duracion debe ser un numero entero de minutos")
@@ -108,7 +108,7 @@ export const createAppointmentRequestSchema = z
 export const rescheduleAppointmentRequestSchema = z.object({
   startsAt: instantField,
   professionalId: z.uuid("Identificador invalido").optional(),
-  durationMinutes: durationField.optional(), // D-70: solo cirugía y examen; sin él se conserva la actual
+  durationMinutes: durationField.optional(), // D-71: solo cirugía y examen; sin él se conserva la actual
 });
 
 export const cancelAppointmentRequestSchema = z.object({
@@ -227,7 +227,7 @@ export interface AvailabilityResponseDto {
   suggestedDates: string[];
 }
 
-// D-70: el registro clínico vinculado a la cita, cuando ya existe. `status` solo viene en el examen de laboratorio.
+// D-71: el registro clínico vinculado a la cita, cuando ya existe. `status` solo viene en el examen de laboratorio.
 export type LinkedClinicalRecordDto =
   | { kind: "CONSULTATION" | "GROOMING" | "SURGERY"; id: string }
   | { kind: "LAB_EXAM"; id: string; status: LabExamStatus };
@@ -241,8 +241,8 @@ export interface AppointmentResponseDto {
   durationMinutes: number;
   reason: string | null;
   cancelReason: string | null;
-  procedureName: string | null; // solo cirugía y examen (D-70)
-  instructions: string | null; // indicaciones para el propietario; solo cirugía y examen (D-70)
+  procedureName: string | null; // solo cirugía y examen (D-71)
+  instructions: string | null; // indicaciones para el propietario; solo cirugía y examen (D-71)
   clinicalRecord: LinkedClinicalRecordDto | null;
   patient: { id: string; name: string };
   professional: ProfessionalSummaryDto;

@@ -1,6 +1,6 @@
 import { AppointmentType } from "@prisma/client";
 
-// D-70: la cirugía y el examen de laboratorio los agenda, reprograma y cancela solo recepción, con duración propia.
+// D-71: la cirugía y el examen de laboratorio los agenda, reprograma y cancela solo recepción, con duración propia.
 export const PROCEDURE_TYPES: readonly AppointmentType[] = [
   AppointmentType.SURGERY,
   AppointmentType.LAB_EXAM,

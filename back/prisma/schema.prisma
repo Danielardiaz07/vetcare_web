@@ -48,11 +48,11 @@ enum AppointmentType {
   VACCINATION
   CHECKUP
   GROOMING
-  SURGERY // D-70: solo la agenda recepción; la duración la fija cada cita, no AppointmentTypeSetting
-  LAB_EXAM // D-70
+  SURGERY // D-71: solo la agenda recepción; la duración la fija cada cita, no AppointmentTypeSetting
+  LAB_EXAM // D-71
 }
 
-// D-70: un examen agendado queda en espera hasta que el veterinario carga los resultados en el mismo registro.
+// D-71: un examen agendado queda en espera hasta que el veterinario carga los resultados en el mismo registro.
 enum LabExamStatus {
   PENDING_RESULTS
   WITH_RESULTS
@@ -242,8 +242,8 @@ model Appointment {
   status         AppointmentStatus @default(SCHEDULED) // RN-25
   reason         String?           @db.VarChar(200) // motivo libre del propietario o de recepción
   cancelReason   String?           @db.VarChar(200) // RN-30: obligatorio al cancelar
-  procedureName  String?           @db.VarChar(80) // D-70: solo cirugía y examen; cabe en Surgery.procedure (120) y LabExam.examType (80)
-  instructions   String?           @db.VarChar(500) // D-70: indicaciones para el propietario (p. ej. ayuno); mismo tope que los textos clínicos
+  procedureName  String?           @db.VarChar(80) // D-71: solo cirugía y examen; cabe en Surgery.procedure (120) y LabExam.examType (80)
+  instructions   String?           @db.VarChar(500) // D-71: indicaciones para el propietario (p. ej. ayuno); mismo tope que los textos clínicos
   createdAt      DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
 
@@ -289,7 +289,7 @@ model Consultation {
 }
 
 // RN-50, D-34: procedimiento quirúrgico hecho por un veterinario; sin costo (RF-20 no lo pide). La cita es opcional:
-// si viene (D-70), es única por cita y la cierra como ATENDIDA.
+// si viene (D-71), es única por cita y la cierra como ATENDIDA.
 model Surgery {
   id             String   @id @default(uuid()) @db.Uuid
   appointmentId  String?  @unique @db.Uuid
@@ -325,7 +325,7 @@ model Hospitalization {
   @@index([patientId, admittedAt]) // historial (RN-41)
 }
 
-// RN-50, D-34: examen de laboratorio con sus resultados en texto libre (sin archivos adjuntos). D-70: con cita, nace
+// RN-50, D-34: examen de laboratorio con sus resultados en texto libre (sin archivos adjuntos). D-71: con cita, nace
 // PENDING_RESULTS sin resultados y pasa a WITH_RESULTS cuando el veterinario los carga (CHECK en la migración:
 // status, results y resultsAt van juntos).
 model LabExam {

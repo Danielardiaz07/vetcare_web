@@ -17,8 +17,8 @@ export interface AppointmentEmailData {
   professional: string;
   reason: string | null;
   cancelReason: string | null;
-  procedureName: string | null; // D-70: solo cirugía y examen
-  instructions: string | null; // D-70: indicaciones para el propietario
+  procedureName: string | null; // D-71: solo cirugía y examen
+  instructions: string | null; // D-71: indicaciones para el propietario
   manageUrl: string; // enlace personal para cambiar o cancelar la cita (RN-84)
   checkInQrUrl: string | null; // imagen del QR de llegada (D-66, RN-83); null si la API no tiene dirección pública
 }
@@ -66,12 +66,12 @@ function appointmentDetails(data: AppointmentEmailData): string {
 
 const greeting = (ownerName: string) => `<p>Hola, ${escapeHtml(ownerName)}.</p>`;
 
-// D-70: lo que el propietario debe hacer antes del procedimiento (p. ej. ayuno); recepción lo escribe al agendar.
+// D-71: lo que el propietario debe hacer antes del procedimiento (p. ej. ayuno); recepción lo escribe al agendar.
 const instructionsBlock = (data: AppointmentEmailData) =>
   data.instructions ? `<p><strong>Indicaciones:</strong> ${escapeHtml(data.instructions)}</p>` : "";
 
 // RN-84: el enlace abre una página con la cita; cambiarla o cancelarla es un paso aparte, así un programa que revise
-// los enlaces del correo no cancela nada. D-70: las cirugías y los exámenes solo los cambia la clínica.
+// los enlaces del correo no cancela nada. D-71: las cirugías y los exámenes solo los cambia la clínica.
 const manageBlock = (data: AppointmentEmailData) =>
   isProcedure(data.type)
     ? `<p>Para reprogramar o cancelar esta cita, comunicate con la clinica.</p>`

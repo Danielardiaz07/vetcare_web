@@ -45,7 +45,7 @@ export interface Actor {
 }
 
 const PROCEDURE_APPOINTMENT_MESSAGE =
-  "La cita es de cirugia o examen: registra el procedimiento desde la cita"; // D-70
+  "La cita es de cirugia o examen: registra el procedimiento desde la cita"; // D-71
 const ISO_DATE_LENGTH = 10;
 const isoDate = (value: Date) => value.toISOString().slice(0, ISO_DATE_LENGTH);
 const utcMidnight = (date: string) => new Date(`${date}T00:00:00.000Z`);
@@ -220,7 +220,7 @@ export class ClinicalService {
     return toVaccinationResponse(record);
   }
 
-  // RN-50: cirugías, internaciones y exámenes los registra solo un veterinario. D-70: con cita, la registra el
+  // RN-50: cirugías, internaciones y exámenes los registra solo un veterinario. D-71: con cita, la registra el
   // veterinario asignado, queda vinculada y la cita pasa a ATENDIDA; sin cita (desde la ficha) sigue como antes.
   async createSurgery(actor: Actor, dto: CreateSurgeryRequestDto): Promise<SurgeryResponseDto> {
     const veterinarianId = await this.requireVeterinarian(actor);
@@ -248,7 +248,7 @@ export class ClinicalService {
     return toSurgeryResponse(record);
   }
 
-  // D-70: con cita y sin resultados, el examen queda en espera de resultados (PENDING_RESULTS).
+  // D-71: con cita y sin resultados, el examen queda en espera de resultados (PENDING_RESULTS).
   async createLabExam(actor: Actor, dto: CreateLabExamRequestDto): Promise<LabExamResponseDto> {
     const veterinarianId = await this.requireVeterinarian(actor);
     const patient = await this.requireActivePatient(dto.patientId);
@@ -277,7 +277,7 @@ export class ClinicalService {
     return toLabExamResponse(record);
   }
 
-  // D-70: el veterinario que tomó la muestra carga los resultados en el mismo registro; solo una vez.
+  // D-71: el veterinario que tomó la muestra carga los resultados en el mismo registro; solo una vez.
   async loadLabResults(
     actor: Actor,
     id: string,
@@ -428,7 +428,7 @@ export class ClinicalService {
     });
   }
 
-  // D-70: la cita de cirugía o examen se cierra con su procedimiento. Mismas reglas que la consulta: RN-44
+  // D-71: la cita de cirugía o examen se cierra con su procedimiento. Mismas reglas que la consulta: RN-44
   // (veterinario asignado) y RN-43 (cita confirmada).
   private async requireProcedureAppointment(
     appointmentId: string,

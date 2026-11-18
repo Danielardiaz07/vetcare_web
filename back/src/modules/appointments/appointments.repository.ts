@@ -49,7 +49,7 @@ const appointmentInclude = {
   },
   veterinarian: { select: professionalSelect },
   groomer: { select: professionalSelect },
-  // D-70: el registro clínico vinculado, para que la agenda y "Mis citas" lo enlacen sin otra consulta.
+  // D-71: el registro clínico vinculado, para que la agenda y "Mis citas" lo enlacen sin otra consulta.
   consultation: { select: { id: true } },
   grooming: { select: { id: true } },
   surgery: { select: { id: true } },

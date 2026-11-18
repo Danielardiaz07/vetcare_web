@@ -58,7 +58,7 @@ export function createClinicalRouter(
     validate({ body: createLabExamRequestSchema }),
     controller.createLabExam,
   );
-  // D-70: el veterinario carga los resultados en el mismo registro del examen en espera.
+  // D-71: el veterinario carga los resultados en el mismo registro del examen en espera.
   router.put(
     "/lab-exams/:id/results",
     ...veterinarian,
