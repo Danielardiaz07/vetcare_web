@@ -24,9 +24,7 @@ import type { Appointment } from "@/types/domain";
 
 type AppointmentCardProps = {
   appointment: Appointment;
-  // Solo las próximas citas muestran "Cómo prepararte".
   withPrep?: boolean;
-  // Con este callback la tarjeta muestra "Reprogramar" y "Cancelar" (Mis citas).
   onChanged?: (message: string) => void;
 };
 
@@ -79,12 +77,12 @@ export function AppointmentCard({
           )}
         </div>
       </div>
-      {onChanged && status === "SCHEDULED" && !rescheduling && (
-        <CheckInQr key={startsAt} appointmentId={appointment.id} startsAt={startsAt} />
-      )}
       {onChanged && active && !rescheduling && (
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-3">
+            {status === "SCHEDULED" && date >= clinicDateOf(new Date()) && (
+              <CheckInQr key={startsAt} appointment={appointment} />
+            )}
             <Button
               variant="secondary"
               disabled={!changeable}

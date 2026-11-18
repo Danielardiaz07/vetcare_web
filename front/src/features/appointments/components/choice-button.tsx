@@ -8,6 +8,7 @@ type ChoiceButtonProps = {
   detail?: ReactNode;
   ariaLabel?: string;
   className?: string;
+  disabled?: boolean;
 };
 
 export function ChoiceButton({
@@ -17,15 +18,17 @@ export function ChoiceButton({
   detail,
   ariaLabel,
   className,
+  disabled,
 }: ChoiceButtonProps) {
   return (
     <button
       type="button"
+      disabled={disabled}
       aria-pressed={selected}
       aria-label={ariaLabel}
       onClick={onSelect}
       className={cn(
-        "flex min-h-11 flex-col items-start justify-center gap-0.5 rounded-control border px-4 py-2 text-left transition-colors duration-150 ease-out",
+        "flex min-h-11 flex-col items-start justify-center gap-0.5 rounded-control border px-4 py-2 text-left transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60",
         selected
           ? "border-brand-600 bg-brand-50 text-brand-700"
           : "border-field-border bg-surface text-ink hover:bg-brand-50",

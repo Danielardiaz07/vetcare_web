@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -27,10 +27,17 @@ type RescheduleFormProps = {
   appointment: Appointment;
   onCancel: () => void;
   onRescheduled: (appointment: Appointment) => void;
+  loadAvailability?: typeof getAvailability;
+  onSave?: (startsAt: string) => Promise<Appointment>;
 };
 
-// Mismo tipo de cita y mismo profesional; solo cambian el día y la hora.
-export function RescheduleForm({ appointment, onCancel, onRescheduled }: RescheduleFormProps) {
+export function RescheduleForm({
+  appointment,
+  onCancel,
+  onRescheduled,
+  loadAvailability = getAvailability,
+  onSave,
+}: RescheduleFormProps) {
   const dates = useMemo(() => bookableDates(), []);
   const currentDate = clinicDateOf(new Date(appointment.startsAt));
   const [date, setDate] = useState(dates.includes(currentDate) ? currentDate : (dates[0] ?? ""));
@@ -39,11 +46,12 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     let active = true;
     setAvailability({ status: "loading" });
-    getAvailability({ type: appointment.type, date, professionalId: appointment.professional.id })
+    loadAvailability({ type: appointment.type, date, professionalId: appointment.professional.id })
       .then((data) => {
         if (active) setAvailability({ status: "ready", data });
       })
@@ -53,7 +61,7 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
     return () => {
       active = false;
     };
-  }, [appointment, date, reloadKey]);
+  }, [appointment, date, reloadKey, loadAvailability]);
 
   function pickDate(next: string) {
     setDate(next);
@@ -62,16 +70,19 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
   }
 
   async function handleConfirm() {
+    if (submittingRef.current) return;
     if (!startsAt) {
       setError("Elige una hora para continuar.");
       return;
     }
+    submittingRef.current = true;
     setSaving(true);
     setError(null);
     try {
-      onRescheduled(await rescheduleAppointment(appointment.id, { startsAt }));
+      onRescheduled(
+        await (onSave ? onSave(startsAt) : rescheduleAppointment(appointment.id, { startsAt })),
+      );
     } catch (failure) {
-      // RN-27: otra persona tomó la hora; se recargan las libres.
       if (isSlotTaken(failure)) {
         setStartsAt(null);
         setReloadKey((key) => key + 1);
@@ -81,6 +92,7 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
       }
     } finally {
       setSaving(false);
+      submittingRef.current = false;
     }
   }
 
@@ -98,6 +110,7 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
             <ChoiceButton
               key={item}
               selected={item === date}
+              disabled={saving}
               onSelect={() => pickDate(item)}
               ariaLabel={formatLongDate(item)}
               className="items-center text-center"
@@ -122,6 +135,7 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
             <ChoiceButton
               key={slot.startsAt}
               selected={slot.startsAt === startsAt}
+              disabled={saving}
               onSelect={() => {
                 setStartsAt(slot.startsAt);
                 setError(null);
@@ -141,6 +155,7 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
                 <ChoiceButton
                   key={item}
                   selected={false}
+                  disabled={saving}
                   onSelect={() => pickDate(item)}
                   label={formatLongDate(item)}
                 />
