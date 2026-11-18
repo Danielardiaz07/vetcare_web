@@ -27,6 +27,7 @@ type DateTimeAvailabilityProps = {
   loadAvailability?: typeof getAvailability;
   disabled?: boolean;
   showSuggestedDates?: boolean;
+  maxSlotColumns?: 2 | 4;
   onChange: (date: string, slot: AvailableSlot | null) => void;
 };
 
@@ -41,6 +42,7 @@ export function DateTimeAvailability({
   loadAvailability = getAvailability,
   disabled = false,
   showSuggestedDates = false,
+  maxSlotColumns = 4,
   onChange,
 }: DateTimeAvailabilityProps) {
   const first = dates[0] ?? "";
@@ -97,17 +99,22 @@ export function DateTimeAvailability({
   return (
     <fieldset
       disabled={disabled}
-      className="grid min-w-0 items-start gap-8 @min-[30rem]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]"
+      className="grid w-full min-w-0 items-start gap-8 @min-[30rem]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] @min-[34rem]:grid-cols-[18rem_minmax(0,1fr)] @min-[48rem]:gap-x-6"
     >
-      <DatePicker
-        value={day}
-        min={first}
-        max={last}
-        variant="inline"
-        label="Fecha"
-        onChange={(next) => onChange(next, null)}
-      />
-      <section aria-label="Horarios disponibles" className="flex min-w-0 flex-col gap-3">
+      <div className="w-full max-w-72">
+        <DatePicker
+          value={day}
+          min={first}
+          max={last}
+          variant="inline"
+          label="Fecha"
+          onChange={(next) => onChange(next, null)}
+        />
+      </div>
+      <section
+        aria-label="Horarios disponibles"
+        className="@container/slots flex min-w-0 flex-col gap-3"
+      >
         <div className="flex flex-col gap-1">
           <h3 className="text-base font-semibold text-ink">Horarios disponibles</h3>
           <p
@@ -137,7 +144,13 @@ export function DateTimeAvailability({
         ) : !ready ? (
           <LoadingState rows={2} />
         ) : slots.length ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div
+            className={cn(
+              "grid grid-cols-2 gap-2",
+              maxSlotColumns === 4 &&
+                "@min-[20rem]/slots:grid-cols-3 @min-[29.5rem]/slots:grid-cols-4",
+            )}
+          >
             {slots.map((available) => (
               <button
                 key={available.startsAt}

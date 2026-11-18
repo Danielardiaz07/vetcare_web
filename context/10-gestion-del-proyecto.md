@@ -106,7 +106,7 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 | Campana de avisos del portal | Hecho: `GET /me/alerts` (D-52) | Hecho: campana, contador y lectura por cuenta (D-59) | 18 nov |
 | Agendas del personal en cuadrícula | Sin cambios | Hecho: recepción por profesional/día y llegada con un clic; veterinario y estilista con Lista/Día/Semana de su propia agenda (D-60) | 20 nov |
 | Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Hecho: comparación, gráfica y descarga autenticada con el rango consultado (D-61) | 20 nov |
-| Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Pendiente | 21 y 22 nov |
+| Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Hecho: estados compartidos, recuperación de búsquedas vacías, listados móviles, foco y adaptación de controles y ventanas (D-72) | 21 y 22 nov |
 | Alerta de variación de peso | Hecho: `weight-trend` y aviso `WEIGHT_CHANGE` (D-55, RN-81) | Hecho en consulta y ficha (D-58) y campana (D-59) | 20 nov |
 | VetBot con datos reales (sin IA externa) | Sin cambios: usa los endpoints existentes y `weight-trend` | Hecho: contenido publicado y consultas propias de citas, avisos, vacunas y peso desde la portada, con sesión para datos propios (D-63) | 21 nov |
 | QR del carné de vacunación (verificable) | Hecho: tabla `CardVerification`, `GET …/vaccination-card/verification` y `GET /public/vaccination-cards/{token}` (D-56) | Hecho: QR imprimible, gestión por el propietario y página `/verify/[token]` (D-64); migración y validación en producción en P-20 | 21 nov |

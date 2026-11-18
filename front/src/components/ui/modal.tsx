@@ -54,7 +54,7 @@ export function Modal({
       type="button"
       onClick={() => dialogRef.current?.close()}
       aria-label="Cerrar"
-      className="inline-flex size-11 items-center justify-center rounded-control text-muted hover:bg-canvas"
+      className="inline-flex size-11 shrink-0 items-center justify-center rounded-control text-muted hover:bg-canvas"
     >
       <Icon name="close" />
     </button>
@@ -67,13 +67,13 @@ export function Modal({
       onClose={handleClose}
       onClick={handleBackdropClick}
       className={cn(
-        "m-auto w-[calc(100%-2rem)] rounded-card bg-surface p-0 text-ink backdrop:bg-navy/50",
+        "m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-y-auto overscroll-contain rounded-card bg-surface p-0 text-ink backdrop:bg-navy/50",
         wide ? "max-w-5xl" : "max-w-lg",
       )}
     >
       <div className={cn("flex flex-col", compact ? "gap-2 p-3" : "gap-4 p-6")}>
         <div className="flex items-start justify-between gap-4">
-          <h2 id={titleId} className="text-lg font-semibold">
+          <h2 id={titleId} className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">
             {title}
           </h2>
           {headerActions ? (

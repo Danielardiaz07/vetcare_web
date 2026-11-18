@@ -110,11 +110,26 @@ export function OwnersList() {
       {list.status === "error" && <ErrorState onRetry={reload} />}
       {list.status === "ready" && list.result.data.length === 0 && (
         <EmptyState
-          title="No hay propietarios"
+          title={q ? "Sin resultados" : "Aún no hay propietarios"}
           description={
             q
               ? "Ningún propietario coincide con la búsqueda."
-              : "Registra el primero con “Nuevo propietario”."
+              : "Consulta aquí sus datos de contacto y mascotas."
+          }
+          action={
+            q ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+              >
+                Limpiar búsqueda
+              </Button>
+            ) : (
+              <Button onClick={() => setCreating(true)}>Nuevo propietario</Button>
+            )
           }
         />
       )}

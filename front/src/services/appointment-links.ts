@@ -29,10 +29,14 @@ export const getManagedAvailability = (params: AvailabilityParams) =>
     signal: signalWithTimeout(),
   });
 
-export const rescheduleManagedAppointment = (token: string, startsAt: string) =>
+export const rescheduleManagedAppointment = (
+  token: string,
+  startsAt: string,
+  professionalId?: string,
+) =>
   request<ManagedAppointment>(`${linkPath(token)}/reschedule`, {
     method: "POST",
-    body: { startsAt },
+    body: { startsAt, professionalId },
     auth: false,
     cache: "no-store",
     signal: signalWithTimeout(),

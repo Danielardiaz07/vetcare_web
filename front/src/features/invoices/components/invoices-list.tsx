@@ -149,11 +149,24 @@ export function InvoicesList() {
       {list.status === "error" && <ErrorState onRetry={reload} />}
       {list.status === "ready" && list.result.data.length === 0 && (
         <EmptyState
-          title="No hay facturas"
+          title={status ? "Sin resultados" : "Aún no hay facturas"}
           description={
             status
               ? "Ninguna factura tiene ese estado."
               : "Cuando factures lo atendido, las facturas aparecerán aquí."
+          }
+          action={
+            status && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setStatus(ALL);
+                  setPage(1);
+                }}
+              >
+                Ver todas las facturas
+              </Button>
+            )
           }
         />
       )}

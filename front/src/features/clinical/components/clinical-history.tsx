@@ -149,6 +149,7 @@ export function ClinicalHistory({ pet, card, staff = false, refreshKey }: Clinic
 
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
     const enabled = TABS.filter((item) => countOf(item.type) > 0);
     const index = enabled.findIndex((item) => item.type === current);
     const step = event.key === "ArrowRight" ? 1 : -1;
@@ -224,12 +225,21 @@ export function ClinicalHistory({ pet, card, staff = false, refreshKey }: Clinic
             })}
           </div>
           {visible.length === 0 ? (
-            <p className="text-muted">No hay registros entre esas fechas.</p>
+            <EmptyState
+              title="Sin registros entre esas fechas"
+              description="Prueba con otro rango para consultar el historial."
+              action={
+                <Button variant="secondary" onClick={() => setFilters({})}>
+                  Limpiar filtro
+                </Button>
+              }
+            />
           ) : (
             <ol
               id={panelId(current)}
               role="tabpanel"
               aria-labelledby={tabId(current)}
+              tabIndex={0}
               className="flex flex-col gap-3"
             >
               {visible.map((entry) => (

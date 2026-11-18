@@ -18,10 +18,10 @@ export function PortalTopBar({ onSignOut }: PortalTopBarProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
         <Link
           href={ROUTES.home}
-          className="flex items-center gap-2 text-lg font-semibold text-brand-700"
+          className="flex shrink-0 items-center gap-2 text-lg font-semibold text-brand-700"
         >
           <Image src="/logo.png" alt="" width={44} height={44} priority />
           VetCare
@@ -29,7 +29,7 @@ export function PortalTopBar({ onSignOut }: PortalTopBarProps) {
             Portal del cliente
           </span>
         </Link>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex min-w-0 items-center gap-1 text-sm sm:gap-2">
           {user && <AlertsBell key={user.id} userId={user.id} />}
           <Link
             href={ROUTES.portalProfile}

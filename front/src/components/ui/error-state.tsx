@@ -15,6 +15,7 @@ export function ErrorState({ onRetry }: ErrorStateProps) {
     >
       <Icon name="alert" className="text-danger" />
       <h2 className="text-lg font-semibold text-ink">No pudimos cargar tus datos</h2>
+      <p className="max-w-prose text-muted">Revisa tu conexión y vuelve a intentarlo.</p>
       <Button variant="secondary" onClick={onRetry}>
         Reintentar
       </Button>

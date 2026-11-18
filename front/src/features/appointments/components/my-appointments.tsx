@@ -102,6 +102,7 @@ export function MyAppointments({ appointmentId }: { appointmentId?: string }) {
   // Las flechas mueven entre pestañas, como en un tablist nativo.
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
     const next = TABS.find((tab) => tab.when !== when)?.when ?? when;
     selectTab(next);
     document.getElementById(tabId(next))?.focus();
@@ -190,6 +191,7 @@ export function MyAppointments({ appointmentId }: { appointmentId?: string }) {
         id={panelId(when)}
         role="tabpanel"
         aria-labelledby={tabId(when)}
+        tabIndex={0}
         className="flex flex-col gap-4"
       >
         {visible.length === 0 ? (
