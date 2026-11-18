@@ -72,10 +72,10 @@ export function ManageAppointment({ token }: { token: string }) {
     setError(appointmentErrorMessage(failure));
   }
 
-  async function saveReschedule(startsAt: string) {
+  async function saveReschedule(startsAt: string, professionalId: string) {
     setBusy(true);
     try {
-      const data = await rescheduleManagedAppointment(token, startsAt);
+      const data = await rescheduleManagedAppointment(token, startsAt, professionalId);
       setState({ status: "ready", data });
       return data.appointment;
     } catch (failure) {

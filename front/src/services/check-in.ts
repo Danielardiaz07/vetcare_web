@@ -1,6 +1,4 @@
 import { request } from "@/services/http-client";
-import { APPOINTMENTS_CHANGED_EVENT } from "@/services/appointments";
-import type { Appointment } from "@/types/domain";
 
 export interface CheckInCode {
   appointmentId: string;
@@ -56,13 +54,3 @@ export const scanCheckIn = (scannerToken: string, code: string) =>
     cache: "no-store",
     signal: requestSignal(),
   });
-
-export async function registerCheckIn(code: string) {
-  const appointment = await request<Appointment>("/appointments/check-in", {
-    method: "POST",
-    body: { code: code.trim() },
-    signal: requestSignal(),
-  });
-  window.dispatchEvent(new Event(APPOINTMENTS_CHANGED_EVENT));
-  return appointment;
-}

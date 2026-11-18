@@ -173,6 +173,7 @@ function AttentionTabs({ context, onContextChange }: AttentionTabsProps) {
 
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
     const next = TABS.find((item) => item.value !== tab)?.value ?? tab;
     setTab(next);
     document.getElementById(tabId(next))?.focus();

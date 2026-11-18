@@ -20,11 +20,11 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
     const errorId = `${inputId}-error`;
 
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-1.5">
         <label htmlFor={inputId} className="text-sm font-medium text-ink">
           {label}
         </label>
-        <div className="relative">
+        <div className="relative min-w-0">
           <input
             ref={ref}
             id={inputId}
@@ -32,7 +32,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={describedBy(hintId, errorId, hint, error)}
             className={cn(
-              "min-h-11 w-full rounded-control border bg-surface pr-12 pl-3 text-ink",
+              "min-h-11 w-full min-w-0 rounded-control border bg-surface pr-12 pl-3 text-base text-ink disabled:cursor-not-allowed disabled:bg-canvas disabled:text-subtle",
               error ? "border-danger" : "border-field-border",
               className,
             )}

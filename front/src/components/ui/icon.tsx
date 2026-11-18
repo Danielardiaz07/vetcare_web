@@ -12,6 +12,7 @@ export type IconName =
   | "paw"
   | "plus"
   | "download"
+  | "copy"
   | "close"
   | "chevron-right"
   | "refresh"
@@ -46,6 +47,12 @@ export type IconName =
 const ICON_SIZE = 24;
 
 const PATHS: Record<IconName, ReactNode> = {
+  copy: (
+    <>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   "qr-code": (
     <>

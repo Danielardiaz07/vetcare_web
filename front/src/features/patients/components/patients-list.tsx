@@ -155,11 +155,26 @@ export function PatientsList() {
       {list.status === "error" && <ErrorState onRetry={reload} />}
       {list.status === "ready" && list.result.data.length === 0 && (
         <EmptyState
-          title="No hay mascotas"
+          title={term ? "Sin resultados" : "Aún no hay mascotas"}
           description={
             term
               ? "Ninguna mascota coincide con la búsqueda."
-              : "Registra la primera con “Nueva mascota”."
+              : "Consulta sus datos y accede a su historial clínico."
+          }
+          action={
+            term ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+              >
+                Limpiar búsqueda
+              </Button>
+            ) : (
+              <Button onClick={() => setCreating(true)}>Nueva mascota</Button>
+            )
           }
         />
       )}

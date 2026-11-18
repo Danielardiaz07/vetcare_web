@@ -7,11 +7,11 @@ const DEFAULT_ROWS = 3;
 export function LoadingState({ rows = DEFAULT_ROWS }: LoadingStateProps) {
   return (
     <div role="status" aria-live="polite" className="flex flex-col gap-4">
-      <span className="sr-only">Cargando…</span>
-      <div className="h-8 w-1/3 animate-pulse rounded-control bg-divider motion-reduce:animate-none" />
+      <p className="text-sm text-muted">Cargando datos…</p>
       {Array.from({ length: rows }, (_, index) => (
         <div
           key={index}
+          aria-hidden="true"
           className="h-24 animate-pulse rounded-card bg-divider motion-reduce:animate-none"
         />
       ))}

@@ -60,7 +60,12 @@ export function PeriodComparison({ report }: { report: DashboardReport }) {
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <div className="overflow-x-auto">
+      <div
+        role="region"
+        aria-label="Comparación de periodos"
+        tabIndex={0}
+        className="relative overflow-x-auto"
+      >
         <table className="w-full min-w-[42rem] border-separate border-spacing-0 text-sm tabular-nums">
           <caption className="sr-only">
             Indicadores del periodo consultado frente al periodo anterior de igual duración
