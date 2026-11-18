@@ -15,16 +15,14 @@ import type { SessionUser } from "@/types/auth";
 const UNAUTHORIZED = 401;
 const LOCKED = 423;
 const TOO_MANY_REQUESTS = 429;
-const LOGIN_LOCK_MINUTES = 15; // RN-08
-
 const INVALID_CREDENTIALS_MESSAGE = "Correo o contraseña incorrectos";
-const LOCKED_MESSAGE = `Tu cuenta está bloqueada por ${LOGIN_LOCK_MINUTES} minutos`;
 
 function loginErrorMessage(error: unknown): string {
   if (isNetworkError(error) || !(error instanceof ApiError)) return NETWORK_ERROR_MESSAGE;
-  // RN-09: el mensaje no dice si falló el correo o la contraseña.
   if (error.status === UNAUTHORIZED) return INVALID_CREDENTIALS_MESSAGE;
-  if (error.status === LOCKED || error.status === TOO_MANY_REQUESTS) return LOCKED_MESSAGE;
+  if (error.status === LOCKED || error.status === TOO_MANY_REQUESTS) {
+    return error.message || "Demasiados intentos. Espera unos minutos antes de volver a ingresar";
+  }
   return error.message;
 }
 

@@ -4,217 +4,332 @@ import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { formatClinicTime } from "@/lib/clinic-time";
-import { checkScannerLink, scanCheckIn } from "@/services/check-in";
+import { LoadingState } from "@/components/ui/loading-state";
+import { appointmentErrorMessage } from "@/features/appointments/errors";
+import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
+import { CHECK_IN_CODE_MAX, checkScannerLink, scanCheckIn } from "@/services/check-in";
 import { ApiError } from "@/services/http-client";
 
-const NOT_FOUND = 404;
 const SCAN_INTERVAL_MS = 200;
-const RESULT_VISIBLE_MS = 4000;
-// Mientras el QR sigue frente a la cámara no se vuelve a enviar el mismo código.
-const SAME_CODE_COOLDOWN_MS = 15_000;
-const MAX_FRAME_WIDTH_PX = 640;
+const MAX_FRAME_SIZE = 640;
 
 type LinkState = "checking" | "valid" | "invalid" | "unreachable";
-type CameraState = "starting" | "on" | "denied" | "unsupported";
-type Outcome = { tone: "success" | "danger"; title: string; detail?: string };
+type CameraState = { status: "off" | "starting" | "on" } | { status: "error"; message: string };
+type Outcome = { tone: "success" | "danger"; title: string; detail: string };
 
-const OUTCOME_CLASSES: Record<Outcome["tone"], string> = {
-  success: "border-success-border bg-success-bg text-success",
-  danger: "border-danger-border bg-danger-bg text-danger",
-};
+function cameraErrorMessage(error: unknown) {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError") {
+      return "No hay permiso para usar la cámara. Permite su uso en el navegador y vuelve a activarla, o ingresa el código abajo.";
+    }
+    if (error.name === "NotFoundError") {
+      return "No encontramos una cámara. Puedes registrar la llegada con el código de abajo.";
+    }
+    if (error.name === "NotReadableError") {
+      return "La cámara está ocupada o no está disponible. Cierra otras aplicaciones que la usen y vuelve a intentarlo.";
+    }
+  }
+  return "No pudimos activar la cámara. Vuelve a intentarlo o ingresa el código abajo.";
+}
 
-// D-66, RN-85: página de recepción sin sesión. El enlace con el token secreto es lo que autoriza escanear.
 export function CheckInScanner({ token }: { token: string }) {
   const [link, setLink] = useState<LinkState>("checking");
-  const [camera, setCamera] = useState<CameraState>("starting");
+  const [linkAttempt, setLinkAttempt] = useState(0);
+  const [camera, setCamera] = useState<CameraState>({ status: "off" });
+  const [cameraRequested, setCameraRequested] = useState(false);
+  const [cameraAttempt, setCameraAttempt] = useState(0);
+  const [foreground, setForeground] = useState(true);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [manualCode, setManualCode] = useState("");
+  const [busy, setBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const busyRef = useRef(false);
-  const lastScanRef = useRef<{ code: string; at: number } | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blockedRef = useRef(false);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-    checkScannerLink(token)
-      .then(() => !cancelled && setLink("valid"))
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        setLink(
-          error instanceof ApiError && error.status === NOT_FOUND ? "invalid" : "unreachable",
-        );
-      });
+    mountedRef.current = true;
+    const onVisibility = () => setForeground(document.visibilityState === "visible");
+    const onPageHide = () => setForeground(false);
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onVisibility);
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onVisibility);
     };
-  }, [token]);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLink("checking");
+    checkScannerLink(token, controller.signal)
+      .then(() => {
+        if (!controller.signal.aborted) setLink("valid");
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setLink(error instanceof ApiError && error.status === 404 ? "invalid" : "unreachable");
+        }
+      });
+    return () => controller.abort();
+  }, [token, linkAttempt]);
 
   const submit = useCallback(
-    async (code: string) => {
-      if (busyRef.current) return;
-      busyRef.current = true;
+    async (rawCode: string) => {
+      const code = rawCode.trim();
+      if (blockedRef.current || !code) return;
+      blockedRef.current = true;
+      if (code.length > CHECK_IN_CODE_MAX) {
+        setOutcome({
+          tone: "danger",
+          title: "Este QR no es un código de llegada",
+          detail: "Pide al propietario el QR de Mis citas o el de su recordatorio.",
+        });
+        return;
+      }
+      setBusy(true);
       try {
         const result = await scanCheckIn(token, code);
+        if (!mountedRef.current) return;
+        setManualCode("");
         setOutcome({
           tone: "success",
           title: `${result.patientName} ya llegó a su cita`,
-          detail: `Cita de las ${formatClinicTime(result.startsAt)}. La llegada quedó registrada.`,
+          detail: `${formatLongDate(clinicDateOf(new Date(result.startsAt)))} · ${formatClinicTime(result.startsAt)}. La llegada quedó registrada.`,
         });
-      } catch (error) {
+      } catch (error: unknown) {
+        if (!mountedRef.current) return;
         setOutcome({
           tone: "danger",
           title: "No se registró la llegada",
-          detail:
-            error instanceof ApiError
-              ? error.message
-              : "No pudimos conectar con el servidor. Intenta de nuevo.",
+          detail: appointmentErrorMessage(error),
         });
+        if (error instanceof ApiError && error.status === 404) {
+          setLinkAttempt((attempt) => attempt + 1);
+        }
+      } finally {
+        if (mountedRef.current) setBusy(false);
       }
-      hideTimerRef.current = setTimeout(() => {
-        setOutcome(null);
-        busyRef.current = false;
-      }, RESULT_VISIBLE_MS);
     },
     [token],
   );
 
   useEffect(() => {
-    if (link !== "valid") return;
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCamera("unsupported");
+    if (!cameraRequested || !foreground || link !== "valid" || outcome) {
+      setCamera({ status: "off" });
       return;
     }
-    let stream: MediaStream | null = null;
+    if (!window.isSecureContext) {
+      setCamera({
+        status: "error",
+        message:
+          "La cámara necesita un enlace HTTPS. Usa el enlace seguro de la clínica o ingresa el código abajo.",
+      });
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCamera({
+        status: "error",
+        message:
+          "Este navegador no permite usar la cámara aquí. Prueba otro navegador o ingresa el código abajo.",
+      });
+      return;
+    }
+
     let cancelled = false;
+    let stream: MediaStream | null = null;
+    const video = videoRef.current;
+    setCamera({ status: "starting" });
+    const stop = () => {
+      stream?.getTracks().forEach((track) => track.stop());
+      if (video && video.srcObject === stream) {
+        video.pause();
+        video.srcObject = null;
+      }
+    };
+
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      .getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
       .then(async (media) => {
-        if (cancelled) return media.getTracks().forEach((track) => track.stop());
+        if (cancelled || !video) {
+          media.getTracks().forEach((track) => track.stop());
+          return;
+        }
         stream = media;
-        const video = videoRef.current;
-        if (!video) return;
         video.srcObject = media;
         await video.play();
-        setCamera("on");
+        if (!cancelled) setCamera({ status: "on" });
       })
-      .catch(() => !cancelled && setCamera("denied"));
+      .catch((error: unknown) => {
+        stop();
+        if (!cancelled) setCamera({ status: "error", message: cameraErrorMessage(error) });
+      });
+
     return () => {
       cancelled = true;
-      stream?.getTracks().forEach((track) => track.stop());
+      stop();
     };
-  }, [link]);
+  }, [cameraRequested, foreground, link, outcome, cameraAttempt]);
 
   useEffect(() => {
-    if (camera !== "on") return;
-    const timer = setInterval(() => {
+    if (camera.status !== "on" || !foreground || link !== "valid") return;
+    const timer = window.setInterval(() => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      if (busyRef.current || !video || !canvas || video.videoWidth === 0) return;
-
-      const scale = Math.min(1, MAX_FRAME_WIDTH_PX / video.videoWidth);
-      canvas.width = Math.round(video.videoWidth * scale);
-      canvas.height = Math.round(video.videoHeight * scale);
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      if (!context) return;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const frame = context.getImageData(0, 0, canvas.width, canvas.height);
-      const found = jsQR(frame.data, frame.width, frame.height, {
-        inversionAttempts: "dontInvert",
-      });
-      if (!found?.data) return;
-
-      const last = lastScanRef.current;
-      const now = Date.now();
-      if (last && last.code === found.data && now - last.at < SAME_CODE_COOLDOWN_MS) return;
-      lastScanRef.current = { code: found.data, at: now };
-      void submit(found.data);
+      if (blockedRef.current || !video || !canvas || video.readyState < 2 || !video.videoWidth)
+        return;
+      try {
+        const scale = Math.min(1, MAX_FRAME_SIZE / Math.max(video.videoWidth, video.videoHeight));
+        canvas.width = Math.round(video.videoWidth * scale);
+        canvas.height = Math.round(video.videoHeight * scale);
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) throw new Error("Canvas no disponible");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        const found = jsQR(frame.data, frame.width, frame.height, {
+          inversionAttempts: "dontInvert",
+        });
+        if (found?.data) void submit(found.data);
+      } catch {
+        setCameraRequested(false);
+        setOutcome({
+          tone: "danger",
+          title: "No pudimos leer la imagen",
+          detail: "Puedes volver a activar la cámara o ingresar el código de llegada.",
+        });
+      }
     }, SCAN_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [camera, submit]);
+    return () => window.clearInterval(timer);
+  }, [camera.status, foreground, link, submit]);
 
-  useEffect(
-    () => () => {
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    },
-    [],
-  );
-
-  function onManualSubmit(event: FormEvent) {
+  function onManualSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const code = manualCode.trim();
-    if (!code) return;
-    setManualCode("");
-    void submit(code);
+    void submit(manualCode);
   }
 
-  if (link === "checking") return <p className="text-muted">Comprobando el enlace…</p>;
+  if (link === "checking") return <LoadingState />;
   if (link !== "valid") {
     return (
-      <section role="alert" className="space-y-2 rounded-card border border-line bg-surface p-6">
+      <section role="alert" className="flex flex-col items-start gap-3">
         <h1 className="text-xl font-semibold text-ink">
-          {link === "invalid" ? "Enlace no válido" : "No pudimos comprobar el enlace"}
+          {link === "invalid" ? "Enlace no disponible" : "No pudimos comprobar el enlace"}
         </h1>
         <p className="text-muted">
           {link === "invalid"
-            ? "Este enlace no existe o fue reemplazado. Pide a la clínica el enlace de escaneo vigente."
-            : "Revisa tu conexión y recarga la página."}
+            ? "Pide a la clínica el enlace o el QR de acceso vigente para recepción."
+            : "Revisa tu conexión y vuelve a intentarlo."}
         </p>
+        <Button variant="secondary" onClick={() => setLinkAttempt((attempt) => attempt + 1)}>
+          Reintentar
+        </Button>
       </section>
     );
   }
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex min-w-0 flex-col gap-5">
       <div>
         <h1 className="text-2xl font-semibold text-ink">Registrar llegada</h1>
-        <p className="text-muted">Apunta la cámara al QR que muestra el propietario.</p>
+        <p className="text-muted">Escanea el QR de Mis citas o del recordatorio del propietario.</p>
       </div>
 
-      <div className="relative overflow-hidden rounded-card border border-line bg-navy">
-        <video ref={videoRef} playsInline muted className="aspect-square w-full object-cover" />
-        <canvas ref={canvasRef} className="hidden" />
-        {camera !== "on" && (
-          <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-white">
-            {camera === "starting" && "Activando la cámara…"}
-            {camera === "denied" &&
-              "No hay permiso para usar la cámara. Actívalo en el navegador y recarga la página."}
-            {camera === "unsupported" &&
-              "Este navegador no permite usar la cámara aquí. Usa el campo de abajo."}
-          </p>
-        )}
-      </div>
-
-      <div aria-live="polite">
-        {outcome && (
+      {outcome ? (
+        <div className="flex flex-col gap-4">
           <div
             role={outcome.tone === "danger" ? "alert" : "status"}
-            className={`rounded-card border p-5 ${OUTCOME_CLASSES[outcome.tone]}`}
+            className={`rounded-card border p-5 break-words ${
+              outcome.tone === "success"
+                ? "border-success-border bg-success-bg text-success"
+                : "border-danger-border bg-danger-bg text-danger"
+            }`}
           >
-            <p className="text-lg font-semibold">{outcome.title}</p>
-            {outcome.detail && <p className="mt-1">{outcome.detail}</p>}
+            <h2 className="text-lg font-semibold">{outcome.title}</h2>
+            <p className="mt-1">{outcome.detail}</p>
           </div>
+          <Button
+            onClick={() => {
+              blockedRef.current = false;
+              setOutcome(null);
+            }}
+          >
+            {outcome.tone === "success" ? "Escanear otra llegada" : "Volver a intentar"}
+          </Button>
+        </div>
+      ) : null}
+
+      <div hidden={Boolean(outcome)} className="flex flex-col gap-3">
+        <div className="relative overflow-hidden rounded-card bg-navy">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            aria-label="Vista de la cámara para leer el QR de llegada"
+            className="aspect-[4/3] max-h-[50svh] min-h-48 w-full object-cover"
+          />
+          <canvas ref={canvasRef} hidden />
+          {camera.status !== "on" && (
+            <p className="absolute inset-0 flex items-center justify-center p-5 text-center text-white">
+              {camera.status === "starting" ? "Activando la cámara…" : "La cámara está apagada"}
+            </p>
+          )}
+        </div>
+        {camera.status === "error" && (
+          <p role="alert" className="text-sm text-danger">
+            {camera.message}
+          </p>
         )}
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => {
+            if (camera.status === "on" || camera.status === "starting") {
+              setCameraRequested(false);
+            } else {
+              setCameraRequested(true);
+              setCameraAttempt((attempt) => attempt + 1);
+            }
+          }}
+        >
+          {camera.status === "on" || camera.status === "starting"
+            ? "Detener cámara"
+            : camera.status === "error"
+              ? "Reintentar cámara"
+              : "Activar cámara"}
+        </Button>
+        <p role="status" className="text-sm text-muted">
+          {busy
+            ? "Registrando llegada…"
+            : camera.status === "on"
+              ? "Apunta al QR y mantenlo completo dentro de la imagen."
+              : "Activa la cámara cuando estés listo para escanear."}
+        </p>
       </div>
 
-      <form onSubmit={onManualSubmit} className="flex flex-col gap-3 border-t border-line pt-5">
+      <form
+        onSubmit={onManualSubmit}
+        className="flex min-w-0 flex-col gap-3 border-t border-line pt-5"
+      >
         <Field
-          label="¿Sin cámara? Escribe o pega el código"
-          hint="También sirve un lector de código de barras USB: el código se escribe aquí."
+          label="Código de llegada"
+          hint="Puedes pegarlo, escribirlo o usar un lector que funcione como teclado y envíe Enter."
           value={manualCode}
           onChange={(event) => setManualCode(event.target.value)}
+          readOnly={busy || Boolean(outcome)}
+          maxLength={CHECK_IN_CODE_MAX}
           autoComplete="off"
-          autoCapitalize="off"
+          autoCapitalize="none"
+          autoCorrect="off"
           spellCheck={false}
+          enterKeyHint="send"
+          className="w-full min-w-0 text-base"
         />
-        <Button
-          type="submit"
-          variant="secondary"
-          disabled={!manualCode.trim()}
-          className="self-start"
-        >
-          Registrar llegada
+        <Button type="submit" loading={busy} disabled={!manualCode.trim() || Boolean(outcome)}>
+          {busy ? "Registrando llegada…" : "Registrar llegada"}
         </Button>
       </form>
     </section>

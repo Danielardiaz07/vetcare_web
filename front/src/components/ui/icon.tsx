@@ -5,6 +5,7 @@ export type IconName =
   | "home"
   | "calendar"
   | "calendar-plus"
+  | "qr-code"
   | "file-medical"
   | "receipt"
   | "user"
@@ -44,6 +45,14 @@ export type IconName =
 const ICON_SIZE = 24;
 
 const PATHS: Record<IconName, ReactNode> = {
+  "qr-code": (
+    <>
+      <rect x="3" y="3" width="6" height="6" rx="1" />
+      <rect x="15" y="3" width="6" height="6" rx="1" />
+      <rect x="3" y="15" width="6" height="6" rx="1" />
+      <path d="M15 15h3v3h3v3h-6v-3M21 12v3M12 3v3M3 12h3M9 12h3v6M12 21h1" />
+    </>
+  ),
   refresh: (
     <path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M8 16H3v5" />
   ),
