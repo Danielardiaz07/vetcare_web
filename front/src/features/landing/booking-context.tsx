@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useAuthDialog, type SignedInHandler } from "@/features/auth/components/auth-dialog";
 import { BOOKING_SECTION_ID } from "@/features/landing/content";
-import type { AppointmentType } from "@/types/domain";
+import type { BookableAppointmentType } from "@/types/domain";
 
 const BOOKING_REASONS = {
   login: "Inicia sesión para agendar tu cita",
@@ -11,9 +11,9 @@ const BOOKING_REASONS = {
 } as const;
 
 type LandingBookingContextValue = {
-  type: AppointmentType | null;
+  type: BookableAppointmentType | null;
   requestKey: number;
-  requestBooking: (type?: AppointmentType) => void;
+  requestBooking: (type?: BookableAppointmentType) => void;
   openLogin: (tab?: "login" | "register", onSignedIn?: SignedInHandler) => void;
 };
 
@@ -30,7 +30,7 @@ function scrollToBooking() {
 
 export function LandingBookingProvider({ children }: { children: ReactNode }) {
   const { open } = useAuthDialog();
-  const [type, setType] = useState<AppointmentType | null>(null);
+  const [type, setType] = useState<BookableAppointmentType | null>(null);
   const [requestKey, setRequestKey] = useState(0);
 
   const openLogin = useCallback(
@@ -42,7 +42,7 @@ export function LandingBookingProvider({ children }: { children: ReactNode }) {
     [open],
   );
 
-  const requestBooking = useCallback((nextType?: AppointmentType) => {
+  const requestBooking = useCallback((nextType?: BookableAppointmentType) => {
     if (nextType) {
       setType(nextType);
       setRequestKey((key) => key + 1);

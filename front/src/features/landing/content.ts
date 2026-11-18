@@ -1,5 +1,5 @@
 import type { IconName } from "@/components/ui/icon";
-import type { AppointmentType } from "@/types/domain";
+import type { BookableAppointmentType } from "@/types/domain";
 
 // Datos de demostración para presentar la propuesta (D-41): no son de una clínica real. El horario
 // coincide con el de los profesionales de seed-demo para que la agenda no contradiga a la landing.
@@ -74,7 +74,7 @@ export type LandingService = {
   description: string;
   icon: IconName;
   // Solo los tipos de cita del sistema se agendan en línea; el resto se coordina con la clínica.
-  appointmentType?: AppointmentType;
+  appointmentType?: BookableAppointmentType;
   durationMinutes?: number;
   price: string;
 };

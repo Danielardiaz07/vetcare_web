@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 import { useLandingBooking } from "@/features/landing/booking-context";
-import type { AppointmentType } from "@/types/domain";
+import type { BookableAppointmentType } from "@/types/domain";
 
 type BookingTriggerProps = {
-  type?: AppointmentType;
+  type?: BookableAppointmentType;
   className?: string;
   children: ReactNode;
 };

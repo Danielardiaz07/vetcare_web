@@ -36,12 +36,12 @@ export function CancelDialog({ open, onClose, ...props }: CancelDialogProps) {
   );
 }
 
-function CancelForm({
+export function CancelForm({
   appointment,
   details,
   onClose,
   onCancelled,
-}: Omit<CancelDialogProps, "open">) {
+}: Omit<CancelDialogProps, "open" | "details"> & { details?: DetailRow[] }) {
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
@@ -64,7 +64,7 @@ function CancelForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
-      <BookingDetails rows={details} />
+      {details && <BookingDetails rows={details} />}
       <p className="text-muted">El horario quedará libre para otra persona.</p>
       <Select label="Motivo" error={errors.choice?.message} defaultValue="" {...register("choice")}>
         <option value="" disabled>

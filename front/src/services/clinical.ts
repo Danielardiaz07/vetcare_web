@@ -1,3 +1,4 @@
+import { isProcedureAppointment } from "@/lib/appointment-procedures";
 import { addDays, clinicDateOf } from "@/lib/clinic-time";
 import { WEIGHT_ALERT_PERCENT } from "@/lib/constants";
 import { getAgenda, mockAppointmentById } from "@/services/appointments";
@@ -22,6 +23,7 @@ import type {
   Hospitalization,
   LabExam,
   Patient,
+  ProcedureAppointmentType,
   Surgery,
   Vaccination,
   VaccinationCardEntry,
@@ -74,19 +76,15 @@ export interface VaccinationInput {
 }
 
 // D-34: la fecha (AAAA-MM-DD) no puede ser futura.
-export interface SurgeryInput {
-  patientId: string;
-  procedure: string;
-  performedAt: string;
-  notes?: string;
-}
+export type SurgeryInput = { patientId: string; notes?: string } & (
+  | { appointmentId?: undefined; procedure: string; performedAt: string }
+  | { appointmentId: string; procedure?: string; performedAt?: string }
+);
 
-export interface LabExamInput {
-  patientId: string;
-  examType: string;
-  performedAt: string;
-  results: string;
-}
+export type LabExamInput = { patientId: string } & (
+  | { appointmentId?: undefined; examType: string; performedAt: string; results: string }
+  | { appointmentId: string; examType?: string; performedAt?: string; results?: string }
+);
 
 // Los cambios de prueba viven mientras la pestaña está abierta.
 const mockConsultationStore = structuredClone(mockConsultations);
@@ -239,6 +237,7 @@ export type AttentionContext =
   | { status: "not-found" }
   // RN-43: solo se atiende una cita Confirmada.
   | { status: "not-confirmed"; appointment: Appointment }
+  | { status: "procedure"; appointment: Appointment }
   | {
       status: "ready";
       appointment: Appointment;
@@ -255,6 +254,13 @@ export async function getAttentionContext(
   const agenda = await getAgenda({ from: date });
   const appointment = agenda.find((item) => item.id === appointmentId);
   if (!appointment) return { status: "not-found" };
+  if (
+    isProcedureAppointment(appointment.type) &&
+    (appointment.status === "CONFIRMED" ||
+      (appointment.status === "ATTENDED" && appointment.clinicalRecord))
+  ) {
+    return { status: "procedure", appointment };
+  }
   if (appointment.status !== "CONFIRMED") return { status: "not-confirmed", appointment };
 
   const [patient, history, vaccinations] = await Promise.all([
@@ -384,18 +390,62 @@ const veterinarianName = ({
   lastNames,
 });
 
+async function mockProcedureAppointment(
+  appointmentId: string,
+  type: ProcedureAppointmentType,
+  patientId: string,
+  veterinarianId: string,
+): Promise<Appointment> {
+  const appointment = mockAppointmentById(appointmentId);
+  if (!appointment) return mockError(NOT_FOUND, "NOT_FOUND", "Cita no encontrada");
+  if (appointment.professional.id !== veterinarianId) {
+    return mockError(
+      FORBIDDEN,
+      "FORBIDDEN",
+      "Solo el veterinario asignado registra el procedimiento",
+    );
+  }
+  if (
+    appointment.type !== type ||
+    appointment.patient.id !== patientId ||
+    appointment.status !== "CONFIRMED"
+  ) {
+    return mockError(
+      CONFLICT,
+      "CONFLICT",
+      "El procedimiento requiere una cita confirmada del tipo y paciente correspondientes",
+    );
+  }
+  return appointment;
+}
+
 async function mockCreateSurgery(input: SurgeryInput): Promise<Surgery> {
   const veterinarian = await mockVeterinarian();
   if (!veterinarian) return mockError(FORBIDDEN, "FORBIDDEN", "No tienes permiso");
+  const appointment = input.appointmentId
+    ? await mockProcedureAppointment(
+        input.appointmentId,
+        "SURGERY",
+        input.patientId,
+        veterinarian.id,
+      )
+    : null;
+  const procedure = input.procedure ?? appointment?.procedureName;
+  if (!procedure) return mockError(400, "VALIDATION_ERROR", "El procedimiento es obligatorio");
   const surgery: Surgery = {
     id: crypto.randomUUID(),
+    appointmentId: appointment?.id ?? null,
     patientId: input.patientId,
     veterinarian: veterinarianName(veterinarian),
-    procedure: input.procedure,
-    performedAt: input.performedAt,
+    procedure,
+    performedAt: input.performedAt ?? clinicDateOf(new Date()),
     notes: input.notes ?? null,
     createdAt: new Date().toISOString(),
   };
+  if (appointment) {
+    appointment.clinicalRecord = { kind: "SURGERY", id: surgery.id };
+    appointment.status = "ATTENDED";
+  }
   mockSurgeryStore.push(surgery);
   return mockResponse(surgery);
 }
@@ -409,12 +459,33 @@ export function registerSurgery(input: SurgeryInput): Promise<Surgery> {
 async function mockCreateLabExam(input: LabExamInput): Promise<LabExam> {
   const veterinarian = await mockVeterinarian();
   if (!veterinarian) return mockError(FORBIDDEN, "FORBIDDEN", "No tienes permiso");
+  const appointment = input.appointmentId
+    ? await mockProcedureAppointment(
+        input.appointmentId,
+        "LAB_EXAM",
+        input.patientId,
+        veterinarian.id,
+      )
+    : null;
+  const examType = input.examType ?? appointment?.procedureName;
+  if (!examType) return mockError(400, "VALIDATION_ERROR", "El tipo de examen es obligatorio");
+  const createdAt = new Date().toISOString();
   const labExam: LabExam = {
-    ...input,
     id: crypto.randomUUID(),
+    patientId: input.patientId,
+    appointmentId: appointment?.id ?? null,
     veterinarian: veterinarianName(veterinarian),
-    createdAt: new Date().toISOString(),
+    examType,
+    performedAt: input.performedAt ?? clinicDateOf(new Date()),
+    status: input.results ? "WITH_RESULTS" : "PENDING_RESULTS",
+    results: input.results ?? null,
+    resultsAt: input.results ? createdAt : null,
+    createdAt,
   };
+  if (appointment) {
+    appointment.clinicalRecord = { kind: "LAB_EXAM", id: labExam.id, status: labExam.status };
+    appointment.status = "ATTENDED";
+  }
   mockLabExamStore.push(labExam);
   return mockResponse(labExam);
 }
@@ -422,6 +493,33 @@ async function mockCreateLabExam(input: LabExamInput): Promise<LabExam> {
 export function registerLabExam(input: LabExamInput): Promise<LabExam> {
   if (isMockEnabled) return mockCreateLabExam(input);
   return request<LabExam>("/lab-exams", { method: "POST", body: input });
+}
+
+export async function loadLabResults(id: string, results: string): Promise<LabExam> {
+  if (!isMockEnabled) {
+    return request<LabExam>(`/lab-exams/${id}/results`, { method: "PUT", body: { results } });
+  }
+  const veterinarian = await mockVeterinarian();
+  const exam = mockLabExamStore.find((item) => item.id === id);
+  if (!exam) return mockError(NOT_FOUND, "NOT_FOUND", "Examen no encontrado");
+  if (exam.veterinarian.id !== veterinarian?.id) {
+    return mockError(
+      FORBIDDEN,
+      "FORBIDDEN",
+      "Solo el veterinario que registró el examen carga los resultados",
+    );
+  }
+  if (exam.status !== "PENDING_RESULTS") {
+    return mockError(CONFLICT, "CONFLICT", "El examen ya tiene resultados");
+  }
+  exam.status = "WITH_RESULTS";
+  exam.results = results;
+  exam.resultsAt = new Date().toISOString();
+  const appointment = exam.appointmentId ? mockAppointmentById(exam.appointmentId) : undefined;
+  if (appointment) {
+    appointment.clinicalRecord = { kind: "LAB_EXAM", id, status: exam.status };
+  }
+  return mockResponse(exam);
 }
 
 async function mockAdmit(patientId: string, reason: string): Promise<Hospitalization> {

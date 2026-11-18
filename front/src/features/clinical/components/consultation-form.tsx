@@ -3,8 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { CopField } from "@/components/ui/cop-field";
 import { Field } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
@@ -29,6 +30,7 @@ export function ConsultationForm({ appointment, patient }: ConsultationFormProps
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ConsultationFormInput>({
@@ -105,15 +107,17 @@ export function ConsultationForm({ appointment, patient }: ConsultationFormProps
         error={errors.prescription?.message}
         {...register("prescription")}
       />
-      <Field
-        label="Costo de la consulta (COP)"
-        type="number"
-        inputMode="numeric"
-        step="1"
-        min="0"
-        hint="Sin puntos ni signo de pesos."
-        error={errors.cost?.message}
-        {...register("cost", { valueAsNumber: true })}
+      <Controller
+        name="cost"
+        control={control}
+        render={({ field: { value, ...field } }) => (
+          <CopField
+            {...field}
+            label="Costo de la consulta (COP)"
+            defaultValue={value}
+            error={errors.cost?.message}
+          />
+        )}
       />
       {/* RN-42: estas notas nunca se muestran al propietario. */}
       <Textarea

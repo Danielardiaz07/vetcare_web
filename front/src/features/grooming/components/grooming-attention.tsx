@@ -4,11 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { CopField } from "@/components/ui/cop-field";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ResponsiveSummary } from "@/components/ui/responsive-summary";
 import { Select } from "@/components/ui/select";
@@ -105,6 +105,7 @@ function GroomingForm({ appointment }: { appointment: Appointment }) {
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<GroomingServiceFormInput>({
@@ -154,15 +155,17 @@ function GroomingForm({ appointment }: { appointment: Appointment }) {
         error={errors.observations?.message}
         {...register("observations")}
       />
-      <Field
-        label="Costo del servicio (COP)"
-        type="number"
-        inputMode="numeric"
-        step="1"
-        min="0"
-        hint="Sin puntos ni signo de pesos."
-        error={errors.cost?.message}
-        {...register("cost", { valueAsNumber: true })}
+      <Controller
+        name="cost"
+        control={control}
+        render={({ field: { value, ...field } }) => (
+          <CopField
+            {...field}
+            label="Costo del servicio (COP)"
+            defaultValue={value}
+            error={errors.cost?.message}
+          />
+        )}
       />
       {formError && (
         <p role="alert" className="text-sm text-danger">

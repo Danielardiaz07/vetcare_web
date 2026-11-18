@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { DatePicker } from "@/components/ui/date-picker";
 import { LoadingState } from "@/components/ui/loading-state";
-import { formatClinicTime, formatLongDate } from "@/lib/clinic-time";
+import { isProcedureAppointment } from "@/lib/appointment-procedures";
+import { formatClinicTime, formatFullClinicDate, formatLongDate } from "@/lib/clinic-time";
 import { MIN_APPOINTMENT_LEAD_HOURS } from "@/lib/constants";
 import { getAvailability } from "@/services/appointments";
 import type { AppointmentType, Availability, AvailableSlot } from "@/types/domain";
@@ -13,43 +14,59 @@ import type { AppointmentType, Availability, AvailableSlot } from "@/types/domai
 const HOUR_MS = 60 * 60 * 1000;
 type LoadState =
   | { status: "loading" }
-  | { status: "error" }
+  | { status: "error"; key: string }
   | { status: "ready"; key: string; data: Availability };
 type DateTimeAvailabilityProps = {
-  type: AppointmentType;
+  type: AppointmentType | null;
   professionalId?: string;
+  durationMinutes?: number;
   dates: string[];
   date: string | null;
   slot: Pick<AvailableSlot, "startsAt"> | null;
   refreshKey: number;
+  loadAvailability?: typeof getAvailability;
+  disabled?: boolean;
+  showSuggestedDates?: boolean;
   onChange: (date: string, slot: AvailableSlot | null) => void;
 };
 
 export function DateTimeAvailability({
   type,
   professionalId,
+  durationMinutes,
   dates,
   date,
   slot,
   refreshKey,
+  loadAvailability = getAvailability,
+  disabled = false,
+  showSuggestedDates = false,
   onChange,
 }: DateTimeAvailabilityProps) {
   const first = dates[0] ?? "";
   const last = dates.at(-1) ?? first;
   const day = date && date >= first && date <= last ? date : first;
+  const needsDuration =
+    type !== null && isProcedureAppointment(type) && durationMinutes === undefined;
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [retryKey, setRetryKey] = useState(0);
-  const request = useRef<{ key: string; promise: Promise<Availability> } | null>(null);
-  const key = `${type}:${professionalId ?? "any"}:${day}:${refreshKey}:${retryKey}`;
+  const request = useRef<{
+    key: string;
+    load: typeof getAvailability;
+    promise: Promise<Availability>;
+  } | null>(null);
+  const key = `${type}:${professionalId ?? "any"}:${durationMinutes ?? "default"}:${day}:${refreshKey}:${retryKey}`;
 
   useEffect(() => {
+    if (!type || needsDuration) return;
     let active = true;
     setState({ status: "loading" });
     // Evita consultas duplicadas al repetir el efecto en Strict Mode.
-    if (request.current?.key !== key) {
+    if (request.current?.key !== key || request.current.load !== loadAvailability) {
       request.current = {
         key,
-        promise: getAvailability({ type, date: day, ...(professionalId && { professionalId }) }),
+        load: loadAvailability,
+        promise: loadAvailability({ type, date: day, professionalId, durationMinutes }),
       };
     }
     request.current.promise
@@ -57,12 +74,12 @@ export function DateTimeAvailability({
         if (active) setState({ status: "ready", key, data });
       })
       .catch(() => {
-        if (active) setState({ status: "error" });
+        if (active) setState({ status: "error", key });
       });
     return () => {
       active = false;
     };
-  }, [type, professionalId, day, key]);
+  }, [type, professionalId, durationMinutes, day, key, loadAvailability, needsDuration]);
 
   const ready = state.status === "ready" && state.key === key;
   const slots = ready
@@ -72,9 +89,16 @@ export function DateTimeAvailability({
           Date.now() + MIN_APPOINTMENT_LEAD_HOURS * HOUR_MS,
       )
     : [];
+  const suggestedDates =
+    ready && showSuggestedDates
+      ? state.data.suggestedDates.filter((suggestion) => suggestion >= first && suggestion <= last)
+      : [];
 
   return (
-    <div className="grid min-w-0 items-start gap-8 @min-[30rem]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+    <fieldset
+      disabled={disabled}
+      className="grid min-w-0 items-start gap-8 @min-[30rem]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]"
+    >
       <DatePicker
         value={day}
         min={first}
@@ -85,10 +109,21 @@ export function DateTimeAvailability({
       />
       <section aria-label="Horarios disponibles" className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h3 className="font-semibold text-ink">Horarios disponibles</h3>
-          <p className="text-sm text-muted first-letter:uppercase">{formatLongDate(day)}</p>
+          <h3 className="text-base font-semibold text-ink">Horarios disponibles</h3>
+          <p
+            aria-live="polite"
+            className="text-sm leading-snug font-semibold text-brand-700 first-letter:uppercase"
+          >
+            <time dateTime={day}>{formatFullClinicDate(day)}</time>
+          </p>
         </div>
-        {state.status === "error" ? (
+        {!type ? (
+          <p className="text-sm text-muted">
+            Elige el tipo de cita y el profesional para consultar las horas disponibles.
+          </p>
+        ) : needsDuration ? (
+          <p className="text-sm text-muted">Escribe una duración válida para ver los horarios.</p>
+        ) : state.status === "error" && state.key === key ? (
           <div className="flex flex-col gap-2">
             <p className="text-sm text-danger">No pudimos cargar los horarios.</p>
             <Button
@@ -122,9 +157,25 @@ export function DateTimeAvailability({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">Sin horarios disponibles.</p>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted">Sin horarios disponibles.</p>
+            {suggestedDates.length > 0 && (
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Fechas sugeridas">
+                {suggestedDates.map((suggestion) => (
+                  <Button
+                    key={suggestion}
+                    variant="secondary"
+                    className="text-sm first-letter:uppercase"
+                    onClick={() => onChange(suggestion, null)}
+                  >
+                    {formatLongDate(suggestion)}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </section>
-    </div>
+    </fieldset>
   );
 }

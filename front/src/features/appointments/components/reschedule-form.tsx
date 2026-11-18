@@ -1,27 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ErrorState } from "@/components/ui/error-state";
-import { LoadingState } from "@/components/ui/loading-state";
-import { ChoiceButton } from "@/features/appointments/components/choice-button";
+import { DateTimeAvailability } from "@/features/appointments/components/date-time-availability";
 import {
   appointmentErrorMessage,
   isSlotTaken,
   SLOT_TAKEN_MESSAGE,
 } from "@/features/appointments/errors";
+import { ProcedureDurationField } from "@/features/appointments/components/procedure-duration-field";
 import {
-  bookableDates,
-  clinicDateOf,
-  dayParts,
-  formatClinicTime,
-  formatLongDate,
-} from "@/lib/clinic-time";
+  formatProcedureDuration,
+  isProcedureAppointment,
+  parseProcedureDuration,
+} from "@/lib/appointment-procedures";
+import { bookableDates, clinicDateOf } from "@/lib/clinic-time";
 import { getAvailability, rescheduleAppointment } from "@/services/appointments";
-import type { Appointment, Availability } from "@/types/domain";
-
-type AvailabilityState =
-  { status: "loading" } | { status: "error" } | { status: "ready"; data: Availability };
+import type { Appointment, AvailableSlot } from "@/types/domain";
 
 type RescheduleFormProps = {
   appointment: Appointment;
@@ -40,51 +35,42 @@ export function RescheduleForm({
 }: RescheduleFormProps) {
   const dates = useMemo(() => bookableDates(), []);
   const currentDate = clinicDateOf(new Date(appointment.startsAt));
+  const isProcedure = isProcedureAppointment(appointment.type);
   const [date, setDate] = useState(dates.includes(currentDate) ? currentDate : (dates[0] ?? ""));
-  const [startsAt, setStartsAt] = useState<string | null>(null);
-  const [availability, setAvailability] = useState<AvailabilityState>({ status: "loading" });
+  const [durationText, setDurationText] = useState(() =>
+    isProcedure ? formatProcedureDuration(appointment.durationMinutes) : "",
+  );
+  const [validateDuration, setValidateDuration] = useState(false);
+  const [slot, setSlot] = useState<AvailableSlot | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
-
-  useEffect(() => {
-    let active = true;
-    setAvailability({ status: "loading" });
-    loadAvailability({ type: appointment.type, date, professionalId: appointment.professional.id })
-      .then((data) => {
-        if (active) setAvailability({ status: "ready", data });
-      })
-      .catch(() => {
-        if (active) setAvailability({ status: "error" });
-      });
-    return () => {
-      active = false;
-    };
-  }, [appointment, date, reloadKey, loadAvailability]);
-
-  function pickDate(next: string) {
-    setDate(next);
-    setStartsAt(null);
-    setError(null);
-  }
+  const duration = isProcedure ? parseProcedureDuration(durationText) : undefined;
 
   async function handleConfirm() {
     if (submittingRef.current) return;
-    if (!startsAt) {
+    if (isProcedure && duration === undefined) {
+      setValidateDuration(true);
+      return;
+    }
+    if (!slot) {
       setError("Elige una hora para continuar.");
       return;
     }
+    const { startsAt } = slot;
     submittingRef.current = true;
     setSaving(true);
     setError(null);
     try {
       onRescheduled(
-        await (onSave ? onSave(startsAt) : rescheduleAppointment(appointment.id, { startsAt })),
+        await (onSave
+          ? onSave(startsAt)
+          : rescheduleAppointment(appointment.id, { startsAt, durationMinutes: duration })),
       );
     } catch (failure) {
       if (isSlotTaken(failure)) {
-        setStartsAt(null);
+        setSlot(null);
         setReloadKey((key) => key + 1);
         setError(SLOT_TAKEN_MESSAGE);
       } else {
@@ -97,73 +83,40 @@ export function RescheduleForm({
   }
 
   return (
-    <div className="flex flex-col gap-4 border-t border-divider pt-4">
-      <h4 className="font-semibold text-ink">Elige un nuevo horario</h4>
-      <div
-        role="group"
-        aria-label="Día"
-        className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2"
-      >
-        {dates.map((item) => {
-          const parts = dayParts(item);
-          return (
-            <ChoiceButton
-              key={item}
-              selected={item === date}
-              disabled={saving}
-              onSelect={() => pickDate(item)}
-              ariaLabel={formatLongDate(item)}
-              className="items-center text-center"
-              label={parts.day}
-              detail={`${parts.weekday} · ${parts.month}`}
-            />
-          );
-        })}
-      </div>
-
-      {availability.status === "loading" && <LoadingState rows={1} />}
-      {availability.status === "error" && (
-        <ErrorState onRetry={() => setReloadKey((key) => key + 1)} />
-      )}
-      {availability.status === "ready" && availability.data.slots.length > 0 && (
-        <div
-          role="group"
-          aria-label={`Horas libres el ${formatLongDate(date)}`}
-          className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2"
-        >
-          {availability.data.slots.map((slot) => (
-            <ChoiceButton
-              key={slot.startsAt}
-              selected={slot.startsAt === startsAt}
-              disabled={saving}
-              onSelect={() => {
-                setStartsAt(slot.startsAt);
-                setError(null);
-              }}
-              className="items-center"
-              label={formatClinicTime(slot.startsAt)}
-            />
-          ))}
+    <div className="@container flex min-w-0 flex-col gap-4 border-t border-divider pt-4">
+      <h3 className="font-semibold text-ink">Elige un nuevo horario</h3>
+      {isProcedure && (
+        <div className="max-w-xs">
+          <ProcedureDurationField
+            value={durationText}
+            disabled={saving}
+            showError={validateDuration}
+            onChange={(value) => {
+              setDurationText(value);
+              if (parseProcedureDuration(value) !== duration) setSlot(null);
+              setError(null);
+            }}
+          />
         </div>
       )}
-      {availability.status === "ready" && availability.data.slots.length === 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-ink">No quedan horas libres ese día.</p>
-          {availability.data.suggestedDates.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {availability.data.suggestedDates.map((item) => (
-                <ChoiceButton
-                  key={item}
-                  selected={false}
-                  disabled={saving}
-                  onSelect={() => pickDate(item)}
-                  label={formatLongDate(item)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <DateTimeAvailability
+        type={appointment.type}
+        professionalId={appointment.professional.id}
+        durationMinutes={duration}
+        dates={dates}
+        date={date}
+        slot={slot}
+        refreshKey={reloadKey}
+        loadAvailability={loadAvailability}
+        disabled={saving}
+        showSuggestedDates
+        onChange={(nextDate, nextSlot) => {
+          if (nextDate === date && !nextSlot) return;
+          setDate(nextDate);
+          setSlot(nextSlot);
+          setError(null);
+        }}
+      />
 
       {error && (
         <p role="alert" className="text-sm text-danger">

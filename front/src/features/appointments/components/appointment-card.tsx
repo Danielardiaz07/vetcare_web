@@ -12,6 +12,7 @@ import { CONTACT_CLINIC_MESSAGE } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
 import { APPOINTMENT_PREP } from "@/lib/appointment-prep";
+import { appointmentLabStatus, isProcedureAppointment } from "@/lib/appointment-procedures";
 import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
 import {
   clinicDateOf,
@@ -43,7 +44,10 @@ export function AppointmentCard({
   const badge = APPOINTMENT_STATUS[status];
   const title = APPOINTMENT_TYPE_LABELS[type];
   const active = status === "SCHEDULED" || status === "CONFIRMED";
-  const changeable = isChangeable(startsAt);
+  const isProcedure = isProcedureAppointment(type);
+  const changeable = !isProcedure && isChangeable(startsAt);
+  const labStatus = appointmentLabStatus(appointment);
+  const prep = withPrep && !isProcedure ? APPOINTMENT_PREP[type] : null;
   const timeRange = `${formatClinicTime(startsAt)} a ${formatClinicTime(endsAt)}`;
 
   return (
@@ -63,7 +67,11 @@ export function AppointmentCard({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-lg font-semibold text-ink">{title}</h3>
             <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
+            {labStatus && <StatusBadge tone={labStatus.tone}>{labStatus.label}</StatusBadge>}
           </div>
+          {appointment.procedureName && (
+            <p className="font-medium break-words text-ink">{appointment.procedureName}</p>
+          )}
           <p className="text-ink first-letter:uppercase">
             {formatLongDate(date)} · {timeRange}
           </p>
@@ -77,27 +85,41 @@ export function AppointmentCard({
           )}
         </div>
       </div>
+      {appointment.instructions && (
+        <div className="flex flex-col gap-1 border-t border-divider pt-3">
+          <p className="font-semibold text-ink">Indicaciones de la clínica</p>
+          <p className="whitespace-pre-line break-words text-ink">{appointment.instructions}</p>
+        </div>
+      )}
       {onChanged && active && !rescheduling && (
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-3">
             {status === "SCHEDULED" && date >= clinicDateOf(new Date()) && (
               <CheckInQr key={startsAt} appointment={appointment} />
             )}
-            <Button
-              variant="secondary"
-              disabled={!changeable}
-              onClick={() => setRescheduling(true)}
-            >
-              Reprogramar
-            </Button>
-            <Button variant="secondary" disabled={!changeable} onClick={() => setCancelling(true)}>
-              Cancelar
-            </Button>
+            {!isProcedure && (
+              <>
+                <Button
+                  variant="secondary"
+                  disabled={!changeable}
+                  onClick={() => setRescheduling(true)}
+                >
+                  Reprogramar
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={!changeable}
+                  onClick={() => setCancelling(true)}
+                >
+                  Cancelar
+                </Button>
+              </>
+            )}
           </div>
           {!changeable && <p className="text-sm text-muted">{CONTACT_CLINIC_MESSAGE}</p>}
         </div>
       )}
-      {onChanged && rescheduling && (
+      {onChanged && !isProcedure && rescheduling && (
         <RescheduleForm
           appointment={appointment}
           onCancel={() => setRescheduling(false)}
@@ -107,7 +129,7 @@ export function AppointmentCard({
           }}
         />
       )}
-      {onChanged && (
+      {onChanged && !isProcedure && (
         <CancelDialog
           appointment={appointment}
           details={[
@@ -125,7 +147,7 @@ export function AppointmentCard({
           }}
         />
       )}
-      {withPrep && (
+      {prep && (
         <div className="flex flex-col gap-2 border-t border-divider pt-3">
           <button
             type="button"
@@ -145,7 +167,7 @@ export function AppointmentCard({
           </button>
           {prepOpen && (
             <ul id={prepId} className="flex list-disc flex-col gap-1 pl-5 text-ink">
-              {APPOINTMENT_PREP[type].map((tip) => (
+              {prep.map((tip) => (
                 <li key={tip}>{tip}</li>
               ))}
             </ul>

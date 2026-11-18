@@ -6,9 +6,20 @@ import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { useToast } from "@/components/ui/toast";
+import { BookingDetails } from "@/features/appointments/components/booking-details";
 import { ConsultationForm } from "@/features/clinical/components/consultation-form";
 import { PatientSummary } from "@/features/clinical/components/patient-summary";
+import {
+  LabResultsForm,
+  ScheduledProcedureForm,
+} from "@/features/clinical/components/procedure-forms";
 import { VaccinationForm } from "@/features/clinical/components/vaccination-form";
+import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
+import { appointmentLabStatus } from "@/lib/appointment-procedures";
+import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
+import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
 import { ROUTES } from "@/lib/constants";
 import {
   getAttentionContext,
@@ -70,12 +81,79 @@ export function AttentionView({ appointmentId, date }: AttentionViewProps) {
     );
   }
   if (data.status === "not-confirmed") return <NotConfirmed appointment={data.appointment} />;
+  if (data.status === "procedure")
+    return <ProcedureAttention appointment={data.appointment} onSaved={reload} />;
 
   return (
     <AttentionTabs
       context={data}
       onContextChange={(next) => setState({ status: "loaded", data: next })}
     />
+  );
+}
+
+function ProcedureAttention({
+  appointment,
+  onSaved,
+}: {
+  appointment: Appointment;
+  onSaved: () => void;
+}) {
+  const { show } = useToast();
+  const { clinicalRecord, instructions, patient, procedureName, startsAt, status, type } =
+    appointment;
+  const appointmentStatus = APPOINTMENT_STATUS[status];
+  const labStatus = appointmentLabStatus(appointment);
+  const pendingExam =
+    clinicalRecord?.kind === "LAB_EXAM" && clinicalRecord.status === "PENDING_RESULTS";
+  const date = clinicDateOf(new Date(startsAt));
+
+  function saved(message: string) {
+    show(message, "success");
+    onSaved();
+  }
+
+  return (
+    <section className="flex max-w-3xl flex-col gap-5 rounded-card border border-line bg-surface p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="text-xl font-semibold text-ink">{APPOINTMENT_TYPE_LABELS[type]}</h1>
+        <StatusBadge tone={appointmentStatus.tone}>{appointmentStatus.label}</StatusBadge>
+        {labStatus && <StatusBadge tone={labStatus.tone}>{labStatus.label}</StatusBadge>}
+      </div>
+      <BookingDetails
+        rows={[
+          { label: "Mascota", value: patient.name },
+          ...(procedureName ? [{ label: "Procedimiento", value: procedureName }] : []),
+          { label: "Cita", value: `${formatLongDate(date)} · ${formatClinicTime(startsAt)}` },
+          ...(instructions
+            ? [{ label: "Indicaciones para el propietario", value: instructions }]
+            : []),
+        ]}
+      />
+      {status === "CONFIRMED" && (
+        <ScheduledProcedureForm
+          appointment={appointment}
+          onSaved={() => saved("Atención registrada")}
+        />
+      )}
+      {pendingExam && (
+        <LabResultsForm examId={clinicalRecord.id} onSaved={() => saved("Resultados guardados")} />
+      )}
+      <div className="flex flex-wrap gap-x-4">
+        <Link
+          href={ROUTES.panelAgenda}
+          className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-2"
+        >
+          Volver a Mi agenda
+        </Link>
+        <Link
+          href={ROUTES.panelPatient(patient.id)}
+          className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-2"
+        >
+          Ver ficha de la mascota
+        </Link>
+      </div>
+    </section>
   );
 }
 

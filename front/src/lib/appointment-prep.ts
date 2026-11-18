@@ -1,7 +1,7 @@
-import type { AppointmentType } from "@/types/domain";
+import type { BookableAppointmentType } from "@/types/domain";
 
 // Recomendaciones generales para el propietario; no reemplazan lo que indique el veterinario.
-export const APPOINTMENT_PREP: Record<AppointmentType, string[]> = {
+export const APPOINTMENT_PREP: Record<BookableAppointmentType, string[]> = {
   GENERAL_CONSULTATION: [
     "Anota los síntomas y desde cuándo los notaste.",
     "Trae los medicamentos que esté tomando.",
