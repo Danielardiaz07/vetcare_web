@@ -156,7 +156,7 @@ export const LANDING_TEAM: TeamMember[] = [
   },
   {
     name: "Camila Torres Vega",
-    role: "Estilista canino",
+    role: "Estilista canina",
     specialty: "Baño y motilada",
     photo: "/equipo/camila-torres.png",
   },
