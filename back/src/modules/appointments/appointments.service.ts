@@ -97,6 +97,7 @@ function toResponse(record: AppointmentRecord, withOwner: boolean): AppointmentR
     procedureName: record.procedureName,
     instructions: record.instructions,
     clinicalRecord: linkedRecordOf(record),
+    attentionStartedAt: record.attentionStartedAt,
     patient: { id: record.patient.id, name: record.patient.name },
     professional: {
       id: professional.id,
@@ -330,6 +331,29 @@ export class AppointmentsService {
       status: AppointmentStatus.CONFIRMED,
     });
     this.events.appointmentChanged(updated.id);
+    return toResponse(updated, true);
+  }
+
+  // D-72: el veterinario asignado inicia la atención de una cita confirmada. No cambia el estado (pasa a ATTENDED al
+  // guardar el registro clínico) y repetirla devuelve el mismo instante, sin otro aviso.
+  async startAttention(actor: Actor, id: string): Promise<AppointmentResponseDto> {
+    const appointment = await this.findOrFail(id);
+    const { veterinarianId } = await this.repository.findProfileIds(actor.id);
+    if (!veterinarianId || appointment.veterinarianId !== veterinarianId) {
+      throw new ForbiddenError();
+    }
+    if (appointment.attentionStartedAt) return toResponse(appointment, true);
+    if (appointment.status !== AppointmentStatus.CONFIRMED) {
+      throw new ConflictError("Solo se puede iniciar la atencion de una cita confirmada");
+    }
+
+    const startedAt = this.clock();
+    const updated = await this.repository.markAttentionStarted(id, startedAt);
+    if (!updated) throw new NotFoundError("Cita no encontrada");
+    // Si otra llamada ganó la carrera, el valor guardado es el suyo y ya emitió el aviso.
+    if (updated.attentionStartedAt?.getTime() === startedAt.getTime()) {
+      this.events.appointmentChanged(updated.id);
+    }
     return toResponse(updated, true);
   }
 

@@ -33,7 +33,7 @@ Documentación en español; código, tablas, columnas y endpoints en inglés.
 | `Groomer` | Estilista | Realiza `GroomingService`; tiene `Schedule` |
 | `Schedule` | Horario de atención por día | Pertenece a un veterinario/estilista (composición) |
 | `AppointmentTypeSetting` | Duración configurable de cada `AppointmentType` (RN-19, D-21) | Una fila por tipo; lo consultan la disponibilidad y el agendamiento |
-| `Appointment` | Reserva de atención con sus reglas de modificación | Genera 0..1 `Consultation`; origina `Notification` |
+| `Appointment` | Reserva de atención con sus reglas de modificación; guarda `attentionStartedAt` cuando el veterinario inicia la atención (D-72) | Genera 0..1 `Consultation`; origina `Notification` |
 | `Consultation` | Registro médico principal | Contiene `PrescriptionItem` (composición) |
 | `PrescriptionItem` | Medicamento formulado con cantidad | Referencia `Medication` |
 | `Medication` / `Vaccine` | Inventario con stock y vencimiento | Referenciados por fórmulas, vacunaciones y detalles de factura |

@@ -244,6 +244,7 @@ model Appointment {
   cancelReason   String?           @db.VarChar(200) // RN-30: obligatorio al cancelar
   procedureName  String?           @db.VarChar(80) // D-71: solo cirugía y examen; cabe en Surgery.procedure (120) y LabExam.examType (80)
   instructions   String?           @db.VarChar(500) // D-71: indicaciones para el propietario (p. ej. ayuno); mismo tope que los textos clínicos
+  attentionStartedAt DateTime?     @db.Timestamptz(3) // D-72: instante en que el veterinario inició la atención; no cambia el estado
   createdAt      DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
 

@@ -64,6 +64,10 @@ export class AppointmentsController {
     res.json(await this.service.registerArrival(String(req.params.id)));
   };
 
+  startAttention: RequestHandler = async (req, res) => {
+    res.json(await this.service.startAttention(req.user!, String(req.params.id)));
+  };
+
   checkInCode: RequestHandler = async (req, res) => {
     res.json(await this.service.checkInCode(req.user!, String(req.params.id)));
   };

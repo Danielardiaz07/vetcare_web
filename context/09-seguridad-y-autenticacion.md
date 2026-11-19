@@ -94,6 +94,7 @@ Consultas públicas de agendamiento (D-50, D-51): GET /appointment-types, GET /a
 | Ver la curva de peso y su alerta (RN-81, D-55) | ✔ (solo las suyas) | ✔ | ✔ | | |
 | Ver y cambiar el QR del carné de vacunación (RN-82, D-56) | ✔ (solo las suyas; también desactivarlo) | ✔ (ver) | ✔ (ver) | | |
 | Mostrar el QR de llegada (propietario) y escanearlo (recepción) (RN-83, D-56) | ✔ (solo sus citas) | ✔ | | | |
+| Iniciar la atención de una cita confirmada propia (D-72) | | | ✔ (solo la asignada) | | |
 | Registrar llegadas desde la página `/scan/<token>`, sin sesión (RN-85, D-66) | | ✔ (quien tenga el enlace o su QR fijo) | | | |
 | Ver el enlace y el QR fijo del escáner de recepción (RN-85, D-68) | | ✔ | | | |
 | Recibir en vivo los cambios de la agenda por el canal de eventos (D-69) | | ✔ | | | |
