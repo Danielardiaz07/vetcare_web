@@ -228,6 +228,15 @@ export class AppointmentsRepository {
     }
   }
 
+  // D-73: solo escribe si aún no hay inicio, así dos llamadas simultáneas conservan el primer instante.
+  async markAttentionStarted(id: string, at: Date): Promise<AppointmentRecord | null> {
+    await prisma.appointment.updateMany({
+      where: { id, attentionStartedAt: null },
+      data: { attentionStartedAt: at },
+    });
+    return this.findById(id);
+  }
+
   listAgenda({
     from,
     to,

@@ -538,6 +538,18 @@ export const OPERATIONS: Operation[] = [
     },
   ),
   op(
+    "put",
+    "/appointments/{id}/start-attention",
+    TAGS.appointments,
+    "Iniciar la atención de una cita",
+    [VETERINARIAN],
+    200,
+    {
+      description:
+        "Solo el veterinario asignado (403 a otro) y sobre una cita CONFIRMED (409 en otro estado). Guarda y devuelve `attentionStartedAt`; repetirla devuelve el mismo valor sin cambiarlo. No cambia el estado: la cita pasa a ATTENDED al guardar el registro clínico. Emite `appointment.changed` la primera vez para actualizar la agenda de recepción (D-73).",
+    },
+  ),
+  op(
     "get",
     "/public/appointments/manage/{token}",
     TAGS.appointments,
@@ -600,7 +612,7 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       description:
-        "Conexión `text/event-stream` autenticada con el JWT en `Authorization` (el `EventSource` del navegador no envía cabeceras: usa `fetch` con lectura de la respuesta). Emite `appointment.changed` con `{ appointmentId }` tras guardar una creación, reprogramación, cancelación, reasignación o cambio de estado (llegada manual o por QR, no asistió, consulta, vacunación o servicio de estética que cierra la cita). El cliente vuelve a consultar la agenda al recibirlo. Envía un comentario `: keep-alive` cada 25 s y cierra la conexión a los 10 minutos para que el cliente se reconecte con un token vigente; al reconectar conviene consultar la agenda, porque los avisos perdidos no se reenvían (D-69).",
+        "Conexión `text/event-stream` autenticada con el JWT en `Authorization` (el `EventSource` del navegador no envía cabeceras: usa `fetch` con lectura de la respuesta). Emite `appointment.changed` con `{ appointmentId }` tras guardar una creación, reprogramación, cancelación, reasignación, inicio de atención del veterinario o cambio de estado (llegada manual o por QR, no asistió, consulta, vacunación o servicio de estética que cierra la cita). El cliente vuelve a consultar la agenda al recibirlo. Envía un comentario `: keep-alive` cada 25 s y cierra la conexión a los 10 minutos para que el cliente se reconecte con un token vigente; al reconectar conviene consultar la agenda, porque los avisos perdidos no se reenvían (D-69).",
     },
   ),
   op(

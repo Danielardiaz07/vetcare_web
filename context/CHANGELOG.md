@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-18 · 06, 08, 09, 12 · D-73: `PUT /appointments/{id}/start-attention` (veterinario asignado, cita confirmada) guarda y devuelve `attentionStartedAt`, es idempotente y emite `appointment.changed`; el estado no cambia hasta guardar el registro clínico. Migración `20261118000000_add_attention_started_at` por aplicar a mano.
 - 2026-11-18 · 10, 12, 13 · D-72. Pulido general de los portales: estados vacíos, carga y errores recuperables, accesibilidad, adaptación a pantallas y coherencia visual (RNF-07, RNF-08).
 - 2026-11-18 · 12 · D-71: recepción puede crear, reprogramar y cancelar citas de cirugía y exámenes de laboratorio desde la agenda. Incluye ajustes visuales en el agendamiento y los formularios (RF-25, RN-86).
 - 2026-11-17 · 02, 04, 05, 06, 07, 08, 09, 10, 12 · D-71: cirugías y exámenes de laboratorio agendables por recepción (RN-86, RF-25): tipos `SURGERY` y `LAB_EXAM` con duración, procedimiento e indicaciones propias, sin cambios del propietario (portal ni enlace del correo); el veterinario registra el procedimiento desde la cita (`appointmentId`), que pasa a atendida, y un examen nace en espera de resultados hasta que carga `PUT /lab-exams/{id}/results` (RN-87). Migración `20261117010000_add_scheduled_procedures` por aplicar a mano.
