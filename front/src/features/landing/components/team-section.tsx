@@ -25,7 +25,7 @@ function MemberPhoto({ member }: { member: TeamMember }) {
           alt={`Foto de ${member.name}`}
           fill
           sizes="(min-width: 640px) 260px, 96px"
-          className="object-cover"
+          className="object-cover object-top"
         />
       </div>
     );
@@ -54,11 +54,12 @@ export function TeamSection() {
           {LANDING_TEAM.map((member) => (
             <li
               key={member.name}
-              className="flex items-center gap-5 border-t border-line py-5 last:border-b sm:flex-col sm:items-stretch sm:gap-3.5 sm:border-0 sm:py-0 sm:last:border-b-0"
+              className="flex items-center gap-5 border-t border-line py-5 last:pb-0 sm:flex-col sm:items-stretch sm:gap-3.5 sm:border-0 sm:py-0"
             >
               <MemberPhoto member={member} />
-              <div>
+              <div className="flex min-w-0 flex-col items-start gap-1">
                 <h3 className="text-lg font-semibold text-ink">{member.name}</h3>
+                <p className="text-sm font-bold text-ink">[{member.role}]</p>
                 <p className="text-[15px] text-muted">{member.specialty}</p>
               </div>
             </li>

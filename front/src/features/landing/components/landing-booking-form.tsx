@@ -232,7 +232,7 @@ export function LandingBookingForm() {
 
   if (user && user.role !== "OWNER") {
     return (
-      <div className="rounded-card bg-surface p-6 shadow-soft">
+      <div className="rounded-card bg-surface p-6 shadow-soft lg:my-auto">
         <h3 className="text-lg font-semibold">Las citas en línea son para propietarios</h3>
         <p className="mt-2 text-muted">
           Con tu cuenta del equipo, agenda desde el panel a nombre del propietario.

@@ -45,7 +45,7 @@ export function BookingSection() {
             .
           </p>
         </div>
-        <div className="min-w-0 lg:flex-[1.4_1_32.5rem]">
+        <div className="min-w-0 lg:flex lg:flex-[1.4_1_32.5rem] lg:flex-col lg:self-stretch">
           <LandingBookingForm />
         </div>
       </div>

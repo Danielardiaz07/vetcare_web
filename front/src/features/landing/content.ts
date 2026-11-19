@@ -135,13 +135,29 @@ export const BOOKABLE_SERVICES = LANDING_SERVICES.filter((service) => service.ap
 
 export type TeamMember = {
   name: string;
+  role: string;
   specialty: string;
   // Ruta dentro de front/public; sin foto se muestran las iniciales.
   photo: string | null;
 };
 
 export const LANDING_TEAM: TeamMember[] = [
-  { name: "Dra. Laura Gómez Ruiz", specialty: "Medicina general", photo: null },
-  { name: "Dr. Andrés Pérez Mora", specialty: "Medicina interna", photo: null },
-  { name: "Camila Torres Vega", specialty: "Estilista de mascotas · Baño y motilada", photo: null },
+  {
+    name: "Dra. Laura Gómez Ruiz",
+    role: "Veterinaria",
+    specialty: "Medicina general",
+    photo: "/equipo/laura-gomez.png",
+  },
+  {
+    name: "Dr. Andrés Pérez Mora",
+    role: "Veterinario",
+    specialty: "Medicina interna",
+    photo: "/equipo/andres-perez.png",
+  },
+  {
+    name: "Camila Torres Vega",
+    role: "Estilista canino",
+    specialty: "Baño y motilada",
+    photo: "/equipo/camila-torres.png",
+  },
 ];
