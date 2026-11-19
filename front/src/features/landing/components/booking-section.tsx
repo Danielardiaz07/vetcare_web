@@ -1,5 +1,3 @@
-"use client";
-
 import { Icon } from "@/components/ui/icon";
 import { LandingBookingForm } from "@/features/landing/components/landing-booking-form";
 import { SectionHeading } from "@/features/landing/components/section-heading";
@@ -47,7 +45,7 @@ export function BookingSection() {
             .
           </p>
         </div>
-        <div className="min-w-0 lg:flex-[1.4_1_32.5rem] lg:self-center">
+        <div className="min-w-0 lg:flex lg:flex-[1.4_1_32.5rem] lg:flex-col lg:self-stretch">
           <LandingBookingForm />
         </div>
       </div>

@@ -1,14 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { useAuth } from "@/features/auth/auth-provider";
+import { AppointmentAttentionAction } from "@/features/clinical/components/appointment-attention-action";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
 import { clinicDateOf, formatClinicTime } from "@/lib/clinic-time";
-import { ROUTES } from "@/lib/constants";
 import { getAgenda } from "@/services/appointments";
 import type { Appointment } from "@/types/domain";
 
@@ -17,6 +17,7 @@ type State =
 
 // RN-43: solo se atiende una cita Confirmada; la agenda ya trae solo las del profesional.
 export function AttentionQueue() {
+  const { user } = useAuth();
   const [state, setState] = useState<State>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [today] = useState(() => clinicDateOf(new Date()));
@@ -68,12 +69,11 @@ export function AttentionQueue() {
                 <span className="text-sm break-words text-muted">{ownerFullName(item.owner)}</span>
               )}
             </div>
-            <Link
-              href={`${ROUTES.panelAppointmentAttention(item.id)}?date=${today}`}
-              className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
-            >
-              Atender
-            </Link>
+            <AppointmentAttentionAction
+              appointment={item}
+              canStartAttention={user?.role === "VETERINARIAN"}
+              label="Atender"
+            />
           </li>
         ))}
       </ul>

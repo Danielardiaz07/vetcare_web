@@ -2,7 +2,7 @@ import { cn } from "@/components/ui/cn";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
 import { appointmentLabStatus } from "@/lib/appointment-procedures";
-import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
+import { APPOINTMENT_STATUS, appointmentInProgressLabel } from "@/lib/appointment-status";
 import { formatClinicTime } from "@/lib/clinic-time";
 import type { Appointment } from "@/types/domain";
 
@@ -22,6 +22,7 @@ export function AgendaItem({ appointment, onOpen, compact = false }: AgendaItemP
   const type = APPOINTMENT_TYPE_LABELS[appointment.type];
   const service = appointment.procedureName ? `${type} · ${appointment.procedureName}` : type;
   const labStatus = appointmentLabStatus(appointment);
+  const inProgress = appointmentInProgressLabel(appointment);
   const time = formatClinicTime(appointment.startsAt);
   const inactive = appointment.status === "CANCELLED" || appointment.status === "NO_SHOW";
 
@@ -29,7 +30,7 @@ export function AgendaItem({ appointment, onOpen, compact = false }: AgendaItemP
     <button
       type="button"
       onClick={() => onOpen(appointment)}
-      aria-label={`${time}, ${appointment.patient.name}, ${service}, ${badge.label}${labStatus ? `, ${labStatus.label}` : ""}. Ver detalle`}
+      aria-label={`${time}, ${appointment.patient.name}, ${service}, ${badge.label}${inProgress ? `, ${inProgress}` : ""}${labStatus ? `, ${labStatus.label}` : ""}. Ver detalle`}
       className={cn(
         "flex w-full gap-3 rounded-control border border-line bg-surface p-3 text-left transition-colors duration-150 ease-out hover:bg-brand-50",
         compact ? "flex-col gap-1" : "items-start",
@@ -45,6 +46,7 @@ export function AgendaItem({ appointment, onOpen, compact = false }: AgendaItemP
         <span className="text-sm break-words text-muted">{service}</span>
         <span className="flex flex-wrap gap-1">
           <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
+          {inProgress && <StatusBadge tone="info">{inProgress}</StatusBadge>}
           {labStatus && <StatusBadge tone={labStatus.tone}>{labStatus.label}</StatusBadge>}
         </span>
       </span>

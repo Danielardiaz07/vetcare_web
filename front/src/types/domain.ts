@@ -106,6 +106,7 @@ export interface Appointment {
   procedureName: string | null;
   instructions: string | null;
   clinicalRecord: LinkedClinicalRecord | null;
+  attentionStartedAt: string | null;
   patient: { id: string; name: string };
   professional: Professional;
   // Solo para el personal: el propietario no recibe este dato en sus citas.

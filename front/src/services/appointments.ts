@@ -40,6 +40,7 @@ import type {
 } from "@/types/domain";
 
 const NOT_FOUND = 404;
+const FORBIDDEN = 403;
 const CONFLICT = 409;
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -342,6 +343,7 @@ function buildSeeds(seeds: MockSeed[], pets: Patient[], idPrefix: string): Appoi
         procedureName: seed.procedureName ?? null,
         instructions: seed.instructions ?? null,
         clinicalRecord: null,
+        attentionStartedAt: null,
         patient: { id: pet.id, name: pet.name },
         professional: {
           id: professional.id,
@@ -501,6 +503,7 @@ async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
     procedureName: input.procedureName ?? null,
     instructions: input.instructions ?? null,
     clinicalRecord: null,
+    attentionStartedAt: null,
     patient: { id: pet.id, name: pet.name },
     professional,
   };
@@ -676,6 +679,31 @@ export function registerArrival(id: string): Promise<Appointment> {
       )
     : staffAction("arrival")(id);
   return updated.then(notifyChange);
+}
+
+export async function startAppointmentAttention(id: string): Promise<Appointment> {
+  if (!isMockEnabled) return staffAction("start-attention")(id).then(notifyChange);
+
+  const appointment = mockAppointmentById(id);
+  if (!appointment) return mockNotFound();
+  const me = await getMe();
+  const veterinarian = mockVeterinarians.find((item) => item.userId === me.id);
+  if (me.role !== "VETERINARIAN" || veterinarian?.id !== appointment.professional.id) {
+    return mockError(
+      FORBIDDEN,
+      "FORBIDDEN",
+      "Solo el veterinario asignado puede iniciar la atención",
+    );
+  }
+  if (appointment.attentionStartedAt) return mockResponse(appointment);
+  return mockStaffUpdate(
+    id,
+    (current) =>
+      current.status === "CONFIRMED"
+        ? null
+        : "Solo se puede iniciar la atención de una cita confirmada",
+    () => ({ attentionStartedAt: new Date().toISOString() }),
+  ).then(notifyChange);
 }
 
 // RN-31: "No asistió" solo cuando pasaron 15 minutos de la hora de la cita.

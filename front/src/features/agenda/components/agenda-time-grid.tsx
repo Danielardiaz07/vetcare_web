@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
 import { appointmentLabStatus } from "@/lib/appointment-procedures";
-import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
+import { APPOINTMENT_STATUS, appointmentInProgressLabel } from "@/lib/appointment-status";
 import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
 import { useAgendaClock } from "@/features/agenda/hooks/use-agenda-clock";
 import {
@@ -22,7 +22,7 @@ import {
 import type { Appointment } from "@/types/domain";
 
 const MIN_COLUMN_WIDTH_REM = 13;
-const WEEK_COLUMN_WIDTH_REM = 10;
+const WEEK_COLUMN_WIDTH_REM = 10.5;
 const DEFAULT_FONT_SIZE = 16;
 const TIME_AXIS_WIDTH_REM = 5;
 const ROW_HEIGHT_REM = 6;
@@ -440,24 +440,34 @@ function AppointmentTile({
   onOpen: AgendaTimeGridProps["onOpen"];
 }) {
   const status = APPOINTMENT_STATUS[appointment.status];
+  const statusColor = TILE_STATUS_CLASSES[appointment.status];
   const time = formatClinicTime(appointment.startsAt);
   const type = APPOINTMENT_TYPE_LABELS[appointment.type];
   const service = appointment.procedureName ? `${type} · ${appointment.procedureName}` : type;
   const labStatus = appointmentLabStatus(appointment);
   const inactive = appointment.status === "CANCELLED" || appointment.status === "NO_SHOW";
   const confirmed = appointment.status === "CONFIRMED";
+  const inProgress = appointmentInProgressLabel(appointment);
+  const attention = inProgress ?? (confirmed ? "En sala" : null);
   return (
     <div
       className={cn(
-        "h-full min-w-0 rounded-control border px-2.5 py-1",
+        "@container/appointment relative h-full min-w-0 rounded-control border px-2.5 py-1",
         TILE_SURFACE_CLASSES[appointment.status],
       )}
     >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-current",
+          statusColor,
+        )}
+      />
       <div className="sticky top-[calc(var(--agenda-header-height,0px)+0.5rem)] flex min-w-0 flex-col gap-0.5">
         <button
           type="button"
           onClick={() => onOpen(appointment)}
-          aria-label={`${time}, ${appointment.patient.name}, ${service}, ${status.label}${labStatus ? `, ${labStatus.label}` : ""}. Ver detalle`}
+          aria-label={`${time}, ${appointment.patient.name}, ${service}, ${status.label}${attention ? `, ${attention}` : ""}${labStatus ? `, ${labStatus.label}` : ""}. Ver detalle`}
           title={appointment.procedureName ? service : undefined}
           className="flex min-h-11 w-full min-w-0 flex-col items-start justify-center gap-1 rounded-md text-left transition-colors hover:bg-ink/5"
         >
@@ -468,16 +478,24 @@ function AppointmentTile({
             {time} · {appointment.procedureName ?? type}
           </span>
         </button>
-        <div className="flex min-h-8 min-w-0 items-center justify-between gap-1">
+        <div className="flex min-h-8 min-w-0 items-center justify-between gap-1 @max-[9rem]/appointment:-mx-1.5 @max-[9rem]/appointment:gap-0.5">
           <span
-            className={cn("shrink-0 text-xs font-medium", TILE_STATUS_CLASSES[appointment.status])}
+            className={cn(
+              "shrink-0 text-xs font-medium @max-[9rem]/appointment:text-[11px]",
+              statusColor,
+            )}
           >
             {status.label}
           </span>
-          {confirmed && (
-            <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-success">
-              <Icon name="check" className="size-3" />
-              En sala
+          {attention && (
+            <span
+              className={cn(
+                "inline-flex min-w-0 items-center gap-1 text-[11px] leading-tight font-medium @max-[9rem]/appointment:gap-0.5",
+                inProgress ? "text-info" : "text-success",
+              )}
+            >
+              <Icon name="check" className="size-3 shrink-0 @max-[9rem]/appointment:size-2.5" />
+              <span>{attention}</span>
             </span>
           )}
           {labStatus && (

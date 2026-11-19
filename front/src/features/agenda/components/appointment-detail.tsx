@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -12,12 +11,13 @@ import { BookingDetails } from "@/features/appointments/components/booking-detai
 import { CancelForm } from "@/features/appointments/components/cancel-dialog";
 import { RescheduleForm } from "@/features/appointments/components/reschedule-form";
 import { appointmentErrorMessage, isSlotTaken } from "@/features/appointments/errors";
+import { AppointmentAttentionAction } from "@/features/clinical/components/appointment-attention-action";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
-import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
+import { APPOINTMENT_STATUS, appointmentInProgressLabel } from "@/lib/appointment-status";
 import { appointmentLabStatus, isProcedureAppointment } from "@/lib/appointment-procedures";
 import { clinicDateOf, formatClinicTime, formatLongDate, noShowFrom } from "@/lib/clinic-time";
-import { NO_SHOW_GRACE_MINUTES, ROUTES } from "@/lib/constants";
+import { NO_SHOW_GRACE_MINUTES } from "@/lib/constants";
 import {
   getReassignOptions,
   markNoShow,
@@ -35,6 +35,7 @@ type AppointmentDetailProps = {
   canManage: boolean;
   // El veterinario o el estilista abre la atención de su cita Confirmada (RN-43, RN-51).
   canAttend: boolean;
+  canStartAttention: boolean;
   onClose: () => void;
   onChanged: (appointment: Appointment, message: string) => void;
 };
@@ -43,13 +44,10 @@ export function AppointmentDetail({
   appointment,
   canManage,
   canAttend,
+  canStartAttention,
   onClose,
   onChanged,
 }: AppointmentDetailProps) {
-  const pendingResults =
-    appointment?.status === "ATTENDED" &&
-    appointment.clinicalRecord?.kind === "LAB_EXAM" &&
-    appointment.clinicalRecord.status === "PENDING_RESULTS";
   return (
     <Modal open={appointment !== null} title="Detalle de la cita" onClose={onClose}>
       {appointment && (
@@ -58,13 +56,12 @@ export function AppointmentDetail({
           {canManage && isActive(appointment) && (
             <Actions key={appointment.id} appointment={appointment} onChanged={onChanged} />
           )}
-          {canAttend && (appointment.status === "CONFIRMED" || pendingResults) && (
-            <Link
-              href={`${ROUTES.panelAppointmentAttention(appointment.id)}?date=${clinicDateOf(new Date(appointment.startsAt))}`}
-              className="inline-flex min-h-11 items-center justify-center self-start rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
-            >
-              {pendingResults ? "Cargar resultados" : "Registrar atención"}
-            </Link>
+          {canAttend && (
+            <AppointmentAttentionAction
+              key={appointment.id}
+              appointment={appointment}
+              canStartAttention={canStartAttention}
+            />
           )}
         </div>
       )}
@@ -334,6 +331,7 @@ function detailRows(appointment: Appointment) {
   const { startsAt, endsAt, owner, reason, cancelReason, procedureName, instructions } =
     appointment;
   const labStatus = appointmentLabStatus(appointment);
+  const inProgress = appointmentInProgressLabel(appointment);
   return [
     { label: "Mascota", value: appointment.patient.name },
     ...(owner
@@ -346,6 +344,7 @@ function detailRows(appointment: Appointment) {
     ...(procedureName ? [{ label: "Procedimiento", value: procedureName }] : []),
     { label: "Profesional", value: ownerFullName(appointment.professional) },
     { label: "Estado", value: APPOINTMENT_STATUS[appointment.status].label },
+    ...(inProgress ? [{ label: "Atención", value: inProgress }] : []),
     ...(labStatus ? [{ label: "Laboratorio", value: labStatus.label }] : []),
     { label: "Fecha", value: formatLongDate(clinicDateOf(new Date(startsAt))) },
     { label: "Hora", value: `${formatClinicTime(startsAt)} a ${formatClinicTime(endsAt)}` },

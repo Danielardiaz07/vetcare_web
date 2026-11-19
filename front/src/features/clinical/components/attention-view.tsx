@@ -18,7 +18,7 @@ import {
 import { VaccinationForm } from "@/features/clinical/components/vaccination-form";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
 import { appointmentLabStatus } from "@/lib/appointment-procedures";
-import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
+import { APPOINTMENT_STATUS, appointmentInProgressLabel } from "@/lib/appointment-status";
 import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
 import { ROUTES } from "@/lib/constants";
 import {
@@ -103,6 +103,7 @@ function ProcedureAttention({
   const { clinicalRecord, instructions, patient, procedureName, startsAt, status, type } =
     appointment;
   const appointmentStatus = APPOINTMENT_STATUS[status];
+  const inProgress = appointmentInProgressLabel(appointment);
   const labStatus = appointmentLabStatus(appointment);
   const pendingExam =
     clinicalRecord?.kind === "LAB_EXAM" && clinicalRecord.status === "PENDING_RESULTS";
@@ -118,6 +119,7 @@ function ProcedureAttention({
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-xl font-semibold text-ink">{APPOINTMENT_TYPE_LABELS[type]}</h1>
         <StatusBadge tone={appointmentStatus.tone}>{appointmentStatus.label}</StatusBadge>
+        {inProgress && <StatusBadge tone="info">{inProgress}</StatusBadge>}
         {labStatus && <StatusBadge tone={labStatus.tone}>{labStatus.label}</StatusBadge>}
       </div>
       <BookingDetails
@@ -167,6 +169,7 @@ type AttentionTabsProps = {
 // Una cita de Vacunación abre en su pestaña; las dos quedan montadas para no perder lo escrito.
 function AttentionTabs({ context, onContextChange }: AttentionTabsProps) {
   const { appointment, patient } = context;
+  const attendedBadge = APPOINTMENT_STATUS.ATTENDED;
   const [tab, setTab] = useState<Tab>(
     appointment.type === "VACCINATION" ? "vaccination" : "consultation",
   );
@@ -181,8 +184,13 @@ function AttentionTabs({ context, onContextChange }: AttentionTabsProps) {
 
   // El carné del resumen se actualiza con la vacuna recién aplicada (RN-49).
   async function refreshVaccinations() {
+    const attended: ReadyContext = {
+      ...context,
+      appointment: { ...appointment, status: "ATTENDED" },
+    };
+    onContextChange(attended);
     try {
-      onContextChange({ ...context, vaccinations: await getVaccinationCard(patient.id) });
+      onContextChange({ ...attended, vaccinations: await getVaccinationCard(patient.id) });
     } catch {
       // Si falla, el carné se queda como estaba; la vacuna ya quedó guardada.
     }
@@ -199,6 +207,11 @@ function AttentionTabs({ context, onContextChange }: AttentionTabsProps) {
         />
       </div>
       <section className="flex flex-col gap-5 rounded-card border border-line bg-surface p-5 lg:order-1">
+        {appointment.status === "ATTENDED" && (
+          <div className="self-start">
+            <StatusBadge tone={attendedBadge.tone}>{attendedBadge.label}</StatusBadge>
+          </div>
+        )}
         <div role="tablist" aria-label="Atención" className="flex gap-2">
           {TABS.map((item) => {
             const selected = item.value === tab;
