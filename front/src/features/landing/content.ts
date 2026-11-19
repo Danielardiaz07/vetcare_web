@@ -13,8 +13,6 @@ export const CLINIC = {
   city: "Valledupar",
   region: "Cesar",
   landmark: "A media cuadra de la Gobernación del Cesar.",
-  weekdayHours: "de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.",
-  saturdayHours: "de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.",
   emergencyHours: "las 24 horas, todos los días",
   busDirections: "busetas al Centro por la Calle 16; bájate en la Gobernación del Cesar.",
   carDirections: "por la Calle 16 hasta la Gobernación y gira en la Carrera 12. Hay parqueadero.",
@@ -32,11 +30,8 @@ const mapsQuery = encodeURIComponent(
 );
 
 export const whatsappUrl = `https://wa.me/${internationalDigits(CLINIC.whatsappPhone)}`;
-// Franja superior y ubicación: si el sábado se atiende igual que entre semana, va en una sola frase.
 export const HOURS_SUMMARY =
-  CLINIC.weekdayHours === CLINIC.saturdayHours
-    ? `lunes a sábado, ${CLINIC.weekdayHours}`
-    : `lunes a viernes, ${CLINIC.weekdayHours}; sábados, ${CLINIC.saturdayHours}`;
+  "lunes a sábado, de 8:00 a. m. a 12:00 m. y de 2:00 p. m. a 6:00 p. m.";
 export const phoneUrl = telUrl(CLINIC.phone);
 export const emergencyPhoneUrl = telUrl(CLINIC.emergencyPhone);
 export const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
@@ -45,6 +40,7 @@ export const mapEmbedUrl = `https://www.google.com/maps?q=${mapsQuery}&output=em
 export const sectionHref = (id: string) => `/#${id}`;
 
 export const BOOKING_SECTION_ID = "agendar";
+export const CONTACT_SECTION_ID = "contacto";
 
 type NavItem = { label: string; href: string; sectionId?: string };
 
@@ -144,9 +140,8 @@ export type TeamMember = {
   photo: string | null;
 };
 
-// Los mismos veterinarios de la base de demostración (back/prisma/seed-demo.ts), para que quien
-// agende vea en la agenda al equipo que anuncia la portada.
 export const LANDING_TEAM: TeamMember[] = [
   { name: "Dra. Laura Gómez Ruiz", specialty: "Medicina general", photo: null },
   { name: "Dr. Andrés Pérez Mora", specialty: "Medicina interna", photo: null },
+  { name: "Camila Torres Vega", specialty: "Estilista de mascotas · Baño y motilada", photo: null },
 ];

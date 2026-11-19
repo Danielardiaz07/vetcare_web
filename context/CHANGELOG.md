@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-19 · 12 · D-73, D-50, D-45, D-41. La agenda de recepción muestra el inicio de la atención. El agendamiento público lleva al resumen y ofrece contacto alternativo si falla la carga o faltan horarios. La portada incorpora metadatos para búsqueda y redes y presenta al equipo de estética.
 - 2026-11-18 · 06, 08, 09, 12 · D-73: `PUT /appointments/{id}/start-attention` (veterinario asignado, cita confirmada) guarda y devuelve `attentionStartedAt`, es idempotente y emite `appointment.changed`; el estado no cambia hasta guardar el registro clínico. Migración `20261118000000_add_attention_started_at` por aplicar a mano.
 - 2026-11-18 · 10, 12, 13 · D-72. Pulido general de los portales: estados vacíos, carga y errores recuperables, accesibilidad, adaptación a pantallas y coherencia visual (RNF-07, RNF-08).
 - 2026-11-18 · 12 · D-71: recepción puede crear, reprogramar y cancelar citas de cirugía y exámenes de laboratorio desde la agenda. Incluye ajustes visuales en el agendamiento y los formularios (RF-25, RN-86).

@@ -4,6 +4,7 @@ import {
   CLINIC,
   directionsUrl,
   emergencyPhoneUrl,
+  HOURS_SUMMARY,
   LANDING_SERVICES,
   phoneUrl,
   whatsappUrl,
@@ -63,7 +64,7 @@ const CONTACT_LINKS: ChatLink[] = [
 
 const FAQ_REPLIES: Record<FaqTopic, ChatReply> = {
   hours: {
-    text: `Atendemos de lunes a viernes ${CLINIC.weekdayHours} y los sábados ${CLINIC.saturdayHours}; para urgencias, ${CLINIC.emergencyHours}, al ${CLINIC.emergencyPhone}.`,
+    text: `Atendemos de ${HOURS_SUMMARY}. Para urgencias, llama ${CLINIC.emergencyHours} al ${CLINIC.emergencyPhone}.`,
   },
   services: {
     text: `Estos son los servicios y precios orientativos publicados por VetCare. El valor final depende de la atención. En línea puedes agendar ${listOf(BOOKABLE_SERVICES.map(serviceLabel))}; cirugías y exámenes se coordinan con la clínica.`,

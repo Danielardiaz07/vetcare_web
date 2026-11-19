@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { DataPolicyLink } from "@/features/landing/components/data-policy-link";
-import { BOOKING_SECTION_ID, CLINIC, sectionHref } from "@/features/landing/content";
+import {
+  BOOKING_SECTION_ID,
+  CLINIC,
+  CONTACT_SECTION_ID,
+  HOURS_SUMMARY,
+  sectionHref,
+} from "@/features/landing/content";
 import { ROUTES } from "@/lib/constants";
 
 const ACCESS_LINKS = [
@@ -17,7 +23,7 @@ const ACCESS_LINK_CLASS =
 export function SiteFooter() {
   return (
     // pb-28: en móvil el botón flotante de VetBot no tapa la última línea.
-    <footer id="contacto" className="scroll-mt-header-bar bg-navy text-white">
+    <footer id={CONTACT_SECTION_ID} className="scroll-mt-header-bar bg-navy text-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pt-20 pb-28 sm:px-6 sm:pb-20">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-2">
@@ -41,8 +47,7 @@ export function SiteFooter() {
           </div>
           <div className="flex flex-col gap-2">
             <h2 className="font-semibold">Horario</h2>
-            <p className="text-white/75">Lunes a viernes: {CLINIC.weekdayHours}</p>
-            <p className="text-white/75">Sábados: {CLINIC.saturdayHours}</p>
+            <p className="text-white/75 first-letter:uppercase">{HOURS_SUMMARY}</p>
             <p className="flex items-baseline gap-2 font-semibold text-white">
               <span
                 aria-hidden="true"

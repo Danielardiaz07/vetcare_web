@@ -46,9 +46,9 @@ export function TeamSection() {
   return (
     <section id="equipo" aria-labelledby="equipo-title" className="scroll-mt-header-bar">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-14 sm:px-6 sm:py-16">
-        <SectionHeading id="equipo-title" title="Médicos veterinarios que conocen a tu mascota.">
-          Todo nuestro equipo tiene tarjeta profesional vigente. Al agendar ves quién atenderá a tu
-          mascota.
+        <SectionHeading id="equipo-title" title="Conoce a nuestro equipo.">
+          Médicos veterinarios y estilistas para cuidar a tu mascota. Al agendar puedes elegir quién
+          la atenderá.
         </SectionHeading>
         <ul className="grid sm:grid-cols-[repeat(3,minmax(0,16.25rem))] sm:gap-10">
           {LANDING_TEAM.map((member) => (

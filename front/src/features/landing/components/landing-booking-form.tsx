@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/features/auth/auth-provider";
 import { homeRouteFor } from "@/features/auth/redirects";
 import { useLandingBooking } from "@/features/landing/booking-context";
+import { BOOKABLE_SERVICES, phoneUrl, whatsappUrl } from "@/features/landing/content";
 import {
   ANY_PROFESSIONAL,
   emptyBookingDraft,
@@ -46,6 +47,31 @@ type GuestPet = Pick<PatientFormInput, "name" | "species">;
 const guestSchema = patientSchema.pick({ name: true, species: true });
 const normalizedPetName = (name: string) =>
   name.normalize("NFC").trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
+const STEP_CARD_CLASS =
+  "scroll-mt-[calc(var(--spacing-header-bar)+1.5rem)] rounded-card bg-surface p-5 shadow-soft sm:p-6";
+const STEP_HEADING_CLASS = "text-xl font-semibold outline-none";
+
+function focusBookingStep(heading: HTMLHeadingElement | null) {
+  heading?.focus({ preventScroll: true });
+  heading?.closest("section")?.scrollIntoView({ block: "start", behavior: "instant" });
+}
+
+function BookingContact() {
+  const linkClass = "font-semibold text-brand-700 underline underline-offset-4";
+  return (
+    <p className="text-sm text-muted">
+      Puedes{" "}
+      <a href={phoneUrl} className={linkClass}>
+        llamar
+      </a>{" "}
+      o escribir por{" "}
+      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+        WhatsApp
+      </a>
+      .
+    </p>
+  );
+}
 
 export function LandingBookingForm() {
   const { user, status } = useAuth();
@@ -67,7 +93,6 @@ export function LandingBookingForm() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [confirmed, setConfirmed] = useState<Appointment | null>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
   const restored = useRef(false);
   const {
     register,
@@ -88,7 +113,10 @@ export function LandingBookingForm() {
     setTypes({ status: "loading", items: [] });
     listAppointmentTypes()
       .then((items) => {
-        if (active) setTypes({ status: "ready", items });
+        const bookable = items.filter(({ type }) =>
+          BOOKABLE_SERVICES.some((service) => service.appointmentType === type),
+        );
+        if (active) setTypes({ status: "ready", items: bookable });
       })
       .catch(() => {
         if (active) setTypes({ status: "error", items: [] });
@@ -194,11 +222,13 @@ export function LandingBookingForm() {
     setDraft,
   ]);
 
-  useEffect(() => {
-    if (phase !== "form") headingRef.current?.focus({ preventScroll: phase !== "new-pet" });
-  }, [phase]);
-
-  if (!draft || status === "loading") return <LoadingState rows={3} />;
+  if (!draft || status === "loading") {
+    return (
+      <div className="rounded-card bg-surface p-5 shadow-soft sm:p-6">
+        <LoadingState label="Cargando el formulario de citas…" />
+      </div>
+    );
+  }
 
   if (user && user.role !== "OWNER") {
     return (
@@ -348,8 +378,8 @@ export function LandingBookingForm() {
 
   if (phase === "review" && pet && setting && draft.slot) {
     return (
-      <section className="rounded-card bg-surface p-5 shadow-soft sm:p-6">
-        <h3 ref={headingRef} tabIndex={-1} className="mb-5 text-xl font-semibold outline-none">
+      <section key="review" className={STEP_CARD_CLASS}>
+        <h3 ref={focusBookingStep} tabIndex={-1} className={`mb-5 ${STEP_HEADING_CLASS}`}>
           Revisa tu cita
         </h3>
         <ReviewStep
@@ -371,6 +401,11 @@ export function LandingBookingForm() {
           }}
           onConfirm={confirm}
         />
+        {error && (
+          <div className="mt-3">
+            <BookingContact />
+          </div>
+        )}
       </section>
     );
   }
@@ -417,8 +452,8 @@ export function LandingBookingForm() {
 
   if (phase === "pet" || registeringPet) {
     return (
-      <section className="flex flex-col gap-4 rounded-card bg-surface p-5 shadow-soft sm:p-6">
-        <h3 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">
+      <section key={phase} className={`flex flex-col gap-4 ${STEP_CARD_CLASS}`}>
+        <h3 ref={focusBookingStep} tabIndex={-1} className={STEP_HEADING_CLASS}>
           {registeringPet
             ? "Nueva mascota"
             : draft.petId === NEW_PET
@@ -439,6 +474,7 @@ export function LandingBookingForm() {
             {errorNotice}
             <p role="alert">No pudimos cargar tus mascotas.</p>
             {retry}
+            <BookingContact />
           </>
         ) : (
           <>
@@ -491,6 +527,7 @@ export function LandingBookingForm() {
               No pudimos cargar tus mascotas.
             </p>
             {retry}
+            <BookingContact />
           </>
         ) : (
           user && <>{petChoices}</>
@@ -553,9 +590,17 @@ export function LandingBookingForm() {
         ) : types.status === "error" ? (
           <>
             <p role="alert" className="text-sm text-danger">
-              No pudimos cargar los tipos de cita.
+              No pudimos cargar las citas en línea.
             </p>
             {retry}
+            <BookingContact />
+          </>
+        ) : types.items.length === 0 ? (
+          <>
+            <p className="text-sm text-muted">
+              Por ahora no hay tipos de cita disponibles en línea.
+            </p>
+            <BookingContact />
           </>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -593,11 +638,15 @@ export function LandingBookingForm() {
               No pudimos cargar los profesionales.
             </p>
             {retry}
+            <BookingContact />
           </>
         ) : profiles.length === 0 ? (
-          <p className="text-sm text-muted">
-            No hay profesionales disponibles para este tipo de cita.
-          </p>
+          <>
+            <p className="text-sm text-muted">
+              No hay profesionales disponibles para este tipo de cita.
+            </p>
+            <BookingContact />
+          </>
         ) : (
           <div className="grid gap-2 @min-[28rem]:grid-cols-2">
             <ChoiceButton
@@ -639,6 +688,7 @@ export function LandingBookingForm() {
           date={draft.date}
           slot={draft.slot}
           refreshKey={refreshKey}
+          unavailableAction={<BookingContact />}
           onChange={(date, slot) => {
             setDraft(
               (current) =>
@@ -666,7 +716,9 @@ export function LandingBookingForm() {
               ? "Revisa los datos antes de confirmar."
               : "Inicia sesión o crea tu cuenta al continuar."}
           </p>
-          <Button type="submit">Revisar cita</Button>
+          <Button type="submit" disabled={types.status !== "ready" || types.items.length === 0}>
+            Revisar cita
+          </Button>
         </div>
       </div>
     </form>

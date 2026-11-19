@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -28,6 +28,7 @@ type DateTimeAvailabilityProps = {
   disabled?: boolean;
   showSuggestedDates?: boolean;
   maxSlotColumns?: 2 | 4;
+  unavailableAction?: ReactNode;
   onChange: (date: string, slot: AvailableSlot | null) => void;
 };
 
@@ -43,6 +44,7 @@ export function DateTimeAvailability({
   disabled = false,
   showSuggestedDates = false,
   maxSlotColumns = 4,
+  unavailableAction,
   onChange,
 }: DateTimeAvailabilityProps) {
   const first = dates[0] ?? "";
@@ -140,6 +142,7 @@ export function DateTimeAvailability({
             >
               Reintentar
             </Button>
+            {unavailableAction}
           </div>
         ) : !ready ? (
           <LoadingState rows={2} />
@@ -172,6 +175,7 @@ export function DateTimeAvailability({
         ) : (
           <div className="flex flex-col gap-2">
             <p className="text-sm text-muted">Sin horarios disponibles.</p>
+            {unavailableAction}
             {suggestedDates.length > 0 && (
               <div className="flex flex-wrap gap-2" role="group" aria-label="Fechas sugeridas">
                 {suggestedDates.map((suggestion) => (
