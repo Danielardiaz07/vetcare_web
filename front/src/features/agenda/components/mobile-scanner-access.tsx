@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { Icon } from "@/components/ui/icon";
 import { LoadingState } from "@/components/ui/loading-state";
 import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { getScannerAccess, type ScannerAccess } from "@/services/check-in";
@@ -38,7 +39,7 @@ function scannerLinkIssue(value: string) {
   }
 }
 
-export function MobileScannerAccess({ onClose }: { onClose: () => void }) {
+export function MobileScannerAccess() {
   const [state, setState] = useState<Load>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
@@ -88,14 +89,14 @@ export function MobileScannerAccess({ onClose }: { onClose: () => void }) {
           <p role="alert" className="text-sm text-danger">
             {state.message}
           </p>
-          <p className="text-sm text-muted">Usa “Con código” mientras tanto.</p>
+          <p className="text-sm text-muted">Registra la llegada desde la cita en la agenda.</p>
         </div>
       )}
       {state.status === "ready" && (
         <>
           {imageFailed ? (
             <p role="alert" className="text-sm text-muted">
-              No pudimos mostrar el QR. Usa el enlace.
+              No pudimos mostrar el QR. Copia el enlace y ábrelo en tu celular.
             </p>
           ) : (
             <Image
@@ -109,43 +110,37 @@ export function MobileScannerAccess({ onClose }: { onClose: () => void }) {
               className="h-auto w-52 max-w-full self-center bg-white"
             />
           )}
-          <Field
-            label="Enlace del escáner de recepción"
-            value={state.data.url}
-            readOnly
-            autoComplete="off"
-            spellCheck={false}
-            onFocus={(event) => event.currentTarget.select()}
-            className="w-full min-w-0 text-base"
-          />
+          <div className="relative min-w-0">
+            <Field
+              label="Enlace del escáner de recepción"
+              value={state.data.url}
+              readOnly
+              autoComplete="off"
+              spellCheck={false}
+              onFocus={(event) => event.currentTarget.select()}
+              className="w-full min-w-0 pr-14 text-base"
+            />
+            <button
+              type="button"
+              aria-label="Copiar enlace"
+              title="Copiar enlace"
+              onClick={() => void copyLink(state.data.url)}
+              className="absolute right-0 bottom-0 inline-flex size-11 items-center justify-center rounded-r-control border border-field-border bg-surface text-brand-700 transition-colors duration-150 ease-out hover:bg-brand-50"
+            >
+              <Icon name={copyMessage === "Enlace copiado" ? "check" : "copy"} className="size-5" />
+            </button>
+          </div>
         </>
       )}
-      <div className="flex flex-wrap gap-2">
-        {state.status === "error" && (
-          <Button variant="secondary" onClick={() => setReloadKey((key) => key + 1)}>
-            Reintentar acceso móvil
-          </Button>
-        )}
-        {state.status === "ready" && (
-          <>
-            <Button variant="secondary" onClick={() => void copyLink(state.data.url)}>
-              Copiar enlace
-            </Button>
-            <a
-              href={state.data.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              referrerPolicy="no-referrer"
-              className="inline-flex min-h-11 items-center justify-center rounded-control bg-brand-600 px-5 font-medium text-white transition-colors duration-150 ease-out hover:bg-brand-700"
-            >
-              Abrir escáner
-            </a>
-          </>
-        )}
-        <Button variant="secondary" onClick={onClose}>
-          Cerrar
+      {state.status === "error" && (
+        <Button
+          variant="secondary"
+          className="self-start"
+          onClick={() => setReloadKey((key) => key + 1)}
+        >
+          Reintentar acceso móvil
         </Button>
-      </div>
+      )}
       {state.status === "ready" && (
         <p role="status" className={copyMessage ? "text-sm text-muted" : "sr-only"}>
           {copyMessage}

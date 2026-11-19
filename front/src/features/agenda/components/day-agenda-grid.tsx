@@ -11,9 +11,7 @@ type Props = {
   staff: AgendaStaff;
   professionalId?: string;
   weekly?: boolean;
-  canRegisterArrival?: boolean;
   onOpen: (appointment: Appointment) => void;
-  onChanged: (appointment: Appointment, message: string) => void;
 };
 
 export function DayAgendaGrid({

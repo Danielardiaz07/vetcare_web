@@ -4,12 +4,11 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { Icon } from "@/components/ui/icon";
-import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
 import { APPOINTMENT_TYPE_LABELS } from "@/features/staff/labels";
+import { appointmentLabStatus } from "@/lib/appointment-procedures";
 import { APPOINTMENT_STATUS } from "@/lib/appointment-status";
 import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
-import { registerArrival } from "@/services/appointments";
 import { useAgendaClock } from "@/features/agenda/hooks/use-agenda-clock";
 import {
   AGENDA_SLOT_MINUTES,
@@ -47,9 +46,7 @@ type AgendaTimeGridProps = {
   timeline: ReturnType<typeof dayTimeline>;
   weekly?: boolean;
   professionalId?: string;
-  canRegisterArrival?: boolean;
   onOpen: (appointment: Appointment) => void;
-  onChanged: (appointment: Appointment, message: string) => void;
 };
 
 export function AgendaTimeGrid({
@@ -57,9 +54,7 @@ export function AgendaTimeGrid({
   timeline,
   weekly = false,
   professionalId,
-  canRegisterArrival = false,
   onOpen,
-  onChanged,
 }: AgendaTimeGridProps) {
   const id = useId();
   const frameRef = useRef<HTMLDivElement>(null);
@@ -75,9 +70,6 @@ export function AgendaTimeGrid({
   const [columnCapacity, setColumnCapacity] = useState(1);
   const [columnPage, setColumnPage] = useState<number | null>(null);
   const now = useAgendaClock();
-  const pendingIds = useRef(new Set<string>());
-  const [pending, setPending] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
   const { slots, columns: allColumns } = timeline;
   const today = now ? clinicDateOf(now) : null;
   const pages = useMemo(
@@ -200,25 +192,7 @@ export function AgendaTimeGrid({
       window.removeEventListener("scroll", alignMarker);
       window.removeEventListener("resize", alignMarker);
     };
-  }, [currentFraction, currentSlotIndex, following, columns, error, pages.length, weekly]);
-
-  async function arrive(appointment: Appointment) {
-    if (!canRegisterArrival || pendingIds.current.has(appointment.id)) return;
-    pendingIds.current.add(appointment.id);
-    setPending(new Set(pendingIds.current));
-    setError(null);
-    try {
-      onChanged(
-        await registerArrival(appointment.id),
-        `Llegada de ${appointment.patient.name} registrada`,
-      );
-    } catch (failure) {
-      setError(`${appointment.patient.name}: ${appointmentErrorMessage(failure)}`);
-    } finally {
-      pendingIds.current.delete(appointment.id);
-      setPending(new Set(pendingIds.current));
-    }
-  }
+  }, [currentFraction, currentSlotIndex, following, columns, pages.length, weekly]);
 
   if (columns.length === 0)
     return <p className="text-muted">No hay profesionales ni citas para mostrar.</p>;
@@ -233,9 +207,7 @@ export function AgendaTimeGrid({
     <div className="flex min-w-0 flex-col gap-5">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-6">
         <p id={`${id}-hint`} className="max-w-prose flex-1 text-sm leading-relaxed text-muted">
-          {canRegisterArrival && !weekly
-            ? "Abre una cita para ver el detalle o pulsa “Registrar llegada”."
-            : "Abre una cita para ver el detalle y gestionar la atención."}
+          Abre una cita para ver el detalle y gestionar la atención.
         </p>
         <button
           type="button"
@@ -258,11 +230,6 @@ export function AgendaTimeGrid({
       {columns.some((column) => column.blocks === null) && (
         <p role="status" className="text-sm text-muted">
           Algunos horarios no están disponibles. Las citas se siguen mostrando.
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-sm text-danger">
-          {error}
         </p>
       )}
       {!weekly && pages.length > 1 && (
@@ -401,14 +368,7 @@ export function AgendaTimeGrid({
                     style={{ gridRow: `${row} / span ${span}`, gridColumn: lane + 1 }}
                     className="z-1 min-h-0 min-w-0 p-1"
                   >
-                    <AppointmentTile
-                      appointment={appointment}
-                      busy={pending.has(appointment.id)}
-                      onOpen={onOpen}
-                      onArrive={
-                        canRegisterArrival && !weekly ? () => void arrive(appointment) : undefined
-                      }
-                    />
+                    <AppointmentTile appointment={appointment} onOpen={onOpen} />
                   </div>
                 ))}
               </section>
@@ -474,21 +434,18 @@ export function AgendaTimeGrid({
 
 function AppointmentTile({
   appointment,
-  busy,
   onOpen,
-  onArrive,
 }: {
   appointment: Appointment;
-  busy: boolean;
   onOpen: AgendaTimeGridProps["onOpen"];
-  onArrive?: () => void;
 }) {
   const status = APPOINTMENT_STATUS[appointment.status];
   const time = formatClinicTime(appointment.startsAt);
   const type = APPOINTMENT_TYPE_LABELS[appointment.type];
+  const service = appointment.procedureName ? `${type} · ${appointment.procedureName}` : type;
+  const labStatus = appointmentLabStatus(appointment);
   const inactive = appointment.status === "CANCELLED" || appointment.status === "NO_SHOW";
   const confirmed = appointment.status === "CONFIRMED";
-  const canArrive = Boolean(onArrive) && appointment.status === "SCHEDULED";
   return (
     <div
       className={cn(
@@ -500,14 +457,15 @@ function AppointmentTile({
         <button
           type="button"
           onClick={() => onOpen(appointment)}
-          aria-label={`${time}, ${appointment.patient.name}, ${type}, ${status.label}. Ver detalle`}
+          aria-label={`${time}, ${appointment.patient.name}, ${service}, ${status.label}${labStatus ? `, ${labStatus.label}` : ""}. Ver detalle`}
+          title={appointment.procedureName ? service : undefined}
           className="flex min-h-11 w-full min-w-0 flex-col items-start justify-center gap-1 rounded-md text-left transition-colors hover:bg-ink/5"
         >
           <span className={cn("w-full truncate text-sm font-semibold", inactive && "text-muted")}>
             {appointment.patient.name}
           </span>
           <span className="w-full truncate text-xs text-muted">
-            {time} · {type}
+            {time} · {appointment.procedureName ?? type}
           </span>
         </button>
         <div className="flex min-h-8 min-w-0 items-center justify-between gap-1">
@@ -516,30 +474,15 @@ function AppointmentTile({
           >
             {status.label}
           </span>
-          {canArrive && (
-            <button
-              type="button"
-              disabled={busy}
-              aria-busy={busy || undefined}
-              aria-label={`${busy ? "Registrando" : "Registrar"} llegada de ${appointment.patient.name}, ${time}`}
-              onClick={onArrive}
-              className="inline-flex min-h-[22px] w-27 shrink-0 items-center justify-center gap-1 rounded-md border border-brand-500 bg-surface px-1 text-[11px] font-medium whitespace-nowrap text-brand-700 transition-colors hover:bg-brand-100 disabled:cursor-wait disabled:opacity-60"
-            >
-              {busy ? (
-                <span
-                  aria-hidden="true"
-                  className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
-                />
-              ) : (
-                <Icon name="log-in" className="size-3.5" />
-              )}
-              {busy ? "Registrando" : "Registrar llegada"}
-            </button>
-          )}
           {confirmed && (
             <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-success">
               <Icon name="check" className="size-3" />
               En sala
+            </span>
+          )}
+          {labStatus && (
+            <span title={labStatus.label} className="truncate text-xs text-muted">
+              {labStatus.label}
             </span>
           )}
         </div>

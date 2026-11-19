@@ -105,6 +105,7 @@ export function InventoryManager() {
   // Las flechas mueven entre pestañas, como en un tablist nativo.
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
     const next = INVENTORY_TABS.find((tab) => tab.kind !== kind)?.kind ?? kind;
     selectTab(next);
     document.getElementById(tabId(next))?.focus();
@@ -206,6 +207,7 @@ export function InventoryManager() {
         id={panelId(kind)}
         role="tabpanel"
         aria-labelledby={tabId(kind)}
+        tabIndex={0}
         className="flex flex-col gap-6"
       >
         {alerts.status === "loading" && <LoadingState rows={1} />}
@@ -258,11 +260,28 @@ export function InventoryManager() {
         {list.status === "error" && <ErrorState onRetry={reload} />}
         {list.status === "ready" && list.result.data.length === 0 && (
           <EmptyState
-            title={`No hay ${labels.plural}`}
+            title={q || alert ? "Sin resultados" : `Aún no hay ${labels.plural}`}
             description={
               q || alert
                 ? `Ningún ${labels.singular} coincide con la búsqueda o el filtro.`
-                : `Aún no hay ${labels.plural} en el inventario.`
+                : "Registra sus existencias, precios y fechas de vencimiento."
+            }
+            action={
+              q || alert ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setSearch("");
+                    selectAlert(undefined);
+                  }}
+                >
+                  Limpiar filtros
+                </Button>
+              ) : (
+                <Button onClick={() => setModal({ kind, item: null })}>
+                  {kind === "VACCINE" ? "Nueva vacuna" : "Nuevo medicamento"}
+                </Button>
+              )
             }
           />
         )}

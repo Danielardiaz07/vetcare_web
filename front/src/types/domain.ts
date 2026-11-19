@@ -59,10 +59,13 @@ export interface ScheduleBlock {
   endTime: string;
 }
 
-export type AppointmentType = "GENERAL_CONSULTATION" | "VACCINATION" | "CHECKUP" | "GROOMING";
+export type ProcedureAppointmentType = "SURGERY" | "LAB_EXAM";
+export type BookableAppointmentType =
+  "GENERAL_CONSULTATION" | "VACCINATION" | "CHECKUP" | "GROOMING";
+export type AppointmentType = BookableAppointmentType | ProcedureAppointmentType;
 
 export interface AppointmentTypeSetting {
-  type: AppointmentType;
+  type: BookableAppointmentType;
   durationMinutes: number;
   professional: "VETERINARIAN" | "GROOMER";
 }
@@ -97,13 +100,21 @@ export interface Appointment {
   status: AppointmentStatus;
   startsAt: string;
   endsAt: string;
+  durationMinutes: number;
   reason: string | null;
   cancelReason: string | null;
+  procedureName: string | null;
+  instructions: string | null;
+  clinicalRecord: LinkedClinicalRecord | null;
   patient: { id: string; name: string };
   professional: Professional;
   // Solo para el personal: el propietario no recibe este dato en sus citas.
   owner?: { id: string; firstNames: string; lastNames: string; phone: string };
 }
+
+export type LinkedClinicalRecord =
+  | { kind: "CONSULTATION" | "GROOMING" | "SURGERY"; id: string }
+  | { kind: "LAB_EXAM"; id: string; status: LabExamStatus };
 
 type StaffName = { id: string; firstNames: string; lastNames: string };
 
@@ -165,6 +176,7 @@ export interface VaccinationCardEntry extends Vaccination {
 // D-34: cirugía y examen ya realizados (fecha AAAA-MM-DD, nunca futura).
 export interface Surgery {
   id: string;
+  appointmentId: string | null;
   patientId: string;
   veterinarian: StaffName;
   procedure: string;
@@ -175,13 +187,18 @@ export interface Surgery {
 
 export interface LabExam {
   id: string;
+  appointmentId: string | null;
   patientId: string;
   veterinarian: StaffName;
   examType: string;
   performedAt: string;
-  results: string;
+  status: LabExamStatus;
+  results: string | null;
+  resultsAt: string | null;
   createdAt: string;
 }
+
+export type LabExamStatus = "PENDING_RESULTS" | "WITH_RESULTS";
 
 export type HospitalizationStatus = "ADMITTED" | "DISCHARGED";
 

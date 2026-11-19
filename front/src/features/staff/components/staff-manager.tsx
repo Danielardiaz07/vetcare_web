@@ -67,6 +67,7 @@ export function StaffManager() {
 
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
     const next = STAFF_KINDS.find((item) => item !== kind) ?? kind;
     selectKind(next);
     document.getElementById(tabId(next))?.focus();
@@ -205,6 +206,7 @@ export function StaffManager() {
           id={panelId(kind)}
           role="tabpanel"
           aria-labelledby={tabId(kind)}
+          tabIndex={0}
           className="flex flex-col gap-4"
         >
           {list.status === "loading" && <LoadingState />}
@@ -212,7 +214,8 @@ export function StaffManager() {
           {list.status === "ready" && list.result.data.length === 0 && (
             <EmptyState
               title={`No hay ${labels.tab.toLowerCase()}`}
-              description={`Registra el primero con “${labels.create}”.`}
+              description="Crea su perfil para asignarle un horario."
+              action={<Button onClick={() => setCreating(true)}>{labels.create}</Button>}
             />
           )}
           {list.status === "ready" && list.result.data.length > 0 && (

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { VaccineCard } from "@/features/clinical/components/vaccine-card";
 import { ownerFullName } from "@/features/owners/labels";
+import { LAB_EXAM_STATUS } from "@/lib/appointment-procedures";
 import { clinicDateOf, formatClinicTime } from "@/lib/clinic-time";
 import { formatDate } from "@/lib/format";
 import type { HistoryEntry as Entry, Hospitalization, VaccineStatus } from "@/types/domain";
@@ -11,6 +12,7 @@ type HistoryEntryProps = {
   vaccineStatus?: VaccineStatus;
   // RN-42: solo el personal ve las notas internas; el portal nunca las recibe.
   showInternalNotes?: boolean;
+  labAction?: ReactNode;
 };
 
 const dateOf = (instant: string) => clinicDateOf(new Date(instant));
@@ -18,7 +20,12 @@ const dateOf = (instant: string) => clinicDateOf(new Date(instant));
 const formatInstant = (instant: string) =>
   `${formatDate(dateOf(instant))}, ${formatClinicTime(instant)}`;
 
-export function HistoryEntry({ entry, vaccineStatus, showInternalNotes }: HistoryEntryProps) {
+export function HistoryEntry({
+  entry,
+  vaccineStatus,
+  showInternalNotes,
+  labAction,
+}: HistoryEntryProps) {
   switch (entry.kind) {
     case "VACCINATION":
       return <VaccineCard vaccination={entry.vaccination} status={vaccineStatus} />;
@@ -53,13 +60,23 @@ export function HistoryEntry({ entry, vaccineStatus, showInternalNotes }: Histor
     }
     case "LAB_EXAM": {
       const { labExam } = entry;
+      const status = LAB_EXAM_STATUS[labExam.status] ?? LAB_EXAM_STATUS.WITH_RESULTS;
       return (
         <EntryCard
           date={labExam.performedAt}
           title={labExam.examType}
           author={ownerFullName(labExam.veterinarian)}
+          badge={<StatusBadge tone={status.tone}>{status.label}</StatusBadge>}
         >
-          <p className="break-words whitespace-pre-line text-ink">{labExam.results}</p>
+          {labExam.results && (
+            <p className="break-words whitespace-pre-line text-ink">{labExam.results}</p>
+          )}
+          {labExam.resultsAt && (
+            <p className="text-sm text-muted">
+              Resultados cargados el {formatDate(dateOf(labExam.resultsAt))}
+            </p>
+          )}
+          {labAction}
         </EntryCard>
       );
     }

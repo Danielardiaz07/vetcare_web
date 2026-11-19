@@ -20,7 +20,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const errorId = `${inputId}-error`;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <label htmlFor={inputId} className="text-sm font-medium text-ink">
         {label}
       </label>
@@ -31,7 +31,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(hintId, errorId, hint, error)}
         className={cn(
-          "rounded-control border bg-surface px-3 py-2 text-ink",
+          "w-full min-w-0 rounded-control border bg-surface px-3 py-2 text-base text-ink disabled:cursor-not-allowed disabled:bg-canvas disabled:text-subtle",
           error ? "border-danger" : "border-field-border",
           className,
         )}

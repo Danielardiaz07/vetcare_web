@@ -7,7 +7,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Modal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/features/auth/auth-provider";
 import { HistoryEntry } from "@/features/clinical/components/history-entry";
+import { LabResultsForm } from "@/features/clinical/components/procedure-forms";
 import { GroomingCard } from "@/features/grooming/components/grooming-card";
 import { clinicDateOf } from "@/lib/clinic-time";
 import {
@@ -20,6 +24,7 @@ import { getMyPetGroomingServices, getPatientGroomingServices } from "@/services
 import type {
   HistoryEntry as Entry,
   GroomingService,
+  LabExam,
   Patient,
   VaccinationCardEntry,
 } from "@/types/domain";
@@ -91,10 +96,13 @@ type ClinicalHistoryProps = {
 };
 
 export function ClinicalHistory({ pet, card, staff = false, refreshKey }: ClinicalHistoryProps) {
+  const { profile } = useAuth();
+  const { show } = useToast();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [filters, setFilters] = useState<HistoryFilters>({});
   const [tab, setTab] = useState<Tab>("CONSULTATION");
+  const [selectedExam, setSelectedExam] = useState<LabExam | null>(null);
   const rangeError =
     filters.from && filters.to && filters.to < filters.from
       ? "La fecha final no puede ser anterior a la inicial"
@@ -141,6 +149,7 @@ export function ClinicalHistory({ pet, card, staff = false, refreshKey }: Clinic
 
   function handleTabKey(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
     const enabled = TABS.filter((item) => countOf(item.type) > 0);
     const index = enabled.findIndex((item) => item.type === current);
     const step = event.key === "ArrowRight" ? 1 : -1;
@@ -216,12 +225,21 @@ export function ClinicalHistory({ pet, card, staff = false, refreshKey }: Clinic
             })}
           </div>
           {visible.length === 0 ? (
-            <p className="text-muted">No hay registros entre esas fechas.</p>
+            <EmptyState
+              title="Sin registros entre esas fechas"
+              description="Prueba con otro rango para consultar el historial."
+              action={
+                <Button variant="secondary" onClick={() => setFilters({})}>
+                  Limpiar filtro
+                </Button>
+              }
+            />
           ) : (
             <ol
               id={panelId(current)}
               role="tabpanel"
               aria-labelledby={tabId(current)}
+              tabIndex={0}
               className="flex flex-col gap-3"
             >
               {visible.map((entry) => (
@@ -233,6 +251,20 @@ export function ClinicalHistory({ pet, card, staff = false, refreshKey }: Clinic
                       entry={entry}
                       vaccineStatus={statusOf(entry)}
                       showInternalNotes={staff}
+                      labAction={
+                        staff &&
+                        entry.kind === "LAB_EXAM" &&
+                        entry.labExam.status === "PENDING_RESULTS" &&
+                        entry.labExam.veterinarian.id === profile?.veterinarian?.id && (
+                          <Button
+                            variant="secondary"
+                            className="mt-2 self-start"
+                            onClick={() => setSelectedExam(entry.labExam)}
+                          >
+                            Cargar resultados
+                          </Button>
+                        )
+                      }
                     />
                   )}
                 </li>
@@ -240,6 +272,23 @@ export function ClinicalHistory({ pet, card, staff = false, refreshKey }: Clinic
             </ol>
           )}
         </>
+      )}
+      {selectedExam && (
+        <Modal
+          open
+          title={`Resultados · ${selectedExam.examType}`}
+          onClose={() => setSelectedExam(null)}
+        >
+          <LabResultsForm
+            examId={selectedExam.id}
+            onCancel={() => setSelectedExam(null)}
+            onSaved={() => {
+              setSelectedExam(null);
+              show("Resultados guardados", "success");
+              reload();
+            }}
+          />
+        </Modal>
       )}
     </section>
   );

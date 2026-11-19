@@ -269,7 +269,7 @@ export function AgendaView() {
           <div
             role="group"
             aria-label="Vista"
-            className="inline-flex h-11 shrink-0 rounded-control border border-line bg-surface p-0.5"
+            className="inline-flex min-h-11 shrink-0 items-stretch gap-4"
           >
             {VIEWS.filter((item) => !isReception || item.value !== "list").map((item) => (
               <button
@@ -278,10 +278,10 @@ export function AgendaView() {
                 aria-pressed={item.value === view}
                 onClick={() => changeView(item.value)}
                 className={cn(
-                  "relative rounded-md px-4 text-sm font-semibold transition-colors duration-150 ease-out after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
+                  "relative min-h-11 min-w-11 rounded-xs px-2 text-sm font-medium transition-colors duration-150 ease-out after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:content-['']",
                   item.value === view
-                    ? "bg-brand-100 text-brand-700"
-                    : "text-muted hover:bg-canvas hover:text-ink",
+                    ? "font-semibold text-brand-700 after:bg-brand-600"
+                    : "text-muted hover:text-ink",
                 )}
               >
                 {item.label}
@@ -461,9 +461,7 @@ export function AgendaView() {
                     filterParams(activeFilter).groomerId)
                   : (professionals.veterinarians[0]?.id ?? professionals.groomers[0]?.id)
               }
-              canRegisterArrival={isReception}
               onOpen={setSelected}
-              onChanged={handleChanged}
             />
           ) : view === "day" ? (
             <AppointmentList appointments={agenda.data} onOpen={setSelected} />
@@ -481,13 +479,7 @@ export function AgendaView() {
         onChanged={handleChanged}
       />
       {isReception && <NewAppointmentDialog open={creating} onClose={() => setCreating(false)} />}
-      {isReception && (
-        <CheckInDialog
-          open={checkingIn}
-          onClose={() => setCheckingIn(false)}
-          onRegistered={handleChanged}
-        />
-      )}
+      {isReception && <CheckInDialog open={checkingIn} onClose={() => setCheckingIn(false)} />}
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Modal } from "@/components/ui/modal";
 import { appointmentErrorMessage } from "@/features/appointments/errors";
@@ -28,13 +27,11 @@ export function ArrivalQrDialog({
   const [state, setState] = useState<Load>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
-  const [copyMessage, setCopyMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
     setState({ status: "loading" });
     setImageFailed(false);
-    setCopyMessage("");
     getCheckInCode(appointment.id, controller.signal)
       .then((data) => {
         if (!controller.signal.aborted) setState({ status: "ready", data });
@@ -61,15 +58,6 @@ export function ArrivalQrDialog({
       window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, refresh);
     };
   }, []);
-
-  async function copyCode(code: string) {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopyMessage("Código copiado");
-    } catch {
-      setCopyMessage("No se pudo copiar. Selecciona el código y cópialo.");
-    }
-  }
 
   const startsAt = state.status === "ready" ? state.data.startsAt : appointment.startsAt;
 
@@ -102,9 +90,14 @@ export function ArrivalQrDialog({
         {state.status === "ready" && (
           <>
             {imageFailed ? (
-              <p role="alert" className="text-sm text-muted">
-                No pudimos mostrar el QR. Usa el código.
-              </p>
+              <div className="flex flex-col items-start gap-3">
+                <p role="alert" className="text-sm text-muted">
+                  No pudimos mostrar el QR. Pide en recepción que registren tu llegada.
+                </p>
+                <Button variant="secondary" onClick={() => setReloadKey((key) => key + 1)}>
+                  Reintentar
+                </Button>
+              </div>
             ) : (
               <Image
                 src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(state.data.qrSvg)}`}
@@ -117,21 +110,6 @@ export function ArrivalQrDialog({
                 className="h-auto w-64 max-w-full self-center bg-white"
               />
             )}
-            <Field
-              label="Código de llegada"
-              value={state.data.code}
-              readOnly
-              spellCheck={false}
-              onFocus={(event) => event.currentTarget.select()}
-              hint="Si no leen el QR, muestra este código."
-              className="w-full min-w-0 text-base"
-            />
-            <Button variant="secondary" onClick={() => void copyCode(state.data.code)}>
-              Copiar código
-            </Button>
-            <p role="status" className={copyMessage ? "text-sm text-muted" : "sr-only"}>
-              {copyMessage}
-            </p>
           </>
         )}
       </div>

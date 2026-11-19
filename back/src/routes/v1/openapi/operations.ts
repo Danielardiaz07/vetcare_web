@@ -546,7 +546,7 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       description:
-        "Solo el veterinario asignado (403 a otro) y sobre una cita CONFIRMED (409 en otro estado). Guarda y devuelve `attentionStartedAt`; repetirla devuelve el mismo valor sin cambiarlo. No cambia el estado: la cita pasa a ATTENDED al guardar el registro clínico. Emite `appointment.changed` la primera vez para actualizar la agenda de recepción (D-72).",
+        "Solo el veterinario asignado (403 a otro) y sobre una cita CONFIRMED (409 en otro estado). Guarda y devuelve `attentionStartedAt`; repetirla devuelve el mismo valor sin cambiarlo. No cambia el estado: la cita pasa a ATTENDED al guardar el registro clínico. Emite `appointment.changed` la primera vez para actualizar la agenda de recepción (D-73).",
     },
   ),
   op(

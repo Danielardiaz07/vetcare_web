@@ -74,7 +74,7 @@ export function createAppointmentsRouter(
     validate({ params: uuidParamSchema }),
     controller.registerArrival,
   );
-  // D-72: el veterinario asignado inicia la atención.
+  // D-73: el veterinario asignado inicia la atención.
   router.put(
     "/:id/start-attention",
     authenticate,

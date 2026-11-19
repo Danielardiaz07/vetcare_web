@@ -72,10 +72,10 @@ export function ManageAppointment({ token }: { token: string }) {
     setError(appointmentErrorMessage(failure));
   }
 
-  async function saveReschedule(startsAt: string) {
+  async function saveReschedule(startsAt: string, professionalId: string) {
     setBusy(true);
     try {
-      const data = await rescheduleManagedAppointment(token, startsAt);
+      const data = await rescheduleManagedAppointment(token, startsAt, professionalId);
       setState({ status: "ready", data });
       return data.appointment;
     } catch (failure) {
@@ -138,12 +138,23 @@ export function ManageAppointment({ token }: { token: string }) {
             <BookingDetails
               rows={[
                 { label: "Servicio", value: APPOINTMENT_TYPE_LABELS[state.data.appointment.type] },
+                ...(state.data.appointment.procedureName
+                  ? [{ label: "Procedimiento", value: state.data.appointment.procedureName }]
+                  : []),
                 { label: "Profesional", value: ownerFullName(state.data.appointment.professional) },
                 {
                   label: "Fecha",
                   value: formatLongDate(clinicDateOf(new Date(state.data.appointment.startsAt))),
                 },
                 { label: "Hora", value: formatClinicTime(state.data.appointment.startsAt) },
+                ...(state.data.appointment.instructions
+                  ? [
+                      {
+                        label: "Indicaciones de la clínica",
+                        value: state.data.appointment.instructions,
+                      },
+                    ]
+                  : []),
               ]}
             />
           </div>

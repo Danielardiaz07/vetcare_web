@@ -334,7 +334,7 @@ export class AppointmentsService {
     return toResponse(updated, true);
   }
 
-  // D-72: el veterinario asignado inicia la atención de una cita confirmada. No cambia el estado (pasa a ATTENDED al
+  // D-73: el veterinario asignado inicia la atención de una cita confirmada. No cambia el estado (pasa a ATTENDED al
   // guardar el registro clínico) y repetirla devuelve el mismo instante, sin otro aviso.
   async startAttention(actor: Actor, id: string): Promise<AppointmentResponseDto> {
     const appointment = await this.findOrFail(id);

@@ -48,9 +48,9 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
         Saltar al contenido
       </a>
       <PanelTopBar onSignOut={handleSignOut} />
-      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 pt-6 pb-24 sm:px-6 md:pb-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-8">
         <PanelSideMenu role={user.role} />
-        <main id="contenido" className="min-w-0 flex-1">
+        <main id="contenido" tabIndex={-1} className="min-w-0 flex-1 scroll-mt-24">
           {children}
         </main>
       </div>

@@ -329,8 +329,8 @@ export function DatePicker({
     </>
   );
   return isInline ? (
-    <div className="min-w-0">
-      <p className="mb-1.5 text-sm font-medium text-ink">{label}</p>
+    <div className="flex min-w-0 flex-col gap-2">
+      <p className="text-base font-semibold text-ink">{label}</p>
       <div
         role="group"
         aria-label="Calendario para agendar"

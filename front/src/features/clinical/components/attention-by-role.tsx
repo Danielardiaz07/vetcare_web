@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/features/auth/auth-provider";
 import { AttentionView } from "@/features/clinical/components/attention-view";
 import { GroomingAttention } from "@/features/grooming/components/grooming-attention";
@@ -13,5 +14,11 @@ type AttentionByRoleProps = {
 export function AttentionByRole(props: AttentionByRoleProps) {
   const { user } = useAuth();
   if (user?.role === "GROOMER") return <GroomingAttention {...props} />;
-  return <AttentionView {...props} />;
+  if (user?.role === "VETERINARIAN") return <AttentionView {...props} />;
+  return (
+    <EmptyState
+      title="Atención del profesional asignado"
+      description="El profesional asignado registra la atención desde su agenda."
+    />
+  );
 }

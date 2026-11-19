@@ -22,9 +22,11 @@ import { FIELD_LIMITS } from "@/lib/constants";
 import {
   admitPatient,
   dischargePatient,
+  loadLabResults,
   registerLabExam,
   registerSurgery,
 } from "@/services/clinical";
+import type { Appointment } from "@/types/domain";
 
 const { PROCEDURE_MAX, EXAM_TYPE_MAX, LONG_TEXT_MAX, CLINICAL_TEXT_MAX } = FIELD_LIMITS;
 
@@ -34,6 +36,8 @@ type FormProps = {
 };
 
 type PatientFormProps = FormProps & { patientId: string };
+const surgeryNotesSchema = surgerySchema.pick({ notes: true });
+const labResultsSchema = labExamSchema.pick({ results: true });
 
 // Cada formulario muestra el error de la API tal cual (p. ej. una segunda internación abierta).
 function useSubmitError() {
@@ -145,6 +149,97 @@ export function LabExamForm({ patientId, onCancel, onSaved }: PatientFormProps) 
   );
 }
 
+export function ScheduledProcedureForm({
+  appointment,
+  onSaved,
+}: {
+  appointment: Appointment;
+  onSaved: () => void;
+}) {
+  const isSurgery = appointment.type === "SURGERY";
+  const { error, run } = useSubmitError();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<Pick<SurgeryFormInput, "notes">>({
+    resolver: zodResolver(surgeryNotesSchema),
+    defaultValues: { notes: "" },
+  });
+
+  const onSubmit = handleSubmit(({ notes }) => {
+    const input = { patientId: appointment.patient.id, appointmentId: appointment.id };
+    return run(
+      () =>
+        isSurgery
+          ? registerSurgery({ ...input, notes: notes || undefined })
+          : registerLabExam(input),
+      onSaved,
+    );
+  });
+
+  return (
+    <FormShell
+      onSubmit={onSubmit}
+      error={error}
+      busy={isSubmitting}
+      label={isSurgery ? "Registrar cirugía" : "Registrar examen"}
+    >
+      {isSurgery ? (
+        <Textarea
+          label="Notas (opcional)"
+          maxLength={LONG_TEXT_MAX}
+          error={errors.notes?.message}
+          {...register("notes")}
+        />
+      ) : (
+        <p className="text-muted">Los resultados se podrán cargar después.</p>
+      )}
+    </FormShell>
+  );
+}
+
+export function LabResultsForm({
+  examId,
+  onCancel,
+  onSaved,
+}: {
+  examId: string;
+  onCancel?: () => void;
+  onSaved: () => void;
+}) {
+  const { error, run } = useSubmitError();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<Pick<LabExamFormInput, "results">>({
+    resolver: zodResolver(labResultsSchema),
+    defaultValues: { results: "" },
+  });
+  const onSubmit = handleSubmit(({ results }) =>
+    run(() => loadLabResults(examId, results), onSaved),
+  );
+
+  return (
+    <FormShell
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      error={error}
+      busy={isSubmitting}
+      label="Guardar resultados"
+    >
+      <Textarea
+        label="Resultados"
+        required
+        maxLength={LONG_TEXT_MAX}
+        error={errors.results?.message}
+        {...register("results")}
+      />
+    </FormShell>
+  );
+}
+
 export function AdmissionForm({ patientId, onCancel, onSaved }: PatientFormProps) {
   const { error, run } = useSubmitError();
   const {
@@ -218,7 +313,7 @@ export function DischargeForm({
 
 type FormShellProps = {
   onSubmit: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   error: string | null;
   busy: boolean;
   label: string;
@@ -235,9 +330,11 @@ function FormShell({ onSubmit, onCancel, error, busy, label, children }: FormShe
         </p>
       )}
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Button variant="secondary" disabled={busy} onClick={onCancel}>
-          Cancelar
-        </Button>
+        {onCancel && (
+          <Button variant="secondary" disabled={busy} onClick={onCancel}>
+            Cancelar
+          </Button>
+        )}
         <Button type="submit" loading={busy}>
           {label}
         </Button>

@@ -244,7 +244,7 @@ export interface AppointmentResponseDto {
   procedureName: string | null; // solo cirugía y examen (D-71)
   instructions: string | null; // indicaciones para el propietario; solo cirugía y examen (D-71)
   clinicalRecord: LinkedClinicalRecordDto | null;
-  attentionStartedAt: Date | null; // D-72
+  attentionStartedAt: Date | null; // D-73
   patient: { id: string; name: string };
   professional: ProfessionalSummaryDto;
   owner?: { id: string; firstNames: string; lastNames: string; phone: string };

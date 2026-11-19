@@ -37,6 +37,8 @@ export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
   VACCINATION: "Vacunación",
   CHECKUP: "Control",
   GROOMING: "Estética",
+  SURGERY: "Cirugía",
+  LAB_EXAM: "Examen de laboratorio",
 };
 
 // D-21: franjas de 30 minutos; una duración va de 30 a 180.
