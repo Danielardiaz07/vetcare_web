@@ -7,6 +7,7 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Field } from "@/components/ui/field";
+import { Icon } from "@/components/ui/icon";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Modal } from "@/components/ui/modal";
 import { Pagination } from "@/components/ui/pagination";
@@ -87,45 +88,56 @@ export function PatientsList() {
     {
       key: "name",
       header: "Nombre",
+      headerClassName: "pl-16",
       render: (pet) => (
         <Link
           href={ROUTES.panelPatient(pet.id)}
-          className="flex min-h-11 items-center gap-3 font-semibold text-brand-700 underline underline-offset-2"
+          className="flex min-h-11 items-center gap-3 font-semibold text-brand-700"
         >
           <PatientAvatar name={pet.name} />
-          {pet.name}
+          <span className="underline underline-offset-2">{pet.name}</span>
         </Link>
       ),
     },
     { key: "species", header: "Especie", render: (pet) => SPECIES_LABELS[pet.species] },
     { key: "breed", header: "Raza", render: (pet) => pet.breed },
-    { key: "age", header: "Edad", render: (pet) => calculateAge(pet.birthDate) },
+    {
+      key: "age",
+      header: "Edad",
+      render: (pet) => (
+        <span className="[overflow-wrap:normal]">{calculateAge(pet.birthDate)}</span>
+      ),
+    },
     { key: "owner", header: "Propietario", render: (pet) => ownerFullName(pet.owner) },
     {
       key: "status",
       header: "Estado",
-      render: (pet) =>
-        pet.active ? (
-          <StatusBadge tone="success">Activa</StatusBadge>
-        ) : (
-          <StatusBadge tone="neutral">Inactiva</StatusBadge>
-        ),
+      render: (pet) => (
+        <span className="inline-flex w-max whitespace-nowrap [overflow-wrap:normal]">
+          <StatusBadge tone={pet.active ? "success" : "neutral"}>
+            {pet.active ? "Activa" : "Inactiva"}
+          </StatusBadge>
+        </span>
+      ),
     },
     {
       key: "actions",
       header: "Acciones",
       render: (pet) => (
-        <span className="flex gap-2">
+        <span className="flex flex-wrap gap-2 md:flex-nowrap">
           <Button
             variant="secondary"
+            className="size-11 shrink-0 border-brand-200! bg-brand-50! px-0! text-brand-700! hover:bg-brand-100!"
             onClick={() => setEditing(pet)}
             aria-label={`Editar ${pet.name}`}
+            title="Editar"
           >
-            Editar
+            <Icon name="pencil" className="size-4" />
           </Button>
           {pet.active && (
             <Button
               variant="secondary"
+              className="shrink-0 border-line! bg-canvas! px-3! text-muted! whitespace-nowrap hover:border-danger-border! hover:bg-danger-bg! hover:text-danger!"
               onClick={() => setDeactivating(pet)}
               aria-label={`Desactivar ${pet.name}`}
             >
@@ -180,7 +192,12 @@ export function PatientsList() {
       )}
       {list.status === "ready" && list.result.data.length > 0 && (
         <>
-          <DataTable columns={columns} rows={list.result.data} getRowKey={(pet) => pet.id} />
+          <DataTable
+            columns={columns}
+            rows={list.result.data}
+            getRowKey={(pet) => pet.id}
+            tableClassName="min-w-3xl"
+          />
           {list.result.meta.totalPages > 1 && (
             <Pagination
               page={list.result.meta.page}

@@ -6,41 +6,14 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/components/ui/cn";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useAuthDialog } from "@/features/auth/components/auth-dialog";
-import {
-  answerCount,
-  chatOptions,
-  chatSuggestions,
-  choiceKey,
-  INITIAL_CHAT_PROGRESS,
-  recordConsultation,
-  type ChatProgress,
-} from "@/features/chat/suggestions";
+import { useChat, type ChatQuestion } from "@/features/chat/chat-provider";
+import { answerCount, chatOptions, choiceKey } from "@/features/chat/suggestions";
 import { ROUTES } from "@/lib/constants";
-import { askVetBot, type ChatReply, type ChatTopic } from "@/services/chat";
-import { ApiError } from "@/services/http-client";
 import type { SessionUser } from "@/types/auth";
 
-type Message = {
-  id: number;
-  from: "user" | "bot";
-  reply: ChatReply;
-  choiceCounts?: Record<string, number>;
-};
-
-const GREETING: Message = {
-  id: 0,
-  from: "bot",
-  reply: { text: "Hola, soy VetBot, el asistente de VetCare. ¿En qué te ayudo hoy?" },
-};
-
 const MESSAGE_MAX_LENGTH = 200;
-type Question = {
-  text: string;
-  label?: string;
-  topic?: ChatTopic;
-  patientId?: string;
-  allPatients?: boolean;
-};
+const REPLY_ACTION_CLASS =
+  "flex min-h-9 w-full items-center justify-between gap-2 py-1 text-left font-semibold text-brand-700 underline-offset-2 hover:underline focus-visible:-outline-offset-2 pointer-coarse:min-h-11";
 
 type ChatWidgetProps = {
   open: boolean;
@@ -67,44 +40,13 @@ function ChatConversation({
   user,
 }: ChatWidgetProps & { user: SessionUser | null }) {
   const { isOpen: authDialogOpen } = useAuthDialog();
-  const [messages, setMessages] = useState<Message[]>([
-    user?.role === "OWNER"
-      ? {
-          ...GREETING,
-          reply: {
-            text: "Hola, soy VetBot. Puedo consultar tus próximas citas, avisos, vacunas y evolución del peso, y orientarte sobre horarios, servicios y precios. ¿Qué necesitas?",
-          },
-        }
-      : GREETING,
-  ]);
+  const { messages, busy, progress, failed, submitQuestion } = useChat();
   const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<ChatProgress>(INITIAL_CHAT_PROGRESS);
-  const [suggestions, setSuggestions] = useState(() =>
-    chatSuggestions(INITIAL_CHAT_PROGRESS, user?.role === "OWNER"),
-  );
-  const [allOptionsOpen, setAllOptionsOpen] = useState(false);
-  const [failed, setFailed] = useState<{ question: Question; expired: boolean } | null>(null);
-  const inFlight = useRef(false);
-  const mounted = useRef(false);
-  const nextId = useRef(1);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const titleId = useId();
-  const allOptions = chatOptions(user?.role === "OWNER");
-  const quickQuestions = suggestions
-    .map(({ topic }) => allOptions.find((option) => option.topic === topic))
-    .filter((option) => option !== undefined);
-  const visibleOptions = allOptionsOpen ? allOptions : quickQuestions;
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!open || authDialogOpen) return;
@@ -114,7 +56,7 @@ function ChatConversation({
 
   useEffect(() => {
     const log = logRef.current;
-    if (log) log.scrollTop = log.scrollHeight;
+    if (log) log.scrollTop = messages.length === 1 ? 0 : log.scrollHeight;
   }, [messages, open, busy, failed]);
 
   if (authDialogOpen) return null;
@@ -124,66 +66,25 @@ function ChatConversation({
     requestAnimationFrame(() => toggleRef.current?.focus({ preventScroll: true }));
   }
 
-  function add(from: Message["from"], reply: ChatReply, choiceCounts?: Record<string, number>) {
-    const message = { id: nextId.current++, from, reply, choiceCounts };
-    setMessages((current) => [...current, message]);
-  }
-
-  async function send(question: Question, retry = false) {
-    if (inFlight.current) return;
+  async function send(question: ChatQuestion, retry = false) {
     const focused = document.activeElement;
-    inFlight.current = true;
-    setBusy(true);
-    setFailed(null);
-    if (!retry) add("user", { text: question.label ?? question.text });
-    try {
-      const reply = await askVetBot(question.text, {
-        user,
-        topic: question.topic,
-        patientId: question.patientId,
-        allPatients: question.allPatients,
-      });
-      if (mounted.current) {
-        const nextProgress = recordConsultation(progress, reply.consultation);
-        const pendingChoices = reply.choices?.filter(
-          (choice) => answerCount(nextProgress, choice) === 0,
-        );
-        const choices = pendingChoices?.length ? pendingChoices : reply.choices;
-        const choiceCounts =
-          choices &&
-          Object.fromEntries(
-            choices.map((choice) => [choiceKey(choice), answerCount(nextProgress, choice)]),
-          );
-        setProgress(nextProgress);
-        setSuggestions((current) => chatSuggestions(nextProgress, user?.role === "OWNER", current));
-        setAllOptionsOpen(false);
-        add("bot", { ...reply, choices }, choiceCounts);
-        requestAnimationFrame(() => {
-          if (
-            focused &&
-            !focused.isConnected &&
-            document.activeElement === document.body &&
-            panelRef.current?.getAttribute("aria-hidden") === "false"
-          ) {
-            panelRef.current.focus({ preventScroll: true });
-          }
-        });
+    if (!(await submitQuestion(question, retry))) return;
+    requestAnimationFrame(() => {
+      if (
+        focused &&
+        !focused.isConnected &&
+        document.activeElement === document.body &&
+        panelRef.current?.getAttribute("aria-hidden") === "false"
+      ) {
+        panelRef.current.focus({ preventScroll: true });
       }
-    } catch (error) {
-      if (mounted.current)
-        setFailed({ question, expired: error instanceof ApiError && error.status === 401 });
-    } finally {
-      if (mounted.current) {
-        inFlight.current = false;
-        setBusy(false);
-      }
-    }
+    });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = draft.trim();
-    if (!question || inFlight.current) return;
+    if (!question || busy) return;
     setDraft("");
     void send({ text: question });
   }
@@ -202,6 +103,12 @@ function ChatConversation({
 
   return (
     <>
+      {open && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-40 bg-navy/50 sm:hidden"
+        />
+      )}
       <div
         ref={panelRef}
         id={panelId}
@@ -222,7 +129,7 @@ function ChatConversation({
           }
         }}
         className={cn(
-          "fixed right-0 bottom-4 z-40 flex h-[min(35rem,calc(100dvh-2rem))] w-[min(25rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-l-card border border-r-0 border-line bg-surface shadow-xl outline-none transition-[opacity,translate,visibility] duration-200 ease-out motion-reduce:translate-x-0 motion-reduce:transition-none sm:bottom-6 sm:h-[min(35rem,calc(100dvh-3rem))]",
+          "fixed inset-x-0 bottom-0 z-40 flex h-[min(35rem,calc(100dvh-1rem))] flex-col overflow-hidden rounded-t-card bg-surface shadow-xl outline-none transition-[opacity,translate,visibility] duration-200 ease-out motion-reduce:translate-x-0 motion-reduce:transition-none sm:left-auto sm:h-[min(35rem,calc(100dvh-3rem))] sm:w-[25rem] sm:rounded-card sm:border sm:border-line",
           open
             ? "visible translate-x-0 opacity-100"
             : "pointer-events-none invisible translate-x-2 opacity-0",
@@ -264,91 +171,93 @@ function ChatConversation({
                   progress.patients.some(({ id }) => id === choice.patientId)) &&
                 answerCount(progress, choice) <= (message.choiceCounts?.[choiceKey(choice)] ?? 0),
             );
+            const hasReplyActions =
+              !!choices?.length || !!message.reply.links?.length || message.reply.bookingAction;
             return (
               <div
                 key={message.id}
                 className={cn(
-                  "flex min-w-0 max-w-[90%] flex-col gap-2 [overflow-wrap:anywhere]",
-                  message.from === "user" ? "self-end items-end" : "self-start",
+                  "min-w-0 max-w-[80%] rounded-control px-4 pt-2.5 [overflow-wrap:anywhere]",
+                  hasReplyActions ? "pb-0" : "pb-2.5",
+                  message.from === "user"
+                    ? "self-end rounded-br-sm bg-brand-600 text-white"
+                    : "self-start rounded-bl-sm border border-line bg-surface text-ink",
                 )}
               >
-                <div
-                  className={cn(
-                    "rounded-control px-4 py-2.5 text-pretty",
-                    message.from === "user"
-                      ? "rounded-br-sm bg-brand-600 text-white"
-                      : "rounded-bl-sm border border-line bg-surface text-ink",
-                  )}
-                >
-                  <p>
-                    <span className="sr-only">{message.from === "user" ? "Tú: " : "VetBot: "}</span>
-                    {message.reply.text}
-                  </p>
-                  {!!message.reply.items?.length && (
-                    <ul className="mt-3 flex flex-col divide-y divide-line border-t border-line">
-                      {message.reply.items.map((item, index) => (
-                        <li key={`${item.title}:${index}`} className="py-2 last:pb-0">
-                          {item.href ? (
-                            <Link
-                              href={item.href}
-                              onClick={() => onOpenChange(false)}
-                              className="font-semibold text-brand-700 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-700"
-                            >
-                              {item.title}
-                            </Link>
-                          ) : (
-                            <span className="font-semibold">{item.title}</span>
-                          )}
-                          <p className="mt-0.5 text-muted">{item.detail}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                {(message.reply.links || message.reply.bookingAction || !!choices?.length) && (
-                  <div className="flex flex-wrap gap-2">
+                <p className="text-pretty">
+                  <span className="sr-only">{message.from === "user" ? "Tú: " : "VetBot: "}</span>
+                  {message.reply.text}
+                </p>
+                {!!message.reply.items?.length && (
+                  <ul className="mt-3 flex flex-col divide-y divide-line border-t border-line">
+                    {message.reply.items.map((item, index) => (
+                      <li key={`${item.title}:${index}`} className="py-2 last:pb-0">
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            onClick={() => onOpenChange(false)}
+                            className="font-semibold text-brand-700 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-700"
+                          >
+                            {item.title}
+                          </Link>
+                        ) : (
+                          <span className="font-semibold">{item.title}</span>
+                        )}
+                        <p className="mt-0.5 text-muted">{item.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {hasReplyActions && (
+                  <ul className="mt-2 divide-y divide-line border-t border-line">
                     {choices?.map((choice) => (
-                      <button
-                        key={choice.patientId ?? choice.label}
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          void send({
-                            text: choice.question ?? choice.label,
-                            label: choice.label,
-                            topic: choice.topic,
-                            patientId: choice.patientId,
-                            allPatients: choice.allPatients,
-                          })
-                        }
-                        className="min-h-8 rounded-control border border-brand-200 bg-brand-50 px-2.5 py-1 text-left text-sm font-medium text-brand-700 hover:bg-brand-100 pointer-coarse:min-h-11 disabled:cursor-wait disabled:opacity-60"
-                      >
-                        {choice.label}
-                      </button>
+                      <li key={choice.patientId ?? choice.label}>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void send({
+                              text: choice.question ?? choice.label,
+                              label: choice.label,
+                              topic: choice.topic,
+                              patientId: choice.patientId,
+                              allPatients: choice.allPatients,
+                            })
+                          }
+                          className={cn(
+                            REPLY_ACTION_CLASS,
+                            "disabled:cursor-wait disabled:opacity-60",
+                          )}
+                        >
+                          <span className="min-w-0">{choice.label}</span>
+                          <Icon name="chevron-right" className="size-4 shrink-0" />
+                        </button>
+                      </li>
                     ))}
                     {message.reply.bookingAction && (
-                      <button
-                        type="button"
-                        onClick={goToBooking}
-                        className="inline-flex min-h-9 items-center rounded-chip bg-brand-600 px-3 text-sm font-semibold text-white hover:bg-brand-700"
-                      >
-                        Ir a agendar
-                      </button>
+                      <li>
+                        <button type="button" onClick={goToBooking} className={REPLY_ACTION_CLASS}>
+                          Ir a agendar
+                          <Icon name="arrow-right" className="size-4 shrink-0" />
+                        </button>
+                      </li>
                     )}
                     {message.reply.links?.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => {
-                          if (link.href.startsWith("/")) onOpenChange(false);
-                        }}
-                        {...(link.external && { target: "_blank", rel: "noopener noreferrer" })}
-                        className="inline-flex min-h-9 items-center rounded-chip border border-line bg-surface px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
-                      >
-                        {link.label}
-                      </Link>
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
+                          onClick={() => {
+                            if (link.href.startsWith("/")) onOpenChange(false);
+                          }}
+                          {...(link.external && { target: "_blank", rel: "noopener noreferrer" })}
+                          className={REPLY_ACTION_CLASS}
+                        >
+                          <span className="min-w-0">{link.label}</span>
+                          <Icon name="arrow-right" className="size-4 shrink-0" />
+                        </Link>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
               </div>
             );
@@ -388,45 +297,37 @@ function ChatConversation({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1.5 border-t border-line px-3 py-2">
-          <div
-            id={`${panelId}-options`}
-            className="grid max-h-[min(15rem,30dvh)] grid-cols-2 gap-1.5 overflow-y-auto overscroll-contain"
-            role="group"
-            aria-label={allOptionsOpen ? "Todas las opciones" : "Consultas sugeridas"}
-          >
-            {visibleOptions.map((question) => (
-              <button
-                key={question.topic}
-                type="button"
-                title={question.label}
-                disabled={busy}
-                onClick={() =>
-                  void send({
-                    text: question.label,
-                    topic: question.topic,
-                  })
-                }
-                className="min-h-9 rounded-control border border-line bg-surface px-2 py-1.5 text-xs font-medium text-ink transition-colors duration-150 ease-out hover:border-brand-200 hover:bg-brand-50 pointer-coarse:min-h-11 disabled:cursor-wait disabled:opacity-60"
-              >
-                {question.label}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            aria-expanded={allOptionsOpen}
-            aria-controls={`${panelId}-options`}
-            onClick={() => setAllOptionsOpen((current) => !current)}
-            className="inline-flex min-h-7 items-center gap-1 self-end rounded-sm px-1 text-xs font-medium text-brand-700 hover:underline hover:underline-offset-2 pointer-coarse:min-h-11"
-          >
-            {allOptionsOpen ? "Ocultar opciones" : "Ver todas las opciones"}
-            <Icon
-              name="chevron-right"
-              className={cn("size-3", allOptionsOpen ? "rotate-90" : "-rotate-90")}
-            />
-          </button>
-          <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="flex min-h-0 flex-col gap-1 bg-canvas px-3 pb-2">
+          <details className="group max-h-[min(19rem,40dvh)] min-h-0 self-end overscroll-contain open:w-full open:overflow-y-auto scrollbar-thin">
+            <summary className="sticky top-0 flex min-h-7 cursor-pointer list-none items-center justify-end gap-1 bg-canvas px-1 text-sm font-medium text-brand-700 hover:underline hover:underline-offset-2 focus-visible:-outline-offset-4 pointer-coarse:min-h-11 [&::-webkit-details-marker]:hidden">
+              <span className="group-open:hidden">Ver opciones</span>
+              <span className="hidden group-open:inline">Ocultar opciones</span>
+              <Icon
+                name="chevron-right"
+                className="size-3.5 shrink-0 -rotate-90 group-open:rotate-90"
+              />
+            </summary>
+            <ul aria-label="Opciones de VetBot" className="grid grid-cols-2 gap-x-2 pt-1">
+              {chatOptions(user?.role === "OWNER").map(({ topic, label, icon }) => (
+                <li key={topic} className="flex min-w-0">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={(event) => {
+                      panelRef.current?.focus({ preventScroll: true });
+                      event.currentTarget.closest("details")?.removeAttribute("open");
+                      void send({ text: label, topic });
+                    }}
+                    className="flex min-h-9 w-full min-w-0 items-center justify-center gap-1.5 px-px py-1 text-center text-sm font-semibold text-brand-700 hover:underline hover:underline-offset-2 focus-visible:-outline-offset-4 pointer-coarse:min-h-11 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    <Icon name={icon} className="size-4 shrink-0" />
+                    <span className="min-w-0">{label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+          <form onSubmit={handleSubmit} className="flex shrink-0 gap-2">
             <label htmlFor={`${panelId}-message`} className="sr-only">
               Escribe tu pregunta
             </label>

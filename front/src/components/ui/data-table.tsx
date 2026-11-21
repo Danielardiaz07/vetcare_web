@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { cn } from "./cn";
 
 export type DataTableColumn<Row> = {
   key: string;
   header: string;
+  headerClassName?: string;
   render: (row: Row) => ReactNode;
 };
 
@@ -11,9 +13,16 @@ type DataTableProps<Row> = {
   rows: Row[];
   getRowKey: (row: Row) => string;
   renderMobileRow?: (row: Row) => ReactNode;
+  tableClassName?: string;
 };
 
-export function DataTable<Row>({ columns, rows, getRowKey, renderMobileRow }: DataTableProps<Row>) {
+export function DataTable<Row>({
+  columns,
+  rows,
+  getRowKey,
+  renderMobileRow,
+  tableClassName,
+}: DataTableProps<Row>) {
   return (
     <>
       <ul className="flex min-w-0 flex-col gap-3 md:hidden">
@@ -43,11 +52,15 @@ export function DataTable<Row>({ columns, rows, getRowKey, renderMobileRow }: Da
         tabIndex={0}
         className="relative hidden overflow-x-auto rounded-card border border-line bg-surface md:block"
       >
-        <table className="w-full text-left text-sm">
+        <table className={cn("w-full text-left text-sm", tableClassName)}>
           <thead className="border-b border-line bg-canvas text-subtle">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} scope="col" className="px-4 py-3 font-medium">
+                <th
+                  key={column.key}
+                  scope="col"
+                  className={cn("px-4 py-3 font-medium", column.headerClassName)}
+                >
                   {column.header}
                 </th>
               ))}
