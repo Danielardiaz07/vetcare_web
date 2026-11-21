@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/features/auth/auth-provider";
 import { AuthDialogProvider } from "@/features/auth/components/auth-dialog";
+import { ChatProvider } from "@/features/chat/chat-provider";
 import "./globals.css";
 
 const ibmPlex = IBM_Plex_Sans({
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="flex min-h-dvh flex-col">
         <ToastProvider>
           <AuthProvider>
-            <AuthDialogProvider>{children}</AuthDialogProvider>
+            <AuthDialogProvider>
+              <ChatProvider>{children}</ChatProvider>
+            </AuthDialogProvider>
           </AuthProvider>
         </ToastProvider>
       </body>

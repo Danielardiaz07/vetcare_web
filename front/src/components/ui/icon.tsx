@@ -11,6 +11,7 @@ export type IconName =
   | "user"
   | "paw"
   | "plus"
+  | "pencil"
   | "download"
   | "copy"
   | "close"
@@ -54,6 +55,7 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  pencil: <path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.8 2.8 0 0 0-4-4Z" />,
   "qr-code": (
     <>
       <rect x="3" y="3" width="6" height="6" rx="1" />

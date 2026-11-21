@@ -44,8 +44,12 @@ export function Modal({
   }
 
   function handleBackdropClick(event: MouseEvent<HTMLDialogElement>) {
-    if (event.target === event.currentTarget) {
-      dialogRef.current?.close();
+    const dialog = event.currentTarget;
+    if (event.target !== dialog) return;
+    const { left, right, top, bottom } = dialog.getBoundingClientRect();
+    const { clientX, clientY } = event;
+    if (clientX < left || clientX >= right || clientY < top || clientY >= bottom) {
+      dialog.close();
     }
   }
 
@@ -67,11 +71,16 @@ export function Modal({
       onClose={handleClose}
       onClick={handleBackdropClick}
       className={cn(
-        "m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-y-auto overscroll-contain rounded-card bg-surface p-0 text-ink backdrop:bg-navy/50",
+        "m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] flex-col overflow-hidden rounded-card bg-surface p-2 text-ink backdrop:bg-navy/50 open:flex print:p-0 print:open:block",
         wide ? "max-w-5xl" : "max-w-lg",
       )}
     >
-      <div className={cn("flex flex-col", compact ? "gap-2 p-3" : "gap-4 p-6")}>
+      <div
+        className={cn(
+          "flex min-h-0 flex-col overflow-y-auto overscroll-contain print:overflow-visible",
+          compact ? "gap-2 p-1" : "gap-4 p-4",
+        )}
+      >
         <div className="flex items-start justify-between gap-4">
           <h2 id={titleId} className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">
             {title}

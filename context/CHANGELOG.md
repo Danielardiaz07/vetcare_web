@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-20 · 12, 13 · D-57, D-63, D-72. VetBot oscurece la portada en móvil, integra las acciones en las burbujas y conserva la conversación al volver del portal. El carné se desplaza dentro de su ventana y la tabla de Pacientes mejora la alineación, la lectura de estados y las acciones.
 - 2026-11-19 · 12, 13 · D-45. La portada muestra un acceso directo a “Iniciar sesión” en el encabezado móvil.
 - 2026-11-19 · 12 · D-73, D-50, D-45, D-41. La agenda de recepción muestra el inicio de la atención. El agendamiento público lleva al resumen y ofrece contacto alternativo si falla la carga o faltan horarios. La portada incorpora metadatos para búsqueda y redes y presenta al equipo de estética.
 - 2026-11-18 · 06, 08, 09, 12 · D-73: `PUT /appointments/{id}/start-attention` (veterinario asignado, cita confirmada) guarda y devuelve `attentionStartedAt`, es idempotente y emite `appointment.changed`; el estado no cambia hasta guardar el registro clínico. Migración `20261118000000_add_attention_started_at` por aplicar a mano.

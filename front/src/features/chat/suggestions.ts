@@ -1,32 +1,31 @@
-import type { ChatChoice, ChatConsultation, ChatPatient, ChatTopic } from "@/services/chat";
+import type { IconName } from "@/components/ui/icon";
+import type { ChatChoice, ChatConsultation, ChatPatient } from "@/services/chat";
 
 export type ChatProgress = {
   answers: Record<string, number>;
-  started: ChatTopic[];
   patients: ChatPatient[] | null;
-  lastTopic: ChatTopic | null;
 };
 
 export const INITIAL_CHAT_PROGRESS: ChatProgress = {
   answers: {},
-  started: [],
   patients: null,
-  lastTopic: null,
 };
 
-const GENERAL_OPTIONS: ChatChoice[] = [
-  { topic: "hours", label: "Horarios" },
-  { topic: "services", label: "Servicios y precios" },
-  { topic: "location", label: "Ubicación" },
-  { topic: "booking", label: "Agendar cita" },
-  { topic: "payments", label: "Medios de pago" },
-  { topic: "contact", label: "Contacto" },
+type ChatOption = Pick<ChatChoice, "topic" | "label"> & { icon: IconName };
+
+const GENERAL_OPTIONS: ChatOption[] = [
+  { topic: "hours", label: "Horarios", icon: "clock" },
+  { topic: "services", label: "Servicios y precios", icon: "stethoscope" },
+  { topic: "location", label: "Ubicación", icon: "map-pin" },
+  { topic: "booking", label: "Agendar cita", icon: "calendar-plus" },
+  { topic: "payments", label: "Medios de pago", icon: "receipt" },
+  { topic: "contact", label: "Contacto", icon: "phone" },
 ];
-const OWNER_OPTIONS: ChatChoice[] = [
-  { topic: "appointments", label: "Mis citas" },
-  { topic: "alerts", label: "Mis avisos" },
-  { topic: "vaccines", label: "Vacunas" },
-  { topic: "weight", label: "Evolución del peso" },
+const OWNER_OPTIONS: ChatOption[] = [
+  { topic: "appointments", label: "Mis citas", icon: "calendar" },
+  { topic: "alerts", label: "Mis avisos", icon: "bell" },
+  { topic: "vaccines", label: "Vacunas", icon: "syringe" },
+  { topic: "weight", label: "Evolución del peso", icon: "chart" },
 ];
 
 export const chatOptions = (owner: boolean) =>
@@ -63,112 +62,5 @@ export function recordConsultation(
       }
     }
   }
-  return {
-    started: progress.started.includes(consultation.topic)
-      ? progress.started
-      : [...progress.started, consultation.topic],
-    answers,
-    patients,
-    lastTopic: consultation.topic,
-  };
-}
-
-export function consultationComplete(
-  progress: ChatProgress,
-  choice: Pick<ChatChoice, "topic" | "patientId">,
-): boolean {
-  if (
-    (choice.topic === "weight" || choice.topic === "vaccines" || choice.topic === "appointments") &&
-    !choice.patientId
-  ) {
-    if (progress.patients === null) return false;
-    return progress.patients.length === 0
-      ? answerCount(progress, choice) > 0
-      : progress.patients.every(
-          ({ id }) => answerCount(progress, { topic: choice.topic, patientId: id }) > 0,
-        );
-  }
-  return answerCount(progress, choice) > 0;
-}
-
-export function chatSuggestions(
-  progress: ChatProgress,
-  owner: boolean,
-  previous?: ChatChoice[],
-): ChatChoice[] {
-  const options = chatOptions(owner);
-  const current = (previous ?? (owner ? OWNER_OPTIONS : GENERAL_OPTIONS.slice(0, 4)))
-    .map(({ topic }) => options.find((option) => option.topic === topic))
-    .filter((option): option is ChatChoice => option !== undefined);
-  if (!progress.lastTopic) return current;
-  const candidates: ChatChoice[] = [];
-  const add = (topic: ChatTopic) => {
-    const option = options.find((item) => item.topic === topic);
-    if (!option) return;
-    candidates.push(option);
-  };
-  for (const topic of ["weight", "vaccines", "appointments"] as const) {
-    if (progress.started.includes(topic) && !consultationComplete(progress, { topic })) add(topic);
-  }
-  if (progress.lastTopic === "weight" || progress.lastTopic === "vaccines") {
-    add(progress.lastTopic);
-    add(progress.lastTopic === "weight" ? "vaccines" : "weight");
-    add("appointments");
-    add("booking");
-  } else if (progress.lastTopic === "services") {
-    add("booking");
-    add("payments");
-    add("hours");
-  } else if (progress.lastTopic === "hours") {
-    add("location");
-    add("contact");
-    add("services");
-  } else if (progress.lastTopic === "appointments") {
-    add("alerts");
-    add("vaccines");
-    add("booking");
-  } else if (progress.lastTopic === "alerts") {
-    add("appointments");
-    add("vaccines");
-    add("weight");
-    add("booking");
-  } else if (progress.lastTopic === "location") {
-    add("hours");
-    add("contact");
-    add("booking");
-  } else if (progress.lastTopic === "booking") {
-    add("hours");
-    add("services");
-    add("location");
-    add("payments");
-  } else if (progress.lastTopic === "payments") {
-    add("services");
-    add("booking");
-    add("contact");
-  } else if (progress.lastTopic === "contact") {
-    add("location");
-    add("hours");
-    add("booking");
-    add("payments");
-  }
-  candidates.push(...options);
-  const seen = new Set(
-    current.filter((choice) => !consultationComplete(progress, choice)).map(({ topic }) => topic),
-  );
-  const replacement = () => {
-    const choice = candidates.find(
-      (candidate) => !seen.has(candidate.topic) && !consultationComplete(progress, candidate),
-    );
-    if (choice) seen.add(choice.topic);
-    return choice;
-  };
-  const suggestions = current
-    .map((choice) => (consultationComplete(progress, choice) ? replacement() : choice))
-    .filter((choice): choice is ChatChoice => choice !== undefined);
-  while (suggestions.length < 4) {
-    const choice = replacement();
-    if (!choice) break;
-    suggestions.push(choice);
-  }
-  return suggestions;
+  return { answers, patients };
 }
