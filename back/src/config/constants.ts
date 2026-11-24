@@ -73,6 +73,13 @@ export const CARD_TOKEN_LENGTH = 43; // 32 bytes en base64url, sin relleno; mism
 export const CHECK_IN_CODE_MAX = 70; // "VC2." + UUID (36) + "." + hasta 12 dígitos + "." + 16 hex = 70 caracteres (D-66)
 export const SCANNER_TOKEN_MIN_LENGTH = 32; // el token del enlace de escaneo se adivina con la misma dificultad que una clave (RN-85)
 export const SCANNER_TOKEN_MAX = 128;
+// D-69: canal de eventos (SSE) de la agenda de recepción.
+export const APPOINTMENT_CHANGED_EVENT = "appointment.changed";
+export const EVENT_STREAM_HEARTBEAT_MS = 25_000; // por debajo del tiempo que el proxy de Render deja una conexión sin tráfico
+export const EVENT_STREAM_RETRY_MS = 3_000; // espera sugerida al cliente antes de reconectar
+export const EVENT_STREAM_MAX_AGE_MS = 10 * MINUTE_MS; // menos que el JWT de acceso (15 min): al reconectar se vuelve a autenticar
+export const SCANNER_PAGE_PATH = "/scan"; // ruta del frontend que abre el enlace de escaneo de recepción (D-68)
+export const HTTPS_SCHEME = "https://";
 export const CHECK_IN_QR_EXTENSION = ".png";
 export const QR_IMAGE_MAX_AGE_SECONDS = 86_400; // el código ya lleva la hora de la cita, así que su imagen no cambia
 export const MANAGE_APPOINTMENT_PATH = "/manage-appointment"; // ruta del frontend que abre el enlace del correo
@@ -115,6 +122,10 @@ export const NO_SHOW_GRACE_MINUTES = 15; // RN-31
 export const SUGGESTED_DATES_COUNT = 3; // RN-33
 export const AGENDA_MAX_DAYS = 7; // RF-16: vista diaria o semanal
 export const APPOINTMENT_TEXT_MAX = 200; // motivo y motivo de cancelación
+// D-71: cirugías y exámenes agendados por recepción.
+export const PROCEDURE_NAME_MAX = 80; // cabe en Surgery.procedure (120) y en LabExam.examType (80)
+export const APPOINTMENT_INSTRUCTIONS_MAX = 500; // mismo tope que los textos clínicos
+export const PROCEDURE_MAX_DURATION_MINUTES = 480; // una jornada; la duración es múltiplo de la franja (SLOT_MINUTES)
 
 export const VACCINE_DUE_SOON_DAYS = 7; // RN-49
 export const IVA_RATE_PERCENT = 19; // RN-71

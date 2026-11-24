@@ -1,79 +1,128 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ErrorState } from "@/components/ui/error-state";
-import { LoadingState } from "@/components/ui/loading-state";
 import { ChoiceButton } from "@/features/appointments/components/choice-button";
+import { DateTimeAvailability } from "@/features/appointments/components/date-time-availability";
 import {
   appointmentErrorMessage,
   isSlotTaken,
   SLOT_TAKEN_MESSAGE,
 } from "@/features/appointments/errors";
+import { ProcedureDurationField } from "@/features/appointments/components/procedure-duration-field";
+import { ownerFullName } from "@/features/owners/labels";
 import {
-  bookableDates,
-  clinicDateOf,
-  dayParts,
-  formatClinicTime,
-  formatLongDate,
-} from "@/lib/clinic-time";
-import { getAvailability, rescheduleAppointment } from "@/services/appointments";
-import type { Appointment, Availability } from "@/types/domain";
+  formatProcedureDuration,
+  isProcedureAppointment,
+  parseProcedureDuration,
+} from "@/lib/appointment-procedures";
+import { bookableDates, clinicDateOf } from "@/lib/clinic-time";
+import { getAvailability, listProfessionals, rescheduleAppointment } from "@/services/appointments";
+import type { Appointment, AvailableSlot, Professional } from "@/types/domain";
 
-type AvailabilityState =
-  { status: "loading" } | { status: "error" } | { status: "ready"; data: Availability };
+const ANY_PROFESSIONAL = "any";
+
+type ProfessionalsState =
+  { status: "loading" } | { status: "error" } | { status: "ready"; data: Professional[] };
 
 type RescheduleFormProps = {
   appointment: Appointment;
   onCancel: () => void;
   onRescheduled: (appointment: Appointment) => void;
+  loadAvailability?: typeof getAvailability;
+  onSave?: (startsAt: string, professionalId: string) => Promise<Appointment>;
 };
 
-// Mismo tipo de cita y mismo profesional; solo cambian el día y la hora.
-export function RescheduleForm({ appointment, onCancel, onRescheduled }: RescheduleFormProps) {
+export function RescheduleForm({
+  appointment,
+  onCancel,
+  onRescheduled,
+  loadAvailability = getAvailability,
+  onSave,
+}: RescheduleFormProps) {
   const dates = useMemo(() => bookableDates(), []);
   const currentDate = clinicDateOf(new Date(appointment.startsAt));
+  const isProcedure = isProcedureAppointment(appointment.type);
   const [date, setDate] = useState(dates.includes(currentDate) ? currentDate : (dates[0] ?? ""));
-  const [startsAt, setStartsAt] = useState<string | null>(null);
-  const [availability, setAvailability] = useState<AvailabilityState>({ status: "loading" });
+  const [durationText, setDurationText] = useState(() =>
+    isProcedure ? formatProcedureDuration(appointment.durationMinutes) : "",
+  );
+  const [validateDuration, setValidateDuration] = useState(false);
+  const [professionalId, setProfessionalId] = useState(appointment.professional.id);
+  const [professionals, setProfessionals] = useState<ProfessionalsState>({ status: "loading" });
+  const [professionalsKey, setProfessionalsKey] = useState(0);
+  const [slot, setSlot] = useState<AvailableSlot | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
+  const duration = isProcedure ? parseProcedureDuration(durationText) : undefined;
+  const slotProfessional = slot?.professionals[0];
+  const listedProfessionals = professionals.status === "ready" ? professionals.data : [];
+  const currentProfessional =
+    listedProfessionals.find((professional) => professional.id === appointment.professional.id) ??
+    appointment.professional;
+  const options = [
+    currentProfessional,
+    ...listedProfessionals.filter((professional) => professional.id !== currentProfessional.id),
+  ];
 
   useEffect(() => {
     let active = true;
-    setAvailability({ status: "loading" });
-    getAvailability({ type: appointment.type, date, professionalId: appointment.professional.id })
+    setProfessionals({ status: "loading" });
+    listProfessionals(appointment.type, true)
       .then((data) => {
-        if (active) setAvailability({ status: "ready", data });
+        if (active) setProfessionals({ status: "ready", data });
       })
       .catch(() => {
-        if (active) setAvailability({ status: "error" });
+        if (active) setProfessionals({ status: "error" });
       });
     return () => {
       active = false;
     };
-  }, [appointment, date, reloadKey]);
+  }, [appointment.type, professionalsKey]);
 
-  function pickDate(next: string) {
-    setDate(next);
-    setStartsAt(null);
+  function selectProfessional(next: string) {
+    setProfessionalId(next);
+    setSlot(null);
     setError(null);
   }
 
   async function handleConfirm() {
-    if (!startsAt) {
+    if (submittingRef.current) return;
+    if (isProcedure && duration === undefined) {
+      setValidateDuration(true);
+      return;
+    }
+    if (!slot) {
       setError("Elige una hora para continuar.");
       return;
     }
+    const selectedProfessionalId =
+      professionalId === ANY_PROFESSIONAL ? slotProfessional?.id : professionalId;
+    if (!selectedProfessionalId) {
+      setSlot(null);
+      setReloadKey((key) => key + 1);
+      setError(SLOT_TAKEN_MESSAGE);
+      return;
+    }
+    const { startsAt } = slot;
+    submittingRef.current = true;
     setSaving(true);
     setError(null);
     try {
-      onRescheduled(await rescheduleAppointment(appointment.id, { startsAt }));
+      onRescheduled(
+        await (onSave
+          ? onSave(startsAt, selectedProfessionalId)
+          : rescheduleAppointment(appointment.id, {
+              startsAt,
+              professionalId: selectedProfessionalId,
+              durationMinutes: duration,
+            })),
+      );
     } catch (failure) {
-      // RN-27: otra persona tomó la hora; se recargan las libres.
       if (isSlotTaken(failure)) {
-        setStartsAt(null);
+        setSlot(null);
         setReloadKey((key) => key + 1);
         setError(SLOT_TAKEN_MESSAGE);
       } else {
@@ -81,74 +130,108 @@ export function RescheduleForm({ appointment, onCancel, onRescheduled }: Resched
       }
     } finally {
       setSaving(false);
+      submittingRef.current = false;
     }
   }
 
   return (
-    <div className="flex flex-col gap-4 border-t border-divider pt-4">
-      <h4 className="font-semibold text-ink">Elige un nuevo horario</h4>
-      <div
-        role="group"
-        aria-label="Día"
-        className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2"
-      >
-        {dates.map((item) => {
-          const parts = dayParts(item);
-          return (
-            <ChoiceButton
-              key={item}
-              selected={item === date}
-              onSelect={() => pickDate(item)}
-              ariaLabel={formatLongDate(item)}
-              className="items-center text-center"
-              label={parts.day}
-              detail={`${parts.weekday} · ${parts.month}`}
-            />
-          );
-        })}
-      </div>
-
-      {availability.status === "loading" && <LoadingState rows={1} />}
-      {availability.status === "error" && (
-        <ErrorState onRetry={() => setReloadKey((key) => key + 1)} />
+    <div className="@container flex min-w-0 flex-col gap-4 border-t border-divider pt-4">
+      <h3 className="font-semibold text-ink">
+        Cambio de horario y/o {appointment.type === "GROOMING" ? "estilista" : "veterinario"}
+      </h3>
+      {isProcedure && (
+        <div className="max-w-xs">
+          <ProcedureDurationField
+            value={durationText}
+            disabled={saving}
+            showError={validateDuration}
+            onChange={(value) => {
+              setDurationText(value);
+              if (parseProcedureDuration(value) !== duration) setSlot(null);
+              setError(null);
+            }}
+          />
+        </div>
       )}
-      {availability.status === "ready" && availability.data.slots.length > 0 && (
-        <div
-          role="group"
-          aria-label={`Horas libres el ${formatLongDate(date)}`}
-          className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2"
-        >
-          {availability.data.slots.map((slot) => (
+      <div className="grid min-w-0 items-start gap-6 @min-[46rem]:grid-cols-[13rem_minmax(0,1fr)]">
+        <fieldset disabled={saving} className="flex min-w-0 flex-col gap-2">
+          <legend className="mb-3 font-semibold text-ink">
+            {appointment.type === "GROOMING" ? "Estilista" : "Veterinario"}
+          </legend>
+          {options.map((professional) => (
             <ChoiceButton
-              key={slot.startsAt}
-              selected={slot.startsAt === startsAt}
-              onSelect={() => {
-                setStartsAt(slot.startsAt);
-                setError(null);
-              }}
-              className="items-center"
-              label={formatClinicTime(slot.startsAt)}
+              key={professional.id}
+              selected={professionalId === professional.id}
+              onSelect={() => selectProfessional(professional.id)}
+              label={ownerFullName(professional)}
+              detail={
+                professional.id === appointment.professional.id ? (
+                  <>
+                    <span className="font-medium text-ink underline underline-offset-2">
+                      Actual
+                    </span>
+                    {professional.specialty && ` · ${professional.specialty}`}
+                  </>
+                ) : (
+                  professional.specialty
+                )
+              }
+              className="w-full [overflow-wrap:anywhere]"
             />
           ))}
-        </div>
-      )}
-      {availability.status === "ready" && availability.data.slots.length === 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-ink">No quedan horas libres ese día.</p>
-          {availability.data.suggestedDates.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {availability.data.suggestedDates.map((item) => (
-                <ChoiceButton
-                  key={item}
-                  selected={false}
-                  onSelect={() => pickDate(item)}
-                  label={formatLongDate(item)}
-                />
-              ))}
+          {!isProcedure && (
+            <ChoiceButton
+              selected={professionalId === ANY_PROFESSIONAL}
+              onSelect={() => selectProfessional(ANY_PROFESSIONAL)}
+              label="Cualquiera disponible"
+              detail="Ver horarios de todos"
+              className="w-full [overflow-wrap:anywhere]"
+            />
+          )}
+          {professionals.status === "loading" && (
+            <p role="status" className="text-sm text-muted">
+              Cargando profesionales…
+            </p>
+          )}
+          {professionals.status === "error" && (
+            <div className="flex flex-col items-start gap-2">
+              <p role="alert" className="text-sm text-danger">
+                No pudimos cargar los profesionales.
+              </p>
+              <Button variant="secondary" onClick={() => setProfessionalsKey((key) => key + 1)}>
+                Reintentar
+              </Button>
             </div>
           )}
+        </fieldset>
+        <div className="@container flex min-w-0 flex-col gap-3">
+          <DateTimeAvailability
+            type={appointment.type}
+            professionalId={professionalId === ANY_PROFESSIONAL ? undefined : professionalId}
+            durationMinutes={duration}
+            dates={dates}
+            date={date}
+            slot={slot}
+            refreshKey={reloadKey}
+            loadAvailability={loadAvailability}
+            disabled={saving}
+            showSuggestedDates
+            maxSlotColumns={2}
+            onChange={(nextDate, nextSlot) => {
+              if (nextDate === date && !nextSlot) return;
+              setDate(nextDate);
+              setSlot(nextSlot);
+              setError(null);
+            }}
+          />
+          {professionalId === ANY_PROFESSIONAL && slotProfessional && (
+            <p className="text-sm text-muted">
+              Esta hora está disponible con{" "}
+              <span className="font-medium text-ink">{ownerFullName(slotProfessional)}</span>.
+            </p>
+          )}
         </div>
-      )}
+      </div>
 
       {error && (
         <p role="alert" className="text-sm text-danger">

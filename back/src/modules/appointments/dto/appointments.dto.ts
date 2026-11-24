@@ -1,13 +1,18 @@
-import { AppointmentStatus, AppointmentType } from "@prisma/client";
+import { AppointmentStatus, AppointmentType, type LabExamStatus } from "@prisma/client";
 import { z } from "zod";
 import {
   AGENDA_MAX_DAYS,
+  APPOINTMENT_INSTRUCTIONS_MAX,
   APPOINTMENT_TEXT_MAX,
   CHECK_IN_CODE_MAX,
   CHECK_IN_QR_EXTENSION,
   MANAGE_TOKEN_MAX,
+  PROCEDURE_MAX_DURATION_MINUTES,
+  PROCEDURE_NAME_MAX,
   SCANNER_TOKEN_MAX,
+  SLOT_MINUTES,
 } from "@/config/constants";
+import { isProcedure } from "@/modules/appointments/procedures";
 import { paginationQuerySchema } from "@/shared/utils/pagination";
 import { daysBetween, isValidClinicDate } from "@/shared/utils/clinic-time";
 
@@ -23,23 +28,87 @@ const textField = (label: string) =>
     .trim()
     .max(APPOINTMENT_TEXT_MAX, `${label} admite maximo ${APPOINTMENT_TEXT_MAX} caracteres`);
 
-export const availabilityQuerySchema = z.object({
-  type: z.enum(AppointmentType),
-  date: clinicDateField,
-  professionalId: z.uuid("Identificador invalido").optional(),
-});
+// D-71: la duración de una cirugía o un examen la fija cada cita, en múltiplos de la franja.
+const durationField = z
+  .number()
+  .int("La duracion debe ser un numero entero de minutos")
+  .min(SLOT_MINUTES, `La duracion minima es de ${SLOT_MINUTES} minutos`)
+  .max(
+    PROCEDURE_MAX_DURATION_MINUTES,
+    `La duracion maxima es de ${PROCEDURE_MAX_DURATION_MINUTES} minutos`,
+  )
+  .refine(
+    (value) => value % SLOT_MINUTES === 0,
+    `La duracion es multiplo de ${SLOT_MINUTES} minutos`,
+  );
 
-export const createAppointmentRequestSchema = z.object({
-  patientId: z.uuid("Identificador invalido"),
-  type: z.enum(AppointmentType),
-  professionalId: z.uuid("Identificador invalido").optional(),
-  startsAt: instantField,
-  reason: textField("El motivo").min(1).optional(),
-});
+const PROCEDURE_ONLY_MESSAGE = "Solo aplica a cirugias y examenes de laboratorio";
+
+export const availabilityQuerySchema = z
+  .object({
+    type: z.enum(AppointmentType),
+    date: clinicDateField,
+    professionalId: z.uuid("Identificador invalido").optional(),
+    durationMinutes: z.coerce.number().pipe(durationField).optional(),
+  })
+  .superRefine((query, ctx) => {
+    if (isProcedure(query.type) && query.durationMinutes === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["durationMinutes"],
+        message: "La duracion es obligatoria para cirugias y examenes",
+      });
+    }
+    if (!isProcedure(query.type) && query.durationMinutes !== undefined) {
+      ctx.addIssue({ code: "custom", path: ["durationMinutes"], message: PROCEDURE_ONLY_MESSAGE });
+    }
+  });
+
+export const createAppointmentRequestSchema = z
+  .object({
+    patientId: z.uuid("Identificador invalido"),
+    type: z.enum(AppointmentType),
+    professionalId: z.uuid("Identificador invalido").optional(),
+    startsAt: instantField,
+    reason: textField("El motivo").min(1).optional(),
+    procedureName: z
+      .string()
+      .trim()
+      .min(1, "El procedimiento es obligatorio")
+      .max(PROCEDURE_NAME_MAX, `El procedimiento admite maximo ${PROCEDURE_NAME_MAX} caracteres`)
+      .optional(),
+    durationMinutes: durationField.optional(),
+    instructions: z
+      .string()
+      .trim()
+      .min(1)
+      .max(
+        APPOINTMENT_INSTRUCTIONS_MAX,
+        `Las indicaciones admiten maximo ${APPOINTMENT_INSTRUCTIONS_MAX} caracteres`,
+      )
+      .optional(),
+  })
+  .superRefine((dto, ctx) => {
+    const procedureFields = ["procedureName", "durationMinutes", "instructions"] as const;
+    if (isProcedure(dto.type)) {
+      for (const field of ["procedureName", "durationMinutes"] as const) {
+        if (dto[field] === undefined) {
+          ctx.addIssue({ code: "custom", path: [field], message: "El campo es obligatorio" });
+        }
+      }
+      return;
+    }
+    for (const field of procedureFields) {
+      if (dto[field] !== undefined) {
+        ctx.addIssue({ code: "custom", path: [field], message: PROCEDURE_ONLY_MESSAGE });
+      }
+    }
+  });
 
 export const rescheduleAppointmentRequestSchema = z.object({
   startsAt: instantField,
   professionalId: z.uuid("Identificador invalido").optional(),
+  durationMinutes: durationField.optional(), // D-71: solo cirugía y examen; sin él se conserva la actual
 });
 
 export const cancelAppointmentRequestSchema = z.object({
@@ -133,6 +202,12 @@ export interface CheckInScanResultDto {
   startsAt: Date;
 }
 
+// D-68, RN-85: el acceso de recepción a la página de escaneo, con su QR fijo ya dibujado.
+export interface ScannerAccessResponseDto {
+  url: string;
+  qrSvg: string;
+}
+
 export interface ProfessionalSummaryDto {
   id: string;
   firstNames: string;
@@ -152,14 +227,24 @@ export interface AvailabilityResponseDto {
   suggestedDates: string[];
 }
 
+// D-71: el registro clínico vinculado a la cita, cuando ya existe. `status` solo viene en el examen de laboratorio.
+export type LinkedClinicalRecordDto =
+  | { kind: "CONSULTATION" | "GROOMING" | "SURGERY"; id: string }
+  | { kind: "LAB_EXAM"; id: string; status: LabExamStatus };
+
 export interface AppointmentResponseDto {
   id: string;
   type: AppointmentType;
   status: AppointmentStatus;
   startsAt: Date;
   endsAt: Date;
+  durationMinutes: number;
   reason: string | null;
   cancelReason: string | null;
+  procedureName: string | null; // solo cirugía y examen (D-71)
+  instructions: string | null; // indicaciones para el propietario; solo cirugía y examen (D-71)
+  clinicalRecord: LinkedClinicalRecordDto | null;
+  attentionStartedAt: Date | null; // D-73
   patient: { id: string; name: string };
   professional: ProfessionalSummaryDto;
   owner?: { id: string; firstNames: string; lastNames: string; phone: string };

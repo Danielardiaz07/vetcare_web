@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { cn } from "./cn";
 import type { StatusTone } from "./status-badge";
 
 type ToastTone = Exclude<StatusTone, "neutral">;
@@ -35,6 +37,8 @@ const TONE_CLASSES: Record<ToastTone, string> = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const hasBottomMenu = pathname.startsWith("/portal") || pathname.startsWith("/panel");
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(0);
 
@@ -59,12 +63,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end"
+        className={cn(
+          "pointer-events-none fixed inset-x-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:max-w-sm sm:items-end",
+          hasBottomMenu
+            ? "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-4"
+            : "bottom-[calc(1rem+env(safe-area-inset-bottom))]",
+        )}
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex flex-col gap-2 rounded-control border px-4 py-3 text-sm font-medium shadow-sm ${TONE_CLASSES[toast.tone]}`}
+            className={`pointer-events-auto flex max-w-full flex-col gap-2 rounded-control border px-4 py-3 text-sm font-medium shadow-sm [overflow-wrap:anywhere] ${TONE_CLASSES[toast.tone]}`}
           >
             <p>{toast.message}</p>
             {toast.actions.length > 0 && (

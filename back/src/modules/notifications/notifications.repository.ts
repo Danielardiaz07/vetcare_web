@@ -22,6 +22,8 @@ const appointmentSelect = {
   startsAt: true,
   reason: true,
   cancelReason: true,
+  procedureName: true,
+  instructions: true,
   patient: { select: { name: true, owner: { select: ownerSelect } } },
   veterinarian: { select: { firstNames: true, lastNames: true } },
   groomer: { select: { firstNames: true, lastNames: true } },

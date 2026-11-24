@@ -4,14 +4,17 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
-import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
+import { Textarea } from "@/components/ui/textarea";
 import { BookingReceipt } from "@/features/appointments/components/booking-receipt";
 import { BookingSummary } from "@/features/appointments/components/booking-summary";
 import { ChoiceButton } from "@/features/appointments/components/choice-button";
+import { NewPetButton } from "@/features/appointments/components/new-pet-button";
 import { ReviewStep } from "@/features/appointments/components/review-step";
 import { DateTimeAvailability } from "@/features/appointments/components/date-time-availability";
+import { ProcedureDurationField } from "@/features/appointments/components/procedure-duration-field";
 import {
   appointmentErrorMessage,
   isActiveLimit,
@@ -19,13 +22,21 @@ import {
   SLOT_TAKEN_MESSAGE,
 } from "@/features/appointments/errors";
 import { ownerFullName } from "@/features/owners/labels";
+import { PatientForm } from "@/features/patients/components/patient-form";
 import { SPECIES_LABELS } from "@/features/patients/labels";
 import { APPOINTMENT_TYPE_LABELS, durationLabel } from "@/features/staff/labels";
+import {
+  isProcedureAppointment,
+  parseProcedureDuration,
+  PROCEDURE_INSTRUCTIONS_MAX,
+  PROCEDURE_NAME_MAX,
+  PROCEDURE_TYPES,
+} from "@/lib/appointment-procedures";
 import { bookableDates, clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
 import { MAX_ACTIVE_APPOINTMENTS_PER_PATIENT, ROUTES } from "@/lib/constants";
 import { calculateAge } from "@/lib/format";
 import { createAppointment, listProfessionals } from "@/services/appointments";
-import { getMyPatients, listPatients } from "@/services/patients";
+import { createMyPatient, getMyPatients, listPatients } from "@/services/patients";
 import { listAppointmentTypes } from "@/services/staff";
 import type {
   Appointment,
@@ -113,8 +124,13 @@ export function AppointmentWizard({
   const [baseKey, setBaseKey] = useState(0);
   const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
   const [step, setStep] = useState<View>(1);
+  const [creatingPet, setCreatingPet] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [procedureName, setProcedureName] = useState("");
+  const [durationText, setDurationText] = useState("");
+  const [validateDuration, setValidateDuration] = useState(false);
+  const [instructions, setInstructions] = useState("");
   const [bookingError, setBookingError] = useState<ReactNode>(null);
   const [confirmed, setConfirmed] = useState<Appointment | null>(null);
   const [professionals, setProfessionals] = useState<Loadable<Professional[]>>({
@@ -151,6 +167,7 @@ export function AppointmentWizard({
   }, [baseKey, initialPetId, initialType, owner]);
 
   const { type, professionalId, date } = selection;
+  const isProcedure = type !== null && isProcedureAppointment(type);
 
   useEffect(() => {
     if (!type) return;
@@ -171,13 +188,17 @@ export function AppointmentWizard({
   // Al cambiar de paso, el lector de pantalla anuncia el título nuevo.
   useEffect(() => {
     if (movedByUser.current) headingRef.current?.focus();
-  }, [step]);
+  }, [step, creatingPet]);
 
   const restart = useCallback(() => {
     movedByUser.current = true;
     setConfirmed(null);
     setSelection(EMPTY_SELECTION);
     setReason("");
+    setProcedureName("");
+    setDurationText("");
+    setValidateDuration(false);
+    setInstructions("");
     setBookingError(null);
     setStepError(null);
     setStep(1);
@@ -196,38 +217,11 @@ export function AppointmentWizard({
   }
 
   const { pets, types } = base.data;
-  if (pets.length === 0 && owner) {
-    return (
-      <EmptyState
-        title="Este propietario no tiene mascotas activas"
-        description="Registra la mascota en la ficha del propietario para poder agendarle una cita."
-        action={
-          <Link
-            href={ROUTES.panelOwner(owner.id)}
-            className="font-semibold text-brand-700 underline"
-          >
-            Ir a la ficha del propietario
-          </Link>
-        }
-      />
-    );
-  }
-  if (pets.length === 0) {
-    return (
-      <EmptyState
-        title="Primero agrega a tu mascota"
-        description="Para agendar necesitamos saber para quién es la cita."
-        action={
-          <Link href={ROUTES.portalNewPet} className="font-semibold text-brand-700 underline">
-            Agregar mascota
-          </Link>
-        }
-      />
-    );
-  }
 
   const pet = pets.find((item) => item.id === selection.petId);
   const setting = types.find((item) => item.type === type);
+  const procedureDuration = parseProcedureDuration(durationText);
+  const duration = isProcedure ? procedureDuration : setting?.durationMinutes;
   const professional =
     professionals.status === "ready"
       ? professionals.data.find((item) => item.id === professionalId)
@@ -248,10 +242,32 @@ export function AppointmentWizard({
     setStep(next);
   }
 
+  function openPetForm() {
+    movedByUser.current = true;
+    setStepError(null);
+    setCreatingPet(true);
+  }
+
+  function selectNewPet(saved: Patient) {
+    setBase((current) =>
+      current.status === "ready"
+        ? { status: "ready", data: { ...current.data, pets: [...current.data.pets, saved] } }
+        : current,
+    );
+    choose({ petId: saved.id });
+    setCreatingPet(false);
+  }
+
   function handleNext() {
     if (step === REVIEW) return;
     if (!isChosen(step, selection)) {
-      setStepError(`Elige ${STEP_MISSING[step]} para continuar.`);
+      const missing = step === 3 && isProcedure ? "un veterinario" : STEP_MISSING[step];
+      setStepError(`Elige ${missing} para continuar.`);
+      return;
+    }
+    if (step === 2 && isProcedure && (!procedureName.trim() || !procedureDuration)) {
+      setValidateDuration(true);
+      setStepError(procedureName.trim() ? null : "Escribe el nombre del procedimiento.");
       return;
     }
     if (step === 3 && (!date || !dates.includes(date))) {
@@ -262,7 +278,7 @@ export function AppointmentWizard({
 
   async function handleConfirm(text: string) {
     const { petId, slot } = selection;
-    if (!petId || !type || !professionalId || !slot) return;
+    if (!petId || !type || !professionalId || !slot || (isProcedure && !procedureDuration)) return;
     setReason(text);
     setBookingError(null);
     try {
@@ -271,7 +287,13 @@ export function AppointmentWizard({
         type,
         startsAt: slot.startsAt,
         ...(professionalId !== ANY_PROFESSIONAL && { professionalId }),
-        ...(text && { reason: text }),
+        ...(isProcedure
+          ? {
+              procedureName: procedureName.trim(),
+              durationMinutes: procedureDuration,
+              ...(instructions.trim() && { instructions: instructions.trim() }),
+            }
+          : text && { reason: text }),
       });
       setConfirmed(appointment);
     } catch (error) {
@@ -300,14 +322,28 @@ export function AppointmentWizard({
     }
   }
 
+  function chooseType(nextType: AppointmentType) {
+    if (nextType === type) return;
+    choose({ type: nextType, professionalId: null, slot: null });
+    setProcedureName("");
+    setDurationText("");
+    setValidateDuration(false);
+    setInstructions("");
+  }
+
+  const procedureRows = isProcedure
+    ? [{ label: "Procedimiento", value: procedureName.trim() || null }]
+    : [];
+
   const summaryRows = [
     { label: "Mascota", value: pet?.name ?? null },
     {
       label: "Tipo de cita",
-      value: setting
-        ? `${APPOINTMENT_TYPE_LABELS[setting.type]} · ${durationLabel(setting.durationMinutes)}`
+      value: type
+        ? `${APPOINTMENT_TYPE_LABELS[type]}${duration ? ` · ${durationLabel(duration)}` : ""}`
         : null,
     },
+    ...procedureRows,
     {
       label: proTitle,
       value:
@@ -322,10 +358,11 @@ export function AppointmentWizard({
   ];
 
   const reviewRows =
-    setting && selection.slot
+    type && duration && selection.slot
       ? [
           { label: "Mascota", value: pet?.name ?? "" },
-          { label: "Tipo de cita", value: APPOINTMENT_TYPE_LABELS[setting.type] },
+          { label: "Tipo de cita", value: APPOINTMENT_TYPE_LABELS[type] },
+          ...(isProcedure ? [{ label: "Procedimiento", value: procedureName.trim() }] : []),
           {
             label: proTitle,
             value:
@@ -337,7 +374,10 @@ export function AppointmentWizard({
           },
           { label: "Fecha", value: date ? formatLongDate(date) : "" },
           { label: "Hora", value: formatClinicTime(selection.slot.startsAt) },
-          { label: "Duración", value: durationLabel(setting.durationMinutes) },
+          { label: "Duración", value: durationLabel(duration) },
+          ...(isProcedure && instructions.trim()
+            ? [{ label: "Indicaciones para el propietario", value: instructions.trim() }]
+            : []),
         ]
       : [];
   const reviewing = step === REVIEW;
@@ -382,15 +422,18 @@ export function AppointmentWizard({
             tabIndex={-1}
             className="text-xl font-semibold text-ink outline-none"
           >
-            {reviewing
-              ? `Revisa y confirma ${owner ? "la" : "tu"} cita`
-              : `Paso ${step} de ${LAST_STEP} · ${stepTitles[step]}`}
+            {creatingPet
+              ? "Nueva mascota"
+              : reviewing
+                ? `Revisa y confirma ${owner ? "la" : "tu"} cita`
+                : `Paso ${step} de ${LAST_STEP} · ${stepTitles[step]}`}
           </h2>
 
           {reviewing && (
             <ReviewStep
               rows={reviewRows}
               defaultReason={reason}
+              hideReason={isProcedure}
               error={bookingError}
               onBack={(text) => {
                 setReason(text);
@@ -400,36 +443,93 @@ export function AppointmentWizard({
             />
           )}
 
-          {step === 1 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {pets.map((item) => (
-                <ChoiceButton
-                  key={item.id}
-                  selected={item.id === selection.petId}
-                  onSelect={() => choose({ petId: item.id })}
-                  label={item.name}
-                  detail={`${SPECIES_LABELS[item.species]} · ${calculateAge(item.birthDate)}`}
-                />
-              ))}
-            </div>
-          )}
+          {step === 1 &&
+            (creatingPet ? (
+              <PatientForm
+                owner={owner}
+                createMine={owner ? undefined : createMyPatient}
+                onCancel={() => setCreatingPet(false)}
+                onSaved={selectNewPet}
+              />
+            ) : (
+              <>
+                {pets.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {pets.map((item) => (
+                      <ChoiceButton
+                        key={item.id}
+                        selected={item.id === selection.petId}
+                        onSelect={() => choose({ petId: item.id })}
+                        label={item.name}
+                        detail={`${SPECIES_LABELS[item.species]} · ${calculateAge(item.birthDate)}`}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted">
+                    {owner
+                      ? "Este propietario aún no tiene mascotas activas."
+                      : "Aún no tienes mascotas activas."}
+                  </p>
+                )}
+                <NewPetButton onClick={openPetForm} />
+              </>
+            ))}
 
           {step === 2 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {types.map((item) => (
-                <ChoiceButton
-                  key={item.type}
-                  selected={item.type === type}
-                  onSelect={() => {
-                    if (item.type !== type) {
-                      choose({ type: item.type, professionalId: null, slot: null });
-                    }
-                  }}
-                  label={APPOINTMENT_TYPE_LABELS[item.type]}
-                  detail={durationLabel(item.durationMinutes)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {types.map((item) => (
+                  <ChoiceButton
+                    key={item.type}
+                    selected={item.type === type}
+                    onSelect={() => chooseType(item.type)}
+                    label={APPOINTMENT_TYPE_LABELS[item.type]}
+                    detail={durationLabel(item.durationMinutes)}
+                  />
+                ))}
+                {owner &&
+                  PROCEDURE_TYPES.map((item) => (
+                    <ChoiceButton
+                      key={item}
+                      selected={item === type}
+                      onSelect={() => chooseType(item)}
+                      label={APPOINTMENT_TYPE_LABELS[item]}
+                    />
+                  ))}
+              </div>
+              {isProcedure && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="Nombre del procedimiento"
+                    maxLength={PROCEDURE_NAME_MAX}
+                    required
+                    value={procedureName}
+                    onChange={(event) => {
+                      setProcedureName(event.target.value);
+                      setStepError(null);
+                    }}
+                  />
+                  <ProcedureDurationField
+                    value={durationText}
+                    showError={validateDuration}
+                    onChange={(value) => {
+                      setDurationText(value);
+                      if (parseProcedureDuration(value) !== procedureDuration)
+                        choose({ slot: null });
+                    }}
+                  />
+                  <div className="sm:col-span-2">
+                    <Textarea
+                      label="Indicaciones para el propietario (opcional)"
+                      maxLength={PROCEDURE_INSTRUCTIONS_MAX}
+                      value={instructions}
+                      onChange={(event) => setInstructions(event.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {step === 3 && professionals.status === "loading" && <LoadingState rows={2} />}
@@ -438,12 +538,17 @@ export function AppointmentWizard({
           )}
           {step === 3 && professionals.status === "ready" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <ChoiceButton
-                selected={professionalId === ANY_PROFESSIONAL}
-                onSelect={() => choose({ professionalId: ANY_PROFESSIONAL, slot: null })}
-                label="Cualquiera disponible"
-                detail={owner ? "Se asigna el primero libre" : "Te asignamos el primero libre"}
-              />
+              {!isProcedure && (
+                <ChoiceButton
+                  selected={professionalId === ANY_PROFESSIONAL}
+                  onSelect={() => choose({ professionalId: ANY_PROFESSIONAL, slot: null })}
+                  label="Cualquiera disponible"
+                  detail={owner ? "Se asigna el primero libre" : "Te asignamos el primero libre"}
+                />
+              )}
+              {isProcedure && professionals.data.length === 0 && (
+                <p className="text-muted">No hay veterinarios activos para agendar.</p>
+              )}
               {professionals.data.map((item) => (
                 <ChoiceButton
                   key={item.id}
@@ -461,6 +566,7 @@ export function AppointmentWizard({
               key={`${type}:${professionalId}`}
               type={type}
               professionalId={professionalId === ANY_PROFESSIONAL ? undefined : professionalId}
+              durationMinutes={isProcedure ? procedureDuration : undefined}
               dates={dates}
               date={date}
               slot={selection.slot}
@@ -475,7 +581,7 @@ export function AppointmentWizard({
             </p>
           )}
 
-          {!reviewing && (
+          {!reviewing && !creatingPet && (step !== 1 || pets.length > 0) && (
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
               {step > 1 ? (
                 <Button variant="secondary" onClick={() => goTo((step - 1) as Step)}>

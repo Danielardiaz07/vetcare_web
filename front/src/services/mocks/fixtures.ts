@@ -405,6 +405,7 @@ export const mockSurgeries: Surgery[] = (
   ] as [string, string, string, string | null][]
 ).map(([patientId, procedure, performedAt, notes], index) => ({
   id: `8a9b0c1d-2e3f-4a4b-8c5d-6e7f8a9b0c${String(index).padStart(2, "0")}`,
+  appointmentId: null,
   patientId,
   veterinarian: mockVetName,
   procedure,
@@ -425,11 +426,14 @@ export const mockLabExams: LabExam[] = (
   ] as [string, string, string, string][]
 ).map(([patientId, examType, performedAt, results], index) => ({
   id: `9b0c1d2e-3f4a-4b5c-9d6e-7f8a9b0c1d${String(index).padStart(2, "0")}`,
+  appointmentId: null,
   patientId,
   veterinarian: mockVetName,
   examType,
   performedAt,
   results,
+  status: "WITH_RESULTS",
+  resultsAt: `${performedAt}T18:00:00.000Z`,
   createdAt: `${performedAt}T18:00:00.000Z`,
 }));
 

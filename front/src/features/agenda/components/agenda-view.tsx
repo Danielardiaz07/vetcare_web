@@ -11,9 +11,12 @@ import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { AgendaItem } from "@/features/agenda/components/agenda-item";
 import { AppointmentDetail } from "@/features/agenda/components/appointment-detail";
+import { CheckInDialog } from "@/features/agenda/components/check-in-dialog";
 import { DayAgendaGrid } from "@/features/agenda/components/day-agenda-grid";
 import { NewAppointmentDialog } from "@/features/agenda/components/new-appointment-dialog";
+import { useAgendaEvents } from "@/features/agenda/hooks/use-agenda-events";
 import type { AgendaStaff } from "@/features/agenda/timeline";
+import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { useAuth } from "@/features/auth/auth-provider";
 import { ownerFullName } from "@/features/owners/labels";
 import { addDays, clinicDateOf, dayParts, formatLongDate, startOfWeek } from "@/lib/clinic-time";
@@ -33,6 +36,7 @@ type Kind = "VET" | "GROOMER";
 
 const ALL = "ALL";
 const DAYS_IN_WEEK = 7;
+const RECEPTION_REFRESH_MS = 30_000;
 const DATE_CONTROL_CLASS = "h-11 shrink-0 border-line! text-sm hover:bg-canvas!";
 const VIEWS: { value: View; label: string }[] = [
   { value: "list", label: "Lista" },
@@ -112,11 +116,14 @@ export function AgendaView() {
   const [agenda, setAgenda] = useState<Load<Appointment[]>>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [staffReloadKey, setStaffReloadKey] = useState(0);
+  const [staffRefreshing, setStaffRefreshing] = useState(false);
+  const [staffError, setStaffError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(false);
   const agendaRequestKey = useRef<string | null>(null);
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [creating, setCreating] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
   const { show } = useToast();
 
   const professionals = staff.status === "ready" ? staff.data : null;
@@ -134,12 +141,20 @@ export function AgendaView() {
   useEffect(() => {
     if (!user) return;
     let active = true;
+    setStaffRefreshing(true);
     (isReception ? loadStaff() : loadOwnStaff(user, profile))
       .then((data) => {
-        if (active) setStaff({ status: "ready", data });
+        if (!active) return;
+        setStaff({ status: "ready", data });
+        setStaffError(null);
       })
-      .catch(() => {
-        if (active) setStaff({ status: "error" });
+      .catch((error: unknown) => {
+        if (!active) return;
+        setStaffError(appointmentErrorMessage(error));
+        setStaff((current) => (current.status === "ready" ? current : { status: "error" }));
+      })
+      .finally(() => {
+        if (active) setStaffRefreshing(false);
       });
     return () => {
       active = false;
@@ -158,7 +173,11 @@ export function AgendaView() {
     setRefreshError(false);
     getAgenda({ from, ...(from !== to && { to }), ...filterParams(activeFilter) })
       .then((data) => {
-        if (active) setAgenda({ status: "ready", data });
+        if (!active) return;
+        setAgenda({ status: "ready", data });
+        setSelected((current) =>
+          current ? (data.find((item) => item.id === current.id) ?? current) : null,
+        );
       })
       .catch(() => {
         if (!active) return;
@@ -176,15 +195,40 @@ export function AgendaView() {
   }, [from, to, activeFilter, reloadKey]);
 
   const refreshAgenda = useCallback(() => setReloadKey((key) => key + 1), []);
+  const eventsConnection = useAgendaEvents(isReception ? (user?.id ?? null) : null, refreshAgenda);
+  const retryStaff = useCallback(() => setStaffReloadKey((key) => key + 1), []);
   const reload = useCallback(() => {
     refreshAgenda();
-    setStaffReloadKey((key) => key + 1);
-  }, [refreshAgenda]);
+    retryStaff();
+  }, [refreshAgenda, retryStaff]);
 
   useEffect(() => {
     window.addEventListener(APPOINTMENTS_CHANGED_EVENT, refreshAgenda);
     return () => window.removeEventListener(APPOINTMENTS_CHANGED_EVENT, refreshAgenda);
   }, [refreshAgenda]);
+
+  useEffect(() => {
+    if (!isReception) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!refreshing) refreshAgenda();
+      if (staff.status === "error" && !staffRefreshing) retryStaff();
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [isReception, refreshAgenda, refreshing, staff.status, staffRefreshing, retryStaff]);
+
+  useEffect(() => {
+    if (!isReception || refreshing || eventsConnection === "live") return;
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState === "visible") refreshAgenda();
+    }, RECEPTION_REFRESH_MS);
+    return () => window.clearTimeout(timer);
+  }, [isReception, refreshing, refreshAgenda, eventsConnection]);
 
   function handleChanged(updated: Appointment, message: string) {
     setAgenda((current) =>
@@ -220,12 +264,12 @@ export function AgendaView() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div
             role="group"
             aria-label="Vista"
-            className="inline-flex h-11 shrink-0 rounded-control border border-line bg-surface p-0.5"
+            className="inline-flex min-h-11 shrink-0 items-stretch gap-4"
           >
             {VIEWS.filter((item) => !isReception || item.value !== "list").map((item) => (
               <button
@@ -234,10 +278,10 @@ export function AgendaView() {
                 aria-pressed={item.value === view}
                 onClick={() => changeView(item.value)}
                 className={cn(
-                  "relative rounded-md px-4 text-sm font-semibold transition-colors duration-150 ease-out after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']",
+                  "relative min-h-11 min-w-11 rounded-xs px-2 text-sm font-medium transition-colors duration-150 ease-out after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:content-['']",
                   item.value === view
-                    ? "bg-brand-100 text-brand-700"
-                    : "text-muted hover:bg-canvas hover:text-ink",
+                    ? "font-semibold text-brand-700 after:bg-brand-600"
+                    : "text-muted hover:text-ink",
                 )}
               >
                 {item.label}
@@ -246,30 +290,50 @@ export function AgendaView() {
           </div>
 
           {isReception && (
-            <Button
-              className="h-11 shrink-0 px-4! text-sm font-semibold sm:ml-auto"
-              onClick={() => setCreating(true)}
-            >
-              <Icon name="calendar-plus" className="size-5" />
-              Nueva cita
-            </Button>
+            <div className="flex flex-wrap gap-3 sm:ml-auto">
+              <Button
+                variant="secondary"
+                className="h-11 border-brand-600! bg-surface! px-3! text-sm text-brand-700! shadow-none active:scale-100! hover:bg-brand-50!"
+                onClick={() => setCheckingIn(true)}
+              >
+                <Icon name="qr-code" className="size-4" />
+                Llegada con QR
+              </Button>
+              <Button className="h-11 shrink-0 px-3! text-sm" onClick={() => setCreating(true)}>
+                <Icon name="calendar-plus" className="size-4" />
+                Nueva cita
+              </Button>
+            </div>
           )}
         </div>
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-2">
-            <h2 aria-live="polite" className="text-xl font-semibold text-ink">
-              {heading}
-            </h2>
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="min-w-0">
+              <h2 aria-live="polite" className="sr-only">
+                {heading}
+              </h2>
+              <DatePicker
+                value={date}
+                onChange={setDate}
+                label="Elegir fecha"
+                triggerAriaLabel={`Elegir fecha, ${heading}`}
+                triggerClassName="max-w-full justify-start! border-0! bg-transparent! px-0! text-left text-xl font-semibold! text-ink hover:text-brand-700!"
+                triggerContent={
+                  <>
+                    <span>{heading}</span>
+                    <Icon
+                      name="chevron-right"
+                      className="size-5 shrink-0 rotate-90 text-brand-700"
+                    />
+                  </>
+                }
+              />
+            </div>
             <div
               role="group"
               aria-label="Navegación por fecha"
               className="flex flex-wrap items-center gap-2"
             >
-              <DatePicker
-                value={date}
-                onChange={setDate}
-                triggerClassName={cn(DATE_CONTROL_CLASS, "px-3!")}
-              />
               <Button
                 variant="secondary"
                 aria-label={unit + " anterior"}
@@ -293,16 +357,24 @@ export function AgendaView() {
               >
                 <Icon name="chevron-right" className="size-5" />
               </Button>
-              <Button
-                variant="secondary"
-                aria-label="Actualizar agenda"
-                title="Actualizar agenda"
-                loading={refreshing}
-                onClick={reload}
-                className={cn(DATE_CONTROL_CLASS, "w-11 px-0!")}
-              >
-                {!refreshing && <Icon name="refresh" className="size-5" />}
-              </Button>
+              {isReception ? (
+                <p className="ml-2 text-xs text-muted">
+                  {eventsConnection === "live"
+                    ? "Actualización en vivo"
+                    : "Actualización automática"}
+                </p>
+              ) : (
+                <Button
+                  variant="secondary"
+                  aria-label="Actualizar agenda ahora"
+                  title="Actualizar agenda ahora"
+                  loading={refreshing || staffRefreshing}
+                  onClick={reload}
+                  className="h-11 w-11 border-0! bg-transparent! px-0! text-subtle! hover:bg-transparent! hover:text-brand-700!"
+                >
+                  {!refreshing && !staffRefreshing && <Icon name="refresh" className="size-5" />}
+                </Button>
+              )}
             </div>
           </div>
           {isReception && professionals && (
@@ -337,8 +409,24 @@ export function AgendaView() {
       {(agenda.status === "loading" || (view !== "list" && staff.status === "loading")) && (
         <LoadingState />
       )}
-      {(agenda.status === "error" || (isReception && staff.status === "error")) && (
-        <ErrorState onRetry={reload} />
+      {agenda.status === "error" && <ErrorState onRetry={reload} />}
+      {isReception && (staff.status === "error" || staffError) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-warning-border bg-warning-bg p-4">
+          <div role="alert" className="min-w-0 flex-1 space-y-1 text-sm text-warning">
+            <p>
+              {staff.status === "ready"
+                ? "No pudimos actualizar los profesionales. Se conservan los últimos datos cargados."
+                : "No pudimos cargar los profesionales para mostrar la cuadrícula."}
+              {staff.status === "error" &&
+                agenda.status === "ready" &&
+                " Se muestran las citas en lista."}
+            </p>
+            {staffError && <p>{staffError}</p>}
+          </div>
+          <Button variant="secondary" loading={staffRefreshing} onClick={retryStaff}>
+            Reintentar profesionales
+          </Button>
+        </div>
       )}
       {!isReception && view !== "list" && staff.status === "error" && (
         <p role="alert" className="text-sm text-muted">
@@ -347,10 +435,14 @@ export function AgendaView() {
         </p>
       )}
       {refreshError && agenda.status === "ready" && (
-        <p role="alert" className="text-sm text-danger">
-          No pudimos actualizar la agenda. Se conservan las últimas citas cargadas; pulsa
-          “Actualizar” para reintentar.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p role="alert" className="text-sm text-danger">
+            No pudimos actualizar la agenda. Se conservan las últimas citas cargadas.
+          </p>
+          <Button variant="secondary" loading={refreshing} onClick={refreshAgenda}>
+            Reintentar
+          </Button>
+        </div>
       )}
       {agenda.status === "ready" && (view === "list" || staff.status !== "loading") && (
         <>
@@ -369,11 +461,9 @@ export function AgendaView() {
                     filterParams(activeFilter).groomerId)
                   : (professionals.veterinarians[0]?.id ?? professionals.groomers[0]?.id)
               }
-              canRegisterArrival={isReception}
               onOpen={setSelected}
-              onChanged={handleChanged}
             />
-          ) : isReception ? null : view === "day" ? (
+          ) : view === "day" ? (
             <AppointmentList appointments={agenda.data} onOpen={setSelected} />
           ) : (
             <WeekView from={from} appointments={agenda.data} onOpen={setSelected} />
@@ -385,10 +475,12 @@ export function AgendaView() {
         appointment={selected}
         canManage={isReception}
         canAttend={user?.role === "VETERINARIAN" || user?.role === "GROOMER"}
+        canStartAttention={user?.role === "VETERINARIAN"}
         onClose={() => setSelected(null)}
         onChanged={handleChanged}
       />
       {isReception && <NewAppointmentDialog open={creating} onClose={() => setCreating(false)} />}
+      {isReception && <CheckInDialog open={checkingIn} onClose={() => setCheckingIn(false)} />}
     </div>
   );
 }

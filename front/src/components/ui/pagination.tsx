@@ -10,11 +10,11 @@ type PaginationProps = {
 
 export function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
   return (
-    <nav aria-label="Paginación" className="flex items-center justify-between gap-3">
+    <nav aria-label="Paginación" className="flex flex-wrap items-center justify-between gap-2">
       <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
         Anterior
       </Button>
-      <span className="text-sm text-muted">
+      <span role="status" className="text-center text-sm text-muted">
         Página {page} de {totalPages}
       </span>
       <Button

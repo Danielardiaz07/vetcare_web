@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CopField } from "@/components/ui/cop-field";
 import { Field } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { inventoryErrorMessage } from "@/features/inventory/errors";
@@ -19,8 +20,6 @@ import {
   type UpdateInventoryInput,
 } from "@/services/inventory";
 import type { InventoryItem, InventoryKind } from "@/types/domain";
-
-const PRICE_STEP = 1 / 10 ** FIELD_LIMITS.PRICE_DECIMALS;
 
 export type InventoryModalTarget = { kind: InventoryKind; item: InventoryItem | null };
 
@@ -79,6 +78,7 @@ function InventoryItemForm({ kind, item, onCancel, onSaved }: InventoryItemFormP
   const nameMax = NAME_MAX[kind];
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<InventoryItemFormInput>({
@@ -139,15 +139,18 @@ function InventoryItemForm({ kind, item, onCancel, onSaved }: InventoryItemFormP
         error={errors.name?.message}
         {...register("name")}
       />
-      <Field
-        label="Precio (COP)"
-        type="number"
-        inputMode="decimal"
-        min={0}
-        max={FIELD_LIMITS.PRICE_MAX}
-        step={PRICE_STEP}
-        error={errors.price?.message}
-        {...register("price", { valueAsNumber: true })}
+      <Controller
+        name="price"
+        control={control}
+        render={({ field: { value, ...field } }) => (
+          <CopField
+            {...field}
+            label="Precio (COP)"
+            defaultValue={value}
+            decimals
+            error={errors.price?.message}
+          />
+        )}
       />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field

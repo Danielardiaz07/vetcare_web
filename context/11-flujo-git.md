@@ -90,28 +90,23 @@ Al hacer merge de `release` a `main` se agrega un tag SemVer según los commits 
 1. **Antes de tocar archivos**: ejecutar `git branch --show-current` y `git status`, y clasificar el trabajo según la tabla de §2.
 2. Si la rama no corresponde, el agente la crea o cambia a ella (`git switch` / `git checkout -b`) **antes** de editar. Origen: `hotfix/*` sale de `main`; todas las demás, de `develop`.
 3. Si sigue en `main`, `develop` o en una rama de otro tema y no puede cambiar, **no edita nada** y pide el cambio.
-4. Al terminar una tarea, **no** entrega comandos de `git add`, `commit`, `push` ni de PR.
-5. Esos comandos se entregan **solo cuando el desarrollador escribe `_git`**. En ese momento el agente revisa todos los cambios de la rama (`git status`, `git diff`, `git diff --staged`, `git diff develop...HEAD`, `git log develop..HEAD` y `git log -8 --oneline` para el estilo) y propone **un** commit y **un** PR cuyo mensaje sale de lo que realmente cambió.
-6. Si no hay nada que commitear ni abrir en PR, lo dice en una frase. Si ya está commiteado, entrega solo el push y el PR.
+4. Al terminar una tarea, **no** hace `git add`, `commit`, `push` ni PR.
+5. Esos comandos los **ejecuta el agente solo cuando el desarrollador escribe `_git`** (D-67). En ese momento revisa todos los cambios de la rama (`git status`, `git diff`, `git diff --staged`, `git diff develop...HEAD`, `git log develop..HEAD` y `git log -8 --oneline` para el estilo) y hace **un** commit y **un** PR cuyo mensaje sale de lo que realmente cambió. Agrega solo los archivos del cambio y no incluye atribución a Claude en el commit ni en el PR.
+6. Si no hay nada que commitear ni abrir en PR, lo dice en una frase. Si ya está commiteado, ejecuta solo el push y el PR.
+7. **El agente nunca hace merge ni aprueba un PR**: la revisión y el merge son del desarrollador. Los releases a `main`, los tags y los `hotfix/*` solo los ejecuta si el desarrollador lo pide de forma explícita para ese caso.
 
-Bloques que entrega el agente al recibir `_git`:
+Comandos que ejecuta el agente al recibir `_git` (el cuerpo del PR va en un archivo con `--body-file`, porque el desarrollador usa Git Bash):
 
 ```
-# add
 git add <archivos>
-
-# commit
 git commit -m "tipo(alcance): descripcion"
-
-# push
 git push -u origin HEAD
-
-# pr
-gh pr create --base develop --title "tipo(alcance): descripcion" --body "<1-2 lineas>"
+gh pr create --base develop --title "tipo(alcance): descripcion" --body-file <archivo.md>
 ```
 
+Después de que el desarrollador haga el merge, la limpieza (borrar local + GitHub y volver a develop):
+
 ```
-# despues de aprobar el PR (borrar local + GitHub y volver a develop)
 git checkout develop
 git pull origin develop
 git branch -d <rama>

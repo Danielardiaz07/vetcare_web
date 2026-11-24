@@ -160,8 +160,8 @@ export function PortalSideMenu() {
                 href={href}
                 aria-current={href === current ? "page" : undefined}
                 className={cn(
-                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                  href === current ? "text-brand-700" : "text-muted",
+                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-xs font-medium",
+                  href === current ? "bg-brand-50 font-semibold text-brand-700" : "text-muted",
                 )}
               >
                 <Icon name={icon} className="size-5" />

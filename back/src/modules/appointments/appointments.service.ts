@@ -17,11 +17,17 @@ import type {
   CheckInCodeResponseDto,
   CheckInScanResultDto,
   CreateAppointmentRequestDto,
+  LinkedClinicalRecordDto,
   ListMyAppointmentsQueryDto,
   ManagedAppointmentDto,
   ReassignAppointmentRequestDto,
   RescheduleAppointmentRequestDto,
+  ScannerAccessResponseDto,
 } from "@/modules/appointments/dto/appointments.dto";
+import type {
+  AppointmentChangeListener,
+  IAppointmentEvents,
+} from "@/modules/appointments/appointment-events.interface";
 import type { IAppointmentNotifier } from "@/modules/appointments/appointment-notifier.interface";
 import {
   ACTIVE_STATUSES,
@@ -36,6 +42,7 @@ import { professionalFor } from "@/modules/appointments/appointment-types.servic
 import type { AppointmentTypesRepository } from "@/modules/appointments/appointment-types.repository";
 import type { CheckInCodes, ManageLinks } from "@/modules/appointments/check-in-codes";
 import type { CheckInScanner } from "@/modules/appointments/check-in-scanner";
+import { isProcedure, PROCEDURE_RECEPTION_ONLY_MESSAGE } from "@/modules/appointments/procedures";
 import { overlapsBusy, scheduleCovers, slotsOfDay } from "@/modules/appointments/slots";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/shared/errors";
 import {
@@ -64,6 +71,17 @@ const DAY_HOURS = 24;
 const professionalOf = (record: AppointmentRecord) => record.veterinarian ?? record.groomer;
 const kindOf = (record: AppointmentRecord): ProfessionalKind => professionalFor(record.type);
 
+// D-71: a lo sumo un registro clínico por cita (cada uno es único por cita).
+function linkedRecordOf(record: AppointmentRecord): LinkedClinicalRecordDto | null {
+  if (record.consultation) return { kind: "CONSULTATION", id: record.consultation.id };
+  if (record.grooming) return { kind: "GROOMING", id: record.grooming.id };
+  if (record.surgery) return { kind: "SURGERY", id: record.surgery.id };
+  if (record.labExam) {
+    return { kind: "LAB_EXAM", id: record.labExam.id, status: record.labExam.status };
+  }
+  return null;
+}
+
 function toResponse(record: AppointmentRecord, withOwner: boolean): AppointmentResponseDto {
   const professional = professionalOf(record);
   if (!professional) throw new Error(`La cita ${record.id} no tiene profesional`);
@@ -73,8 +91,13 @@ function toResponse(record: AppointmentRecord, withOwner: boolean): AppointmentR
     status: record.status,
     startsAt: record.startsAt,
     endsAt: record.endsAt,
+    durationMinutes: minutesBetween(record.startsAt, record.endsAt),
     reason: record.reason,
     cancelReason: record.cancelReason,
+    procedureName: record.procedureName,
+    instructions: record.instructions,
+    clinicalRecord: linkedRecordOf(record),
+    attentionStartedAt: record.attentionStartedAt,
     patient: { id: record.patient.id, name: record.patient.name },
     professional: {
       id: professional.id,
@@ -90,15 +113,17 @@ export class AppointmentsService {
     private readonly repository: AppointmentsRepository,
     private readonly types: AppointmentTypesRepository,
     private readonly notifier: IAppointmentNotifier,
+    private readonly events: IAppointmentEvents,
     private readonly checkInCodes: CheckInCodes,
     private readonly manageLinks: ManageLinks,
     private readonly scanner: CheckInScanner,
+    private readonly frontendUrl: string | undefined,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
   async availability(query: AvailabilityQueryDto): Promise<AvailabilityResponseDto> {
     const kind = professionalFor(query.type);
-    const durationMinutes = await this.durationOf(query.type);
+    const durationMinutes = await this.durationFor(query.type, query.durationMinutes);
     const professionals = await this.repository.findProfessionals(kind, query.professionalId);
     if (query.professionalId && professionals.length === 0) {
       throw new NotFoundError("Profesional no encontrado");
@@ -143,12 +168,18 @@ export class AppointmentsService {
     if (!patient) throw new NotFoundError("Paciente no encontrado");
     await this.assertCanAccessOwner(actor, patient.ownerId);
     if (!patient.active) throw new ConflictError("El paciente esta desactivado");
+    if (isProcedure(dto.type) && actor.role !== Role.RECEPTIONIST) {
+      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-71
+    }
 
-    const durationMinutes = await this.durationOf(dto.type);
+    const durationMinutes = await this.durationFor(dto.type, dto.durationMinutes);
     const endsAt = addMinutes(dto.startsAt, durationMinutes);
     this.assertBookable(dto.startsAt);
 
-    const activeCount = await this.repository.countActiveFuture(patient.id, this.clock());
+    // RN-24 frena que un propietario acapare franjas; las cirugías y exámenes los agenda recepción y no cuentan.
+    const activeCount = isProcedure(dto.type)
+      ? 0
+      : await this.repository.countActiveFuture(patient.id, this.clock());
     if (activeCount >= MAX_ACTIVE_APPOINTMENTS_PER_PATIENT) {
       throw new ConflictError(
         `Esta mascota ya tiene ${MAX_ACTIVE_APPOINTMENTS_PER_PATIENT} citas activas`,
@@ -168,7 +199,10 @@ export class AppointmentsService {
           startsAt: dto.startsAt,
           endsAt,
           reason: dto.reason,
+          procedureName: dto.procedureName,
+          instructions: dto.instructions,
         });
+        this.events.appointmentChanged(created.id);
         await this.notifier.appointmentEvent("CONFIRMED", created.id); // RN-35
         return toResponse(created, actor.role !== Role.OWNER);
       } catch (error) {
@@ -193,11 +227,14 @@ export class AppointmentsService {
     withOwner: boolean,
   ): Promise<AppointmentResponseDto> {
     this.assertBookable(dto.startsAt);
+    if (dto.durationMinutes !== undefined && !isProcedure(appointment.type)) {
+      throw new ValidationError("La duracion solo se cambia en cirugias y examenes");
+    }
 
     const kind = kindOf(appointment);
     const endsAt = addMinutes(
       dto.startsAt,
-      minutesBetween(appointment.startsAt, appointment.endsAt),
+      dto.durationMinutes ?? minutesBetween(appointment.startsAt, appointment.endsAt),
     );
     const currentId = professionalOf(appointment)?.id;
     const candidates = await this.freeCandidates(
@@ -215,6 +252,7 @@ export class AppointmentsService {
           endsAt,
           professionalId: candidate.id,
         });
+        this.events.appointmentChanged(updated.id);
         await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
         return toResponse(updated, withOwner);
       } catch (error) {
@@ -242,6 +280,7 @@ export class AppointmentsService {
       status: AppointmentStatus.CANCELLED,
       cancelReason: reason,
     });
+    this.events.appointmentChanged(updated.id);
     await this.notifier.appointmentEvent("CANCELLED", updated.id); // RN-35
     return toResponse(updated, withOwner);
   }
@@ -291,6 +330,30 @@ export class AppointmentsService {
     const updated = await this.repository.update(id, kindOf(appointment), {
       status: AppointmentStatus.CONFIRMED,
     });
+    this.events.appointmentChanged(updated.id);
+    return toResponse(updated, true);
+  }
+
+  // D-73: el veterinario asignado inicia la atención de una cita confirmada. No cambia el estado (pasa a ATTENDED al
+  // guardar el registro clínico) y repetirla devuelve el mismo instante, sin otro aviso.
+  async startAttention(actor: Actor, id: string): Promise<AppointmentResponseDto> {
+    const appointment = await this.findOrFail(id);
+    const { veterinarianId } = await this.repository.findProfileIds(actor.id);
+    if (!veterinarianId || appointment.veterinarianId !== veterinarianId) {
+      throw new ForbiddenError();
+    }
+    if (appointment.attentionStartedAt) return toResponse(appointment, true);
+    if (appointment.status !== AppointmentStatus.CONFIRMED) {
+      throw new ConflictError("Solo se puede iniciar la atencion de una cita confirmada");
+    }
+
+    const startedAt = this.clock();
+    const updated = await this.repository.markAttentionStarted(id, startedAt);
+    if (!updated) throw new NotFoundError("Cita no encontrada");
+    // Si otra llamada ganó la carrera, el valor guardado es el suyo y ya emitió el aviso.
+    if (updated.attentionStartedAt?.getTime() === startedAt.getTime()) {
+      this.events.appointmentChanged(updated.id);
+    }
     return toResponse(updated, true);
   }
 
@@ -330,9 +393,21 @@ export class AppointmentsService {
     return this.registerArrival(appointment.id);
   }
 
+  // D-69: la agenda de recepción se suscribe a los cambios de citas; devuelve la función que cancela la suscripción.
+  subscribeToChanges(listener: AppointmentChangeListener): () => void {
+    return this.events.subscribe(listener);
+  }
+
   // D-66, RN-85: la página de escaneo de recepción entra con el token del enlace, sin sesión.
   assertScannerToken(token: string): void {
     if (!this.scanner.accepts(token)) throw new NotFoundError(LINK_NOT_FOUND_MESSAGE);
+  }
+
+  // D-68: recepción obtiene el enlace de escaneo y su QR fijo; se lee el token existente, nunca se crea ni se cambia.
+  async scannerAccess(): Promise<ScannerAccessResponseDto> {
+    const url = this.scanner.accessLink(this.frontendUrl);
+    if (!url) throw new NotFoundError("El acceso de escaneo no esta configurado");
+    return { url, qrSvg: await toQrSvg(url) };
   }
 
   async checkInFromScanner(token: string, code: string): Promise<CheckInScanResultDto> {
@@ -360,6 +435,7 @@ export class AppointmentsService {
     const updated = await this.repository.update(id, kindOf(appointment), {
       status: AppointmentStatus.NO_SHOW,
     });
+    this.events.appointmentChanged(updated.id);
     return toResponse(updated, true);
   }
 
@@ -381,6 +457,7 @@ export class AppointmentsService {
 
     try {
       const updated = await this.repository.update(id, kind, { professionalId: candidate.id });
+      this.events.appointmentChanged(updated.id);
       await this.notifier.appointmentEvent("CHANGED", updated.id); // RN-35
       return toResponse(updated, true);
     } catch (error) {
@@ -434,6 +511,15 @@ export class AppointmentsService {
     }
     if (actor.role === Role.GROOMER && ids.groomerId) return { groomerId: ids.groomerId };
     throw new ForbiddenError();
+  }
+
+  // D-71: cirugías y exámenes llevan la duración de la cita; el resto, la configurada por tipo (RN-19).
+  private async durationFor(type: AppointmentType, requested: number | undefined): Promise<number> {
+    if (!isProcedure(type)) return this.durationOf(type);
+    if (requested === undefined) {
+      throw new ValidationError("La duracion es obligatoria para cirugias y examenes");
+    }
+    return requested;
   }
 
   private async durationOf(type: AppointmentType): Promise<number> {
@@ -548,6 +634,9 @@ export class AppointmentsService {
   private async findModifiable(actor: Actor, id: string): Promise<AppointmentRecord> {
     const appointment = await this.findOrFail(id);
     await this.assertCanAccessOwner(actor, appointment.patient.ownerId);
+    if (actor.role === Role.OWNER && isProcedure(appointment.type)) {
+      throw new ForbiddenError(PROCEDURE_RECEPTION_ONLY_MESSAGE); // D-71
+    }
     this.assertModifiable(appointment, actor.role === Role.OWNER);
     return appointment;
   }
@@ -560,6 +649,8 @@ export class AppointmentsService {
   // null = se puede cambiar. `enforceLead` es la restricción de 2 horas, que rige solo para el propietario.
   private blockedReasonOf(appointment: AppointmentRecord, enforceLead = true): string | null {
     if (!ACTIVE_STATUSES.includes(appointment.status)) return "La cita ya no admite cambios";
+    // D-71: quien llega por el enlace del correo (enforceLead) es el propietario y no cambia cirugías ni exámenes.
+    if (enforceLead && isProcedure(appointment.type)) return PROCEDURE_RECEPTION_ONLY_MESSAGE;
     const lead = addMinutes(this.clock(), MIN_APPOINTMENT_LEAD_HOURS * HOUR_MINUTES);
     if (enforceLead && appointment.startsAt <= lead) return CONTACT_CLINIC_MESSAGE;
     return null;

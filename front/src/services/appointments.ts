@@ -1,3 +1,4 @@
+import { isProcedureAppointment } from "@/lib/appointment-procedures";
 import {
   addDays,
   bookableDates,
@@ -39,6 +40,7 @@ import type {
 } from "@/types/domain";
 
 const NOT_FOUND = 404;
+const FORBIDDEN = 403;
 const CONFLICT = 409;
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -56,6 +58,7 @@ export interface AvailabilityParams {
   date: string;
   // D-26: sin profesional, la API busca entre todos los del tipo de cita.
   professionalId?: string;
+  durationMinutes?: number;
 }
 
 export interface CreateAppointmentInput {
@@ -64,11 +67,15 @@ export interface CreateAppointmentInput {
   professionalId?: string;
   startsAt: string;
   reason?: string;
+  procedureName?: string;
+  instructions?: string;
+  durationMinutes?: number;
 }
 
 export interface RescheduleAppointmentInput {
   startsAt: string;
   professionalId?: string;
+  durationMinutes?: number;
 }
 
 const isGrooming = (type: AppointmentType) => type === "GROOMING";
@@ -92,6 +99,7 @@ export function listProfessionals(
   }
   const path = isGrooming(type) ? "/groomers" : "/veterinarians";
   return request<Paginated<Professional>>(publicOnly ? `${path}/public` : path, {
+    auth: !publicOnly,
     // Recepción también recibe al personal inactivo; agendar y reasignar solo admiten activos.
     query: { page: 1, limit: PROFESSIONALS_LIMIT, ...(!publicOnly && { active: true }) },
   }).then((result) => result.data);
@@ -112,6 +120,13 @@ const takenKey = (professionalId: string, startsAt: string) => `${professionalId
 const isTaken = (professionalId: string, startsAt: string) =>
   mockTakenSlots.has(takenKey(professionalId, startsAt));
 
+function mockBusy(startsAt: string, endsAt: string, excludeId?: string) {
+  return mockAppointmentStore.filter(
+    (item) =>
+      item.id !== excludeId && isActive(item) && startsAt < item.endsAt && item.startsAt < endsAt,
+  );
+}
+
 function mockSlotsOf(
   date: string,
   durationMinutes: number,
@@ -128,12 +143,18 @@ function mockSlotsOf(
     start += MOCK_SLOT_MINUTES * MS_PER_MINUTE
   ) {
     const startsAt = new Date(start).toISOString();
+    const endsAt = new Date(start + durationMinutes * MS_PER_MINUTE).toISOString();
     const busy = MOCK_BUSY_TIMES.some((time) => clinicInstant(date, time) === startsAt);
-    const free = professionals.filter((item) => !isTaken(item.id, startsAt));
+    const occupied = mockBusy(startsAt, endsAt);
+    const free = professionals.filter(
+      (item) =>
+        !isTaken(item.id, startsAt) &&
+        !occupied.some((booking) => booking.professional.id === item.id),
+    );
     if (start < earliest || busy || free.length === 0) continue;
     slots.push({
       startsAt,
-      endsAt: new Date(start + durationMinutes * MS_PER_MINUTE).toISOString(),
+      endsAt,
       professionals: free,
     });
   }
@@ -144,9 +165,12 @@ async function mockAvailability({
   type,
   date,
   professionalId,
+  durationMinutes: requestedDuration,
 }: AvailabilityParams): Promise<Availability> {
   const durationMinutes =
-    mockAppointmentTypes.find((setting) => setting.type === type)?.durationMinutes ?? 0;
+    requestedDuration ??
+    mockAppointmentTypes.find((setting) => setting.type === type)?.durationMinutes ??
+    0;
   const all = await listProfessionals(type);
   const professionals = professionalId ? all.filter((item) => item.id === professionalId) : all;
   if (professionalId && professionals.length === 0) {
@@ -180,6 +204,9 @@ type MockSeed = {
   when: { daysFromToday: number; time: string } | { minutesFromNow: number };
   reason?: string;
   cancelReason?: string;
+  durationMinutes?: number;
+  procedureName?: string;
+  instructions?: string;
 };
 
 // Citas de prueba de Laura: una por estado, para ver cada color en Mis citas.
@@ -212,6 +239,15 @@ const MOCK_SEEDS: MockSeed[] = [
     type: "CHECKUP",
     status: "NO_SHOW",
     when: { daysFromToday: -40, time: "15:00" },
+  },
+  {
+    petIndex: 0,
+    type: "SURGERY",
+    status: "SCHEDULED",
+    when: { daysFromToday: 4, time: "11:00" },
+    durationMinutes: 90,
+    procedureName: "Limpieza dental",
+    instructions: "Trae los exámenes previos que te solicitó la clínica.",
   },
 ];
 
@@ -261,6 +297,15 @@ CLINIC_SEEDS.push({
   when: { minutesFromNow: -5 },
 });
 
+CLINIC_SEEDS.push({
+  petIndex: 1,
+  type: "LAB_EXAM",
+  status: "CONFIRMED",
+  when: { daysFromToday: 0, time: "14:30" },
+  durationMinutes: 30,
+  procedureName: "Hemograma",
+});
+
 function seedStart(when: MockSeed["when"], today: string): string {
   if ("minutesFromNow" in when) {
     return new Date(Date.now() + when.minutesFromNow * MS_PER_MINUTE).toISOString();
@@ -278,7 +323,9 @@ function buildSeeds(seeds: MockSeed[], pets: Patient[], idPrefix: string): Appoi
     const professionals = isGrooming(seed.type) ? mockGroomers : mockVeterinarians;
     const professional = professionals[seed.professionalIndex ?? 0];
     const durationMinutes =
-      mockAppointmentTypes.find((setting) => setting.type === seed.type)?.durationMinutes ?? 0;
+      seed.durationMinutes ??
+      mockAppointmentTypes.find((setting) => setting.type === seed.type)?.durationMinutes ??
+      0;
     if (!pet || !professional) return [];
     const startsAt = seedStart(seed.when, today);
     return [
@@ -292,6 +339,11 @@ function buildSeeds(seeds: MockSeed[], pets: Patient[], idPrefix: string): Appoi
         ).toISOString(),
         reason: seed.reason ?? null,
         cancelReason: seed.cancelReason ?? null,
+        durationMinutes,
+        procedureName: seed.procedureName ?? null,
+        instructions: seed.instructions ?? null,
+        clinicalRecord: null,
+        attentionStartedAt: null,
         patient: { id: pet.id, name: pet.name },
         professional: {
           id: professional.id,
@@ -335,10 +387,18 @@ const CONTACT_CLINIC_MESSAGE = "Comunícate con la clínica";
 async function mockModifiable(id: string): Promise<Appointment> {
   const appointment = mockAppointmentStore.find((item) => item.id === id);
   if (!appointment) return mockNotFound();
+  const { role } = await getMe();
+  if (isProcedureAppointment(appointment.type) && role !== "RECEPTIONIST") {
+    return mockError(
+      403,
+      "FORBIDDEN",
+      "Solo recepción gestiona cirugías y exámenes de laboratorio",
+    );
+  }
   if (appointment.status !== "SCHEDULED" && appointment.status !== "CONFIRMED") {
     return mockError(CONFLICT, "CONFLICT", "La cita ya no admite cambios");
   }
-  if (!isChangeable(appointment.startsAt)) {
+  if (role === "OWNER" && !isChangeable(appointment.startsAt)) {
     return mockError(CONFLICT, "CONFLICT", CONTACT_CLINIC_MESSAGE);
   }
   return appointment;
@@ -349,16 +409,29 @@ async function mockReschedule(id: string, input: RescheduleAppointmentInput): Pr
   const professionals = await listProfessionals(appointment.type);
   simulateRace(professionals, input.startsAt);
   const professionalId = input.professionalId ?? appointment.professional.id;
-  if (isTaken(professionalId, input.startsAt)) {
+  const professional = professionals.find((item) => item.id === professionalId);
+  if (!professional) return mockError(NOT_FOUND, "NOT_FOUND", "Profesional no encontrado");
+  const durationMinutes = input.durationMinutes ?? appointment.durationMinutes;
+  const endsAt = new Date(
+    new Date(input.startsAt).getTime() + durationMinutes * MS_PER_MINUTE,
+  ).toISOString();
+  const occupied = mockBusy(input.startsAt, endsAt, id);
+  if (occupied.some((item) => item.patient.id === appointment.patient.id)) {
+    return mockError(CONFLICT, "CONFLICT", "La mascota ya tiene una cita en esa franja");
+  }
+  if (
+    occupied.some((item) => item.professional.id === professionalId) ||
+    (input.startsAt !== appointment.startsAt && isTaken(professionalId, input.startsAt))
+  ) {
     return mockError(CONFLICT, "CONFLICT", SLOT_TAKEN_MESSAGE);
   }
-  const duration =
-    new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime();
   mockTakenSlots.delete(takenKey(appointment.professional.id, appointment.startsAt));
   mockTakenSlots.add(takenKey(professionalId, input.startsAt));
   Object.assign(appointment, {
     startsAt: input.startsAt,
-    endsAt: new Date(new Date(input.startsAt).getTime() + duration).toISOString(),
+    endsAt,
+    durationMinutes,
+    professional,
   });
   return mockResponse(appointment);
 }
@@ -375,12 +448,21 @@ const isActiveFuture = (appointment: Appointment, now: string) =>
   appointment.startsAt > now;
 
 async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
+  const isProcedure = isProcedureAppointment(input.type);
+  if (isProcedure && (await getMe()).role !== "RECEPTIONIST") {
+    return mockError(
+      403,
+      "FORBIDDEN",
+      "Solo recepción gestiona cirugías y exámenes de laboratorio",
+    );
+  }
   const pet = await getPatient(input.patientId);
   const now = new Date().toISOString();
   const activeCount = mockAppointmentStore.filter(
-    (item) => item.patient.id === pet.id && isActiveFuture(item, now),
+    (item) =>
+      item.patient.id === pet.id && !isProcedureAppointment(item.type) && isActiveFuture(item, now),
   ).length;
-  if (activeCount >= MAX_ACTIVE_APPOINTMENTS_PER_PATIENT) {
+  if (!isProcedure && activeCount >= MAX_ACTIVE_APPOINTMENTS_PER_PATIENT) {
     return mockError(
       CONFLICT,
       "CONFLICT",
@@ -388,27 +470,40 @@ async function mockCreate(input: CreateAppointmentInput): Promise<Appointment> {
     );
   }
   const all = await listProfessionals(input.type);
+  const durationMinutes =
+    input.durationMinutes ??
+    mockAppointmentTypes.find((setting) => setting.type === input.type)?.durationMinutes ??
+    0;
+  const endsAt = new Date(
+    new Date(input.startsAt).getTime() + durationMinutes * MS_PER_MINUTE,
+  ).toISOString();
+  const occupied = mockBusy(input.startsAt, endsAt);
+  if (occupied.some((item) => item.patient.id === pet.id)) {
+    return mockError(CONFLICT, "CONFLICT", "La mascota ya tiene una cita en esa franja");
+  }
   simulateRace(all, input.startsAt);
   const candidates = all.filter(
     (item) =>
       (!input.professionalId || item.id === input.professionalId) &&
+      !occupied.some((booking) => booking.professional.id === item.id) &&
       !isTaken(item.id, input.startsAt),
   );
   const professional = candidates[0];
   if (!professional) return mockError(CONFLICT, "CONFLICT", SLOT_TAKEN_MESSAGE);
   mockTakenSlots.add(takenKey(professional.id, input.startsAt));
-  const durationMinutes =
-    mockAppointmentTypes.find((setting) => setting.type === input.type)?.durationMinutes ?? 0;
   const appointment: Appointment = {
     id: crypto.randomUUID(),
     type: input.type,
     status: "SCHEDULED",
     startsAt: input.startsAt,
-    endsAt: new Date(
-      new Date(input.startsAt).getTime() + durationMinutes * MS_PER_MINUTE,
-    ).toISOString(),
+    endsAt,
+    durationMinutes,
     reason: input.reason ?? null,
     cancelReason: null,
+    procedureName: input.procedureName ?? null,
+    instructions: input.instructions ?? null,
+    clinicalRecord: null,
+    attentionStartedAt: null,
     patient: { id: pet.id, name: pet.name },
     professional,
   };
@@ -584,6 +679,31 @@ export function registerArrival(id: string): Promise<Appointment> {
       )
     : staffAction("arrival")(id);
   return updated.then(notifyChange);
+}
+
+export async function startAppointmentAttention(id: string): Promise<Appointment> {
+  if (!isMockEnabled) return staffAction("start-attention")(id).then(notifyChange);
+
+  const appointment = mockAppointmentById(id);
+  if (!appointment) return mockNotFound();
+  const me = await getMe();
+  const veterinarian = mockVeterinarians.find((item) => item.userId === me.id);
+  if (me.role !== "VETERINARIAN" || veterinarian?.id !== appointment.professional.id) {
+    return mockError(
+      FORBIDDEN,
+      "FORBIDDEN",
+      "Solo el veterinario asignado puede iniciar la atención",
+    );
+  }
+  if (appointment.attentionStartedAt) return mockResponse(appointment);
+  return mockStaffUpdate(
+    id,
+    (current) =>
+      current.status === "CONFIRMED"
+        ? null
+        : "Solo se puede iniciar la atención de una cita confirmada",
+    () => ({ attentionStartedAt: new Date().toISOString() }),
+  ).then(notifyChange);
 }
 
 // RN-31: "No asistió" solo cuando pasaron 15 minutos de la hora de la cita.

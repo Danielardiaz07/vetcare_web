@@ -21,6 +21,8 @@ const TYPE_LABEL: Record<AppointmentType, string> = {
   VACCINATION: "vacunacion",
   CHECKUP: "control",
   GROOMING: "estetica",
+  SURGERY: "cirugia",
+  LAB_EXAM: "examen de laboratorio",
 };
 
 const timeOfDay = new Intl.DateTimeFormat("es-CO", {

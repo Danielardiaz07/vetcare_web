@@ -12,12 +12,20 @@ import { FIELD_LIMITS } from "@/lib/constants";
 type ReviewStepProps = {
   rows: DetailRow[];
   defaultReason: string;
+  hideReason?: boolean;
   error: ReactNode;
   onBack: (reason: string) => void;
   onConfirm: (reason: string) => Promise<void>;
 };
 
-export function ReviewStep({ rows, defaultReason, error, onBack, onConfirm }: ReviewStepProps) {
+export function ReviewStep({
+  rows,
+  defaultReason,
+  hideReason = false,
+  error,
+  onBack,
+  onConfirm,
+}: ReviewStepProps) {
   const {
     register,
     handleSubmit,
@@ -33,13 +41,15 @@ export function ReviewStep({ rows, defaultReason, error, onBack, onConfirm }: Re
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <BookingDetails rows={rows} />
-      <Textarea
-        label="Motivo de la cita (opcional)"
-        hint="Cuéntanos qué le pasa o qué necesita tu mascota."
-        maxLength={FIELD_LIMITS.APPOINTMENT_REASON_MAX}
-        error={errors.reason?.message}
-        {...register("reason")}
-      />
+      {!hideReason && (
+        <Textarea
+          label="Motivo de la cita (opcional)"
+          hint="Cuéntanos qué le pasa o qué necesita tu mascota."
+          maxLength={FIELD_LIMITS.APPOINTMENT_REASON_MAX}
+          error={errors.reason?.message}
+          {...register("reason")}
+        />
+      )}
       {error && (
         <div
           role="alert"

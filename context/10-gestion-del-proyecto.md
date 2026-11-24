@@ -60,6 +60,7 @@ Una historia está **hecha** cuando:
 | HU-22 | Como propietario, quiero actualizar mi perfil y registrar una nueva mascota | RF-15 | S | 3 | 3 |
 | HU-23 | Como estilista, quiero registrar los servicios estéticos realizados | RF-21 | C | 3 | 3 |
 | HU-24 | Como administrador, quiero un tablero de indicadores para tomar decisiones | RF-24 | C | 5 | 3 |
+| HU-25 | Como recepcionista, quiero agendar cirugías y exámenes de laboratorio para que el veterinario y el propietario los vean | RF-25 | S | 5 | 3 |
 
 ## 5. Sprint Backlog (objetivos)
 
@@ -105,10 +106,10 @@ Las 24 historias ya están comprometidas; con los días que quedan antes de la s
 | Campana de avisos del portal | Hecho: `GET /me/alerts` (D-52) | Hecho: campana, contador y lectura por cuenta (D-59) | 18 nov |
 | Agendas del personal en cuadrícula | Sin cambios | Hecho: recepción por profesional/día y llegada con un clic; veterinario y estilista con Lista/Día/Semana de su propia agenda (D-60) | 20 nov |
 | Tablero con comparación, gráfica de ingresos y CSV | Hecho: `previous` y `GET /reports/dashboard/export` (D-53) | Hecho: comparación, gráfica y descarga autenticada con el rango consultado (D-61) | 20 nov |
-| Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Pendiente | 21 y 22 nov |
+| Pulido general y datos de demostración más ricos | Hecho: historia de peso y facturas en `db:seed:demo` (D-54) | Hecho: estados compartidos, recuperación de búsquedas vacías, listados móviles, foco y adaptación de controles y ventanas (D-72) | 21 y 22 nov |
 | Alerta de variación de peso | Hecho: `weight-trend` y aviso `WEIGHT_CHANGE` (D-55, RN-81) | Hecho en consulta y ficha (D-58) y campana (D-59) | 20 nov |
 | VetBot con datos reales (sin IA externa) | Sin cambios: usa los endpoints existentes y `weight-trend` | Hecho: contenido publicado y consultas propias de citas, avisos, vacunas y peso desde la portada, con sesión para datos propios (D-63) | 21 nov |
 | QR del carné de vacunación (verificable) | Hecho: tabla `CardVerification`, `GET …/vaccination-card/verification` y `GET /public/vaccination-cards/{token}` (D-56) | Hecho: QR imprimible, gestión por el propietario y página `/verify/[token]` (D-64); migración y validación en producción en P-20 | 21 nov |
-| QR de llegada a la cita | Hecho: `GET /me/appointments/{id}/check-in` y `POST /appointments/check-in` (D-56) | Hecho: el QR en Mis citas, la página `/scan/[token]` con cámara y campo de respaldo, y el QR en el recordatorio (D-66, RN-85); pendiente validarlo en producción con `CHECK_IN_SCANNER_TOKEN` y `API_PUBLIC_URL` | 21 nov |
-| Cambiar o cancelar la cita desde el correo | Hecho: enlace en los correos y `GET` y `POST …/cancel` y `…/reschedule` en `/public/appointments/manage/{token}` (D-65) | Pendiente: la página `/manage-appointment/[token]` | 21 nov |
+| QR de llegada a la cita | Hecho: QR `VC2`, escáner sin sesión y recordatorio con PNG; consulta protegida del acceso móvil y canal SSE de recepción (D-56, D-66, D-68, D-69) | Hecho: QR y código en Mis citas, acceso móvil desde recepción y agenda en vivo con reconexión y respaldo periódico (D-70). Llegada manual y recuperación ante errores conservadas. Verificación visual, cámara física y producción pendientes (P-20) | 21 nov |
+| Cambiar o cancelar la cita desde el correo | Hecho: enlace y API pública de gestión de citas (D-65) | Hecho: `/manage-appointment/[token]`, lectura sin sesión y cambios con confirmación explícita. Prueba con correo real en producción pendiente (P-21) | 21 nov |
 | VetBot con IA | Fuera del alcance por ahora (P-08) | — | Solo si sobra tiempo |

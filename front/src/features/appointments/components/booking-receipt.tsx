@@ -33,11 +33,17 @@ export function BookingReceipt({ appointment, onBookAnother, onDone }: BookingRe
   const rows = [
     { label: "Mascota", value: appointment.patient.name },
     { label: "Tipo de cita", value: APPOINTMENT_TYPE_LABELS[appointment.type] },
+    ...(appointment.procedureName
+      ? [{ label: "Procedimiento", value: appointment.procedureName }]
+      : []),
     { label: professionalLabel, value: ownerFullName(appointment.professional) },
     { label: "Fecha", value: formatLongDate(clinicDateOf(new Date(startsAt))) },
     { label: "Hora", value: `${formatClinicTime(startsAt)} a ${formatClinicTime(endsAt)}` },
     { label: "Duración", value: durationLabel(minutes) },
     ...(appointment.reason ? [{ label: "Motivo", value: appointment.reason }] : []),
+    ...(appointment.instructions
+      ? [{ label: "Indicaciones para el propietario", value: appointment.instructions }]
+      : []),
   ];
 
   return (

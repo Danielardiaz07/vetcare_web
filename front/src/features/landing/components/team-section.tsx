@@ -25,7 +25,7 @@ function MemberPhoto({ member }: { member: TeamMember }) {
           alt={`Foto de ${member.name}`}
           fill
           sizes="(min-width: 640px) 260px, 96px"
-          className="object-cover"
+          className="object-cover object-top"
         />
       </div>
     );
@@ -46,19 +46,20 @@ export function TeamSection() {
   return (
     <section id="equipo" aria-labelledby="equipo-title" className="scroll-mt-header-bar">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-14 sm:px-6 sm:py-16">
-        <SectionHeading id="equipo-title" title="Médicos veterinarios que conocen a tu mascota.">
-          Todo nuestro equipo tiene tarjeta profesional vigente. Al agendar ves quién atenderá a tu
-          mascota.
+        <SectionHeading id="equipo-title" title="Conoce a nuestro equipo.">
+          Médicos veterinarios y estilistas para cuidar a tu mascota. Al agendar puedes elegir quién
+          la atenderá.
         </SectionHeading>
         <ul className="grid sm:grid-cols-[repeat(3,minmax(0,16.25rem))] sm:gap-10">
           {LANDING_TEAM.map((member) => (
             <li
               key={member.name}
-              className="flex items-center gap-5 border-t border-line py-5 last:border-b sm:flex-col sm:items-stretch sm:gap-3.5 sm:border-0 sm:py-0 sm:last:border-b-0"
+              className="flex items-center gap-5 border-t border-line py-5 last:pb-0 sm:flex-col sm:items-stretch sm:gap-3.5 sm:border-0 sm:py-0"
             >
               <MemberPhoto member={member} />
-              <div>
+              <div className="flex min-w-0 flex-col items-start gap-1">
                 <h3 className="text-lg font-semibold text-ink">{member.name}</h3>
+                <p className="text-sm font-bold text-ink">[{member.role}]</p>
                 <p className="text-[15px] text-muted">{member.specialty}</p>
               </div>
             </li>

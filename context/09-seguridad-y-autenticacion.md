@@ -78,7 +78,10 @@ Consultas públicas de agendamiento (D-50, D-51): GET /appointment-types, GET /a
 | Gestionar agenda (RF-16) | | ✔ | consulta de la suya | consulta de la suya | |
 | Consultar mis facturas (RF-14) | ✔ (solo las suyas) | | | | |
 | Perfil (RF-15) | ✔ | | | | |
-| Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (consulta: cita asignada; cirugía, internación y examen sin cita obligatoria, D-34) | | |
+| Registrar consulta / vacunación / cirugía / internación / examen (RF-18/19/20) | | | ✔ (consulta: cita asignada; cirugía y examen: con cita, solo el veterinario asignado y la cita confirmada, o sin cita desde la ficha; internación sin cita, D-34, D-71) | | |
+| Agendar, reprogramar y cancelar cirugías y exámenes de laboratorio (RN-86, D-71) | | ✔ | | | |
+| Cargar los resultados de un examen en espera (RN-87, D-71) | | | ✔ (solo quien lo registró) | | |
+| Ver mis cirugías y exámenes agendados, con las indicaciones y el estado de los resultados (RN-86, D-71) | ✔ (solo los suyos) | | | | |
 | Registrar servicio estético (RF-21) | | | | ✔ | |
 | Ver los servicios estéticos de una mascota (D-33) | ✔ (solo las suyas) | ✔ | ✔ | ✔ | |
 | Gestionar inventario (RF-22) | | | | | ✔ |
@@ -91,7 +94,10 @@ Consultas públicas de agendamiento (D-50, D-51): GET /appointment-types, GET /a
 | Ver la curva de peso y su alerta (RN-81, D-55) | ✔ (solo las suyas) | ✔ | ✔ | | |
 | Ver y cambiar el QR del carné de vacunación (RN-82, D-56) | ✔ (solo las suyas; también desactivarlo) | ✔ (ver) | ✔ (ver) | | |
 | Mostrar el QR de llegada (propietario) y escanearlo (recepción) (RN-83, D-56) | ✔ (solo sus citas) | ✔ | | | |
+| Iniciar la atención de una cita confirmada propia (D-73) | | | ✔ (solo la asignada) | | |
 | Registrar llegadas desde la página `/scan/<token>`, sin sesión (RN-85, D-66) | | ✔ (quien tenga el enlace o su QR fijo) | | | |
+| Ver el enlace y el QR fijo del escáner de recepción (RN-85, D-68) | | ✔ | | | |
+| Recibir en vivo los cambios de la agenda por el canal de eventos (D-69) | | ✔ | | | |
 | Reprogramar o cancelar una cita con el enlace personal del correo, sin sesión (RN-84, D-65) | ✔ (quien tenga el enlace, solo esa cita) | | | | |
 
 > La matriz deriva de los RF y actores de `specs.pdf`. Los matices no especificados (p. ej. si el veterinario puede ver propietarios, o recepción ver el historial clínico completo) se afinan al implementar el módulo y se registran aquí.

@@ -1,5 +1,13 @@
 import type { RequestHandler } from "express";
-import { CHECK_IN_QR_EXTENSION, HttpStatus, QR_IMAGE_MAX_AGE_SECONDS } from "@/config/constants";
+import {
+  APPOINTMENT_CHANGED_EVENT,
+  CHECK_IN_QR_EXTENSION,
+  EVENT_STREAM_HEARTBEAT_MS,
+  EVENT_STREAM_MAX_AGE_MS,
+  EVENT_STREAM_RETRY_MS,
+  HttpStatus,
+  QR_IMAGE_MAX_AGE_SECONDS,
+} from "@/config/constants";
 import type {
   AgendaQueryDto,
   AvailabilityQueryDto,
@@ -56,6 +64,10 @@ export class AppointmentsController {
     res.json(await this.service.registerArrival(String(req.params.id)));
   };
 
+  startAttention: RequestHandler = async (req, res) => {
+    res.json(await this.service.startAttention(req.user!, String(req.params.id)));
+  };
+
   checkInCode: RequestHandler = async (req, res) => {
     res.json(await this.service.checkInCode(req.user!, String(req.params.id)));
   };
@@ -82,6 +94,38 @@ export class AppointmentsController {
 
   checkIn: RequestHandler = async (req, res) => {
     res.json(await this.service.checkIn((req.body as CheckInRequestDto).code));
+  };
+
+  // D-69: canal SSE de la agenda de recepción; avisa con el id de la cita y el cliente vuelve a consultar la agenda.
+  events: RequestHandler = (req, res) => {
+    res.set({
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no", // evita que un proxy acumule los avisos antes de enviarlos
+    });
+    res.flushHeaders();
+    res.write(`retry: ${EVENT_STREAM_RETRY_MS}\n\n`);
+
+    const unsubscribe = this.service.subscribeToChanges((appointmentId) => {
+      res.write(
+        `event: ${APPOINTMENT_CHANGED_EVENT}\ndata: ${JSON.stringify({ appointmentId })}\n\n`,
+      );
+    });
+    // Un comentario SSE mantiene viva la conexión sin que el cliente lo vea como evento.
+    const heartbeat = setInterval(() => res.write(": keep-alive\n\n"), EVENT_STREAM_HEARTBEAT_MS);
+    const expiry = setTimeout(() => res.end(), EVENT_STREAM_MAX_AGE_MS);
+
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      clearTimeout(expiry);
+      unsubscribe();
+    });
+  };
+
+  scannerAccess: RequestHandler = async (_req, res) => {
+    res.set("Cache-Control", "no-store"); // la respuesta lleva el token secreto
+    res.json(await this.service.scannerAccess());
   };
 
   scannerStatus: RequestHandler = (req, res) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { addDays, clinicDateOf, formatLongDate, isoWeekday, monthRange } from "@/lib/clinic-time";
 import { Button } from "./button";
 import { cn } from "./cn";
@@ -26,6 +26,8 @@ type DatePickerProps = {
   max?: string;
   label?: string;
   triggerClassName?: string;
+  triggerContent?: ReactNode;
+  triggerAriaLabel?: string;
   variant?: "button" | "inline";
 };
 
@@ -51,6 +53,8 @@ export function DatePicker({
   max,
   label = "Ir a fecha",
   triggerClassName,
+  triggerContent,
+  triggerAriaLabel,
   variant = "button",
 }: DatePickerProps) {
   const isInline = variant === "inline";
@@ -325,8 +329,8 @@ export function DatePicker({
     </>
   );
   return isInline ? (
-    <div className="min-w-0">
-      <p className="mb-1.5 text-sm font-medium text-ink">{label}</p>
+    <div className="flex min-w-0 flex-col gap-2">
+      <p className="text-base font-semibold text-ink">{label}</p>
       <div
         role="group"
         aria-label="Calendario para agendar"
@@ -341,11 +345,16 @@ export function DatePicker({
         variant="secondary"
         className={triggerClassName}
         aria-haspopup="dialog"
-        aria-label={label + ", " + formatLongDate(value)}
+        aria-expanded={open}
+        aria-label={triggerAriaLabel ?? label + ", " + formatLongDate(value)}
         onClick={openCalendar}
       >
-        <Icon name="calendar" className="size-5" />
-        {label}
+        {triggerContent ?? (
+          <>
+            <Icon name="calendar" className="size-5" />
+            {label}
+          </>
+        )}
       </Button>
       <Modal
         open={open}

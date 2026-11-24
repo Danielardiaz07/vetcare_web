@@ -172,8 +172,29 @@ export function UsersManager() {
       {list.status === "error" && <ErrorState onRetry={reload} />}
       {list.status === "ready" && list.result.data.length === 0 && (
         <EmptyState
-          title="No hay cuentas"
-          description="Ninguna cuenta del personal coincide con la búsqueda o los filtros."
+          title={q || role || status ? "Sin resultados" : "Aún no hay cuentas del personal"}
+          description={
+            q || role || status
+              ? "Ninguna cuenta del personal coincide con la búsqueda o los filtros."
+              : "Crea una cuenta para dar acceso al personal de la clínica."
+          }
+          action={
+            q || role || status ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearch("");
+                  setRole(undefined);
+                  setStatus(undefined);
+                  setPage(1);
+                }}
+              >
+                Limpiar filtros
+              </Button>
+            ) : (
+              <Button onClick={() => setCreating(true)}>Nueva cuenta</Button>
+            )
+          }
         />
       )}
       {list.status === "ready" && list.result.data.length > 0 && (

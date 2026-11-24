@@ -12,11 +12,18 @@ Fuente: `context/11-flujo-git.md`. Esta regla es obligatoria en cada tarea que m
 4. Si estás en `main`, `develop` o en una rama de otro tema y no puedes cambiar, **no edites nada** y pide el cambio.
 5. Si `develop` no existe, créala desde `main` primero.
 
+## Cuándo ejecuta Git el agente
+
+- Solo cuando el desarrollador escriba **`_git`** (usa la skill `git-flow`), el agente **ejecuta** `git add` (solo los archivos del cambio), `git commit`, `git push -u origin HEAD` y `gh pr create`.
+- Al terminar una tarea sin `_git`, no hace commit, push ni PR: dice qué cambió y recuerda que `_git` lo publica.
+- El PR siempre se redacta con el cuerpo en un archivo y `--body-file` (el desarrollador usa Git Bash; los here-strings de PowerShell fallan).
+
 ## Prohibido para el agente
 
-- **Nunca** ejecutes `git commit`, `git push` ni `gh pr create` (ni `git add` como entrega final), aunque la tarea esté terminada.
-- No entregues comandos de `add`/`commit`/`push`/PR al terminar una tarea. Solo cuando el desarrollador escriba **`_git`** (usa la skill `git-flow`).
-- No trabajes directo en `main` ni en `develop`. No uses `--force`, `--no-verify` ni reescribas historia.
+- **Nunca** hace merge de un PR ni lo aprueba: la revisión y el merge son del desarrollador.
+- No trabaja directo en `main` ni en `develop`: no hace commit, push ni PR desde ellas. Los `release/*` a `main`, los tags y los `hotfix/*` solo los ejecuta si el desarrollador lo pide de forma explícita para ese caso.
+- No usa `--force`, `--no-verify` ni reescribe historia. No agrega `.env`, archivos ajenos al cambio ni `git add .` con archivos ajenos.
+- No agrega líneas de atribución a Claude/Anthropic (`Co-Authored-By`, "Generated with Claude Code") en commits ni PR.
 
 ## Commits (cuando el desarrollador los pida con `_git`)
 

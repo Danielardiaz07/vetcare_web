@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { BookingTrigger } from "@/features/landing/components/booking-trigger";
 import { SectionHeading } from "@/features/landing/components/section-heading";
-import { LANDING_SERVICES, sectionHref } from "@/features/landing/content";
+import { CONTACT_SECTION_ID, LANDING_SERVICES } from "@/features/landing/content";
 import { durationLabel } from "@/features/staff/labels";
 
 // La flecha se corre un poco al pasar el mouse (solo con puntero y sin "reducir movimiento").
@@ -53,10 +52,10 @@ export function ServicesSection() {
                   <Icon name="arrow-right" width={16} height={16} className={ARROW_CLASS} />
                 </BookingTrigger>
               ) : (
-                <Link href={sectionHref("contacto")} className={SERVICE_ACTION_CLASS}>
+                <a href={`#${CONTACT_SECTION_ID}`} className={SERVICE_ACTION_CLASS}>
                   Contactar
                   <Icon name="arrow-right" width={16} height={16} className={ARROW_CLASS} />
-                </Link>
+                </a>
               )}
             </li>
           ))}

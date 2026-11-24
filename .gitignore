@@ -11,3 +11,4 @@ next-env.d.ts
 scanner-qr.png
 scanner-link.txt
 .DS_Store
+.vercel

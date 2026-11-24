@@ -30,6 +30,7 @@ import {
   dischargeHospitalizationRequestSchema,
   historyQuerySchema,
   listHospitalizationsQuerySchema,
+  loadLabResultsRequestSchema,
 } from "@/modules/clinical/dto/clinical.dto";
 import { createGroomingServiceRequestSchema } from "@/modules/grooming/dto/grooming.dto";
 import {
@@ -478,7 +479,7 @@ export const OPERATIONS: Operation[] = [
     {
       query: availabilityQuerySchema,
       description:
-        "Pública (D-51). Si ese día no hay franjas, sugiere hasta 3 fechas cercanas (RN-33). Crear la cita sigue exigiendo sesión.",
+        "Pública (D-51). Si ese día no hay franjas, sugiere hasta 3 fechas cercanas (RN-33). Crear la cita sigue exigiendo sesión. Para `SURGERY` y `LAB_EXAM` (D-71) `durationMinutes` es obligatorio (múltiplo de 30, hasta 480); para los demás tipos no se envía.",
     },
   ),
   op(
@@ -497,7 +498,7 @@ export const OPERATIONS: Operation[] = [
   op("post", "/appointments", TAGS.appointments, "Agendar una cita", [OWNER, RECEPTIONIST], 201, {
     body: createAppointmentRequestSchema,
     description:
-      "Con 2 horas de anticipación como mínimo, hasta 30 días y máximo 3 citas activas por mascota. Sin `professionalId` se asigna cualquiera disponible. Envía el correo de confirmación (RN-35).",
+      "Con 2 horas de anticipación como mínimo, hasta 30 días y máximo 3 citas activas por mascota. Sin `professionalId` se asigna cualquiera disponible. Envía el correo de confirmación (RN-35). `SURGERY` y `LAB_EXAM` (D-71) los agenda solo recepción (403 al propietario) y exigen `procedureName` y `durationMinutes`; admiten `instructions` para el propietario, no cuentan en el máximo de 3 citas activas y la API valida los cruces del veterinario y de la mascota (409). La respuesta trae `durationMinutes`, `procedureName`, `instructions` y `clinicalRecord` (el registro clínico vinculado cuando existe; en el examen incluye `status`).",
   }),
   op(
     "put",
@@ -508,6 +509,8 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       body: rescheduleAppointmentRequestSchema,
+      description:
+        "Las cirugías y los exámenes (D-71) solo los reprograma recepción: el propietario recibe 403 desde el portal y 409 desde el enlace del correo. En ellos `durationMinutes` cambia la duración; sin él se conserva.",
     },
   ),
   op(
@@ -519,6 +522,8 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       body: cancelAppointmentRequestSchema,
+      description:
+        "Las cirugías y los exámenes (D-71) solo los cancela recepción: el propietario recibe 403 desde el portal y 409 desde el enlace del correo.",
     },
   ),
   op(
@@ -530,6 +535,18 @@ export const OPERATIONS: Operation[] = [
     200,
     {
       description: "La cita pasa de SCHEDULED a CONFIRMED.",
+    },
+  ),
+  op(
+    "put",
+    "/appointments/{id}/start-attention",
+    TAGS.appointments,
+    "Iniciar la atención de una cita",
+    [VETERINARIAN],
+    200,
+    {
+      description:
+        "Solo el veterinario asignado (403 a otro) y sobre una cita CONFIRMED (409 en otro estado). Guarda y devuelve `attentionStartedAt`; repetirla devuelve el mismo valor sin cambiarlo. No cambia el estado: la cita pasa a ATTENDED al guardar el registro clínico. Emite `appointment.changed` la primera vez para actualizar la agenda de recepción (D-73).",
     },
   ),
   op(
@@ -584,6 +601,30 @@ export const OPERATIONS: Operation[] = [
       body: checkInRequestSchema,
       description:
         "Recibe el `code` que trae el QR del propietario. Solo vale el día de la cita y para una cita programada; hace lo mismo que registrar la llegada a mano. El código lleva la hora de la cita: si se reprogramó, el anterior se rechaza con 409 (RN-83, D-56, D-66).",
+    },
+  ),
+  op(
+    "get",
+    "/appointments/events",
+    TAGS.appointments,
+    "Canal de eventos de la agenda de recepción (SSE)",
+    [RECEPTIONIST],
+    200,
+    {
+      description:
+        "Conexión `text/event-stream` autenticada con el JWT en `Authorization` (el `EventSource` del navegador no envía cabeceras: usa `fetch` con lectura de la respuesta). Emite `appointment.changed` con `{ appointmentId }` tras guardar una creación, reprogramación, cancelación, reasignación, inicio de atención del veterinario o cambio de estado (llegada manual o por QR, no asistió, consulta, vacunación o servicio de estética que cierra la cita). El cliente vuelve a consultar la agenda al recibirlo. Envía un comentario `: keep-alive` cada 25 s y cierra la conexión a los 10 minutos para que el cliente se reconecte con un token vigente; al reconectar conviene consultar la agenda, porque los avisos perdidos no se reenvían (D-69).",
+    },
+  ),
+  op(
+    "get",
+    "/appointments/check-in/scanner-access",
+    TAGS.appointments,
+    "Obtener el enlace y el QR fijo del escáner de recepción",
+    [RECEPTIONIST],
+    200,
+    {
+      description:
+        "Devuelve `{ url, qrSvg }`: el enlace `<FRONTEND_URL>/scan/<token>` y su QR ya dibujado. Lee `CHECK_IN_SCANNER_TOKEN` sin crearlo ni cambiarlo; la respuesta lleva `Cache-Control: no-store`. 404 si falta el token o `FRONTEND_URL` no es HTTPS (RN-85, D-68).",
     },
   ),
   op(
@@ -668,6 +709,8 @@ export const OPERATIONS: Operation[] = [
   }),
   op("post", "/surgeries", TAGS.clinical, "Registrar una cirugía", [VETERINARIAN], 201, {
     body: createSurgeryRequestSchema,
+    description:
+      "Desde la ficha (sin `appointmentId`) `procedure` y `performedAt` son obligatorios. Con `appointmentId` (D-71) la cita debe ser de cirugía, de la misma mascota, estar CONFIRMED y asignada al veterinario: el registro queda vinculado, la cita pasa a ATTENDED y `procedure` y `performedAt` salen de la cita si no se envían.",
   }),
   op(
     "post",
@@ -678,6 +721,21 @@ export const OPERATIONS: Operation[] = [
     201,
     {
       body: createLabExamRequestSchema,
+      description:
+        "Desde la ficha (sin `appointmentId`) `examType`, `performedAt` y `results` son obligatorios y el examen nace WITH_RESULTS. Con `appointmentId` (D-71) la cita debe ser de examen, de la misma mascota, estar CONFIRMED y asignada al veterinario: la cita pasa a ATTENDED y, sin `results`, el examen queda PENDING_RESULTS (en espera de resultados).",
+    },
+  ),
+  op(
+    "put",
+    "/lab-exams/{id}/results",
+    TAGS.clinical,
+    "Cargar los resultados de un examen en espera",
+    [VETERINARIAN],
+    200,
+    {
+      body: loadLabResultsRequestSchema,
+      description:
+        "Solo el veterinario que registró el examen (403 si es otro) y solo mientras esté PENDING_RESULTS (409 si ya tiene resultados). Pasa a WITH_RESULTS y el propietario los ve en el historial (D-71).",
     },
   ),
   op(

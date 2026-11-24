@@ -35,12 +35,14 @@ const clinicHourFormatter = new Intl.DateTimeFormat("en-GB", {
   hourCycle: "h23",
 });
 
-const longDateFormatter = new Intl.DateTimeFormat("es-CO", {
+const longDateOptions: Intl.DateTimeFormatOptions = {
   timeZone: "UTC",
   weekday: "long",
   day: "numeric",
   month: "long",
-});
+};
+const longDateFormatter = new Intl.DateTimeFormat("es-CO", longDateOptions);
+const fullDateFormatter = new Intl.DateTimeFormat("es-CO", { ...longDateOptions, year: "numeric" });
 
 const weekdayFormatter = new Intl.DateTimeFormat("es-CO", { timeZone: "UTC", weekday: "short" });
 const monthFormatter = new Intl.DateTimeFormat("es-CO", { timeZone: "UTC", month: "short" });
@@ -102,6 +104,7 @@ export const noShowFrom = (startsAt: string) =>
 export const formatClinicTime = (instant: string) => timeFormatter.format(new Date(instant));
 
 export const formatLongDate = (date: string) => longDateFormatter.format(dateAtNoon(date));
+export const formatFullClinicDate = (date: string) => fullDateFormatter.format(dateAtNoon(date));
 
 export function dayParts(date: string) {
   const noon = dateAtNoon(date);
