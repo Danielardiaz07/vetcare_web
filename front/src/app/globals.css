@@ -38,7 +38,6 @@
   --radius-chip: 14px;
   --radius-card: 24px;
   --radius-block: 32px;
-  --spacing-section-content: 9.75rem;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* El menú fijo y los anclajes comparten estas alturas al ocultarse la franja de urgencias. */
@@ -80,7 +79,6 @@
   html {
     background-color: var(--color-canvas);
     color: var(--color-ink);
-    scrollbar-gutter: stable;
   }
 
   body {
