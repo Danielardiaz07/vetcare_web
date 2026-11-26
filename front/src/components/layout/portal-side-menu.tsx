@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { cn } from "@/components/ui/cn";
-import { Icon, type IconName } from "@/components/ui/icon";
+import { SectionMenu } from "@/components/layout/section-menu";
+import type { IconName } from "@/components/ui/icon";
 import { ROUTES } from "@/lib/constants";
 import { APPOINTMENTS_CHANGED_EVENT, getMyAppointments } from "@/services/appointments";
 
@@ -13,77 +12,55 @@ type MenuItem = {
   label: string;
   shortLabel: string;
   icon: IconName;
-  inBottomBar: boolean;
+  hideOnMobile?: boolean;
+  primary?: boolean;
 };
 
 const MENU_ITEMS: MenuItem[] = [
-  { href: ROUTES.portal, label: "Inicio", shortLabel: "Inicio", icon: "home", inBottomBar: true },
+  { href: ROUTES.portal, label: "Inicio", shortLabel: "Inicio", icon: "home" },
   {
     href: ROUTES.portalAppointments,
     label: "Mis citas",
     shortLabel: "Citas",
     icon: "calendar",
-    inBottomBar: true,
   },
   {
     href: ROUTES.portalNewAppointment,
-    label: "Agendar",
+    label: "Agendar cita",
     shortLabel: "Agendar",
     icon: "calendar-plus",
-    inBottomBar: true,
+    primary: true,
   },
   {
     href: ROUTES.portalHistory,
     label: "Historial clínico",
     shortLabel: "Historial",
     icon: "file-medical",
-    inBottomBar: true,
   },
   {
     href: ROUTES.portalInvoices,
     label: "Facturas",
     shortLabel: "Facturas",
     icon: "receipt",
-    inBottomBar: true,
   },
   {
     href: ROUTES.portalProfile,
     label: "Mi perfil",
     shortLabel: "Perfil",
     icon: "user",
-    inBottomBar: false,
+    hideOnMobile: true,
   },
 ];
 
-// Gana la ruta más larga que coincide: /portal/appointments/new es "Agendar", no "Mis citas".
 function activeHref(pathname: string): string | undefined {
   return MENU_ITEMS.map((item) => item.href)
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
 }
 
-function UpcomingCount({ count, compact = false }: { count: number; compact?: boolean }) {
-  if (count === 0) return null;
-  return (
-    <>
-      <span
-        aria-hidden="true"
-        className={cn(
-          "inline-flex min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-semibold text-white",
-          compact ? "absolute -top-1 left-1/2 ml-2" : "ml-auto h-5",
-        )}
-      >
-        {count}
-      </span>
-      <span className="sr-only">, {count === 1 ? "1 próxima" : `${count} próximas`}</span>
-    </>
-  );
-}
-
 export function PortalSideMenu() {
   const pathname = usePathname();
   const current = activeHref(pathname);
-  const isNewAppointment = current === ROUTES.portalNewAppointment;
   const [upcoming, setUpcoming] = useState(0);
 
   useEffect(() => {
@@ -104,74 +81,13 @@ export function PortalSideMenu() {
     };
   }, [pathname]);
 
-  const countFor = (href: string, compact?: boolean) =>
-    href === ROUTES.portalAppointments ? (
-      <UpcomingCount count={upcoming} compact={compact} />
-    ) : null;
-
   return (
-    <>
-      <aside className="hidden w-60 shrink-0 flex-col gap-4 self-start md:sticky md:top-24 md:flex">
-        <nav aria-label="Portal" className="rounded-card border border-line bg-surface p-3">
-          <ul className="flex flex-col gap-1">
-            {MENU_ITEMS.map(({ href, label, icon }) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  aria-current={href === current ? "page" : undefined}
-                  className={cn(
-                    "flex min-h-11 items-center gap-3 rounded-control px-3 transition-colors duration-150 ease-out",
-                    href === current
-                      ? "bg-brand-50 font-semibold text-brand-700"
-                      : "font-medium text-muted hover:bg-brand-50 hover:text-brand-700",
-                  )}
-                >
-                  <Icon name={icon} className="size-5" />
-                  {label}
-                  {countFor(href)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <Link
-          href={ROUTES.portalNewAppointment}
-          aria-current={isNewAppointment ? "page" : undefined}
-          className={cn(
-            "flex min-h-11 items-center gap-3 rounded-2xl border border-white bg-brand-600 px-3 font-semibold text-white shadow-sm transition-colors duration-150 ease-out hover:bg-brand-700",
-            isNewAppointment && "pointer-events-none opacity-75",
-          )}
-        >
-          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-control bg-surface text-brand-600">
-            <Icon name="calendar-plus" className="size-5" />
-          </span>
-          <span>Agendar cita</span>
-          <Icon name="arrow-right" className="ml-auto size-5 shrink-0" />
-        </Link>
-      </aside>
-      <nav
-        aria-label="Portal"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
-      >
-        <ul className="grid grid-cols-5">
-          {MENU_ITEMS.filter((item) => item.inBottomBar).map(({ href, shortLabel, icon }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                aria-current={href === current ? "page" : undefined}
-                className={cn(
-                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1 text-center text-xs font-medium",
-                  href === current ? "bg-brand-50 font-semibold text-brand-700" : "text-muted",
-                )}
-              >
-                <Icon name={icon} className="size-5" />
-                {shortLabel}
-                {countFor(href, true)}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </>
+    <SectionMenu
+      label="Portal"
+      current={current}
+      items={MENU_ITEMS.map((item) =>
+        item.href === ROUTES.portalAppointments ? { ...item, upcoming } : item,
+      )}
+    />
   );
 }

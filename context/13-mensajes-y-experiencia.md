@@ -15,7 +15,7 @@ Fuente para los textos y flujos de pantalla. La interfaz va en español (RN-61) 
 
 **Iniciar y cerrar sesión**: correo y contraseña → “Ingresar”. Los límites de solicitudes y bloqueos muestran el mensaje del backend, incluido el tiempo restante cuando lo informa. “¿Olvidaste tu contraseña?” envía un enlace válido 30 min. Para salir: ícono de salida en la barra superior derecha, identificado como “Cerrar sesión” para lectores de pantalla y al pasar el cursor. El mismo control se usa en los paneles de recepción, veterinario, estilista y administrador.
 
-**Menú del portal**: Inicio · Mis citas · Agendar · Historial clínico · Facturas · Mi perfil. En escritorio, las opciones se agrupan en una tarjeta blanca con borde fino y 12 px de espacio interior; “Agendar cita” aparece fuera, 16 px debajo, con el mismo ancho de la tarjeta, 44 px de alto y radio de 16 px, fondo petróleo, borde blanco, calendario petróleo sobre un recuadro blanco y flecha blanca a la derecha (variante 3A invertida); el activo se destaca en azul claro con texto petróleo semibold. “Cerrar sesión” está en la barra superior.
+**Menú del portal.** Inicio · Mis citas · Agendar · Historial clínico · Facturas · Mi perfil. La distribución del menú y del contenido de gestión se describe en [D-72](12-decisiones-y-pendientes.md#1-decisiones-tomadas).
 
 **Inicio**: saludo con el nombre del propietario, la próxima cita y “Tus mascotas” (una tarjeta por mascota con acceso a su historial). Las mascotas se ven en Inicio y en Mi perfil; no tienen entrada propia en el menú.
 
@@ -51,7 +51,7 @@ Fuente para los textos y flujos de pantalla. La interfaz va en español (RN-61) 
 
 ## 3. Panel interno
 
-Los menús laterales de recepción, veterinario, estilista y administrador se agrupan en la misma tarjeta blanca compacta del portal, con altura ajustada a sus opciones y hover azul tenue (D-48).
+Los paneles internos comparten la distribución del portal, con las opciones de cada rol (D-72).
 
 | Rol | Menú | Tareas principales |
 |-----|------|--------------------|

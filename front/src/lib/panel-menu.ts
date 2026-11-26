@@ -7,6 +7,7 @@ export type StaffRole = Exclude<Role, "OWNER">;
 export type PanelMenuItem = {
   href: string;
   label: string;
+  sidebarLabel?: string;
   icon: IconName;
 };
 
@@ -36,7 +37,12 @@ export const PANEL_MENU: Record<StaffRole, PanelMenuItem[]> = {
   ],
   ADMIN: [
     { href: ROUTES.panelUsers, label: "Usuarios", icon: "users" },
-    { href: ROUTES.panelStaff, label: "Personal y horarios", icon: "clock" },
+    {
+      href: ROUTES.panelStaff,
+      label: "Personal y horarios",
+      sidebarLabel: "Personal",
+      icon: "clock",
+    },
     // D-42: como supervisor, consulta las facturas y es el único que las anula (RN-74).
     { href: ROUTES.panelInvoices, label: "Facturación", icon: "receipt" },
     // RF-22: medicamentos y vacunas con alertas de stock (D-36).
@@ -52,7 +58,6 @@ export const isStaffRole = (role: Role): role is StaffRole => role !== "OWNER";
 // genera facturas.
 export const canOperateReception = (role: Role) => role === "RECEPTIONIST";
 
-// Una ruta con subrutas (/panel/attention/123) pertenece al enlace que la contiene.
 export function panelItemFor(role: StaffRole, pathname: string): PanelMenuItem | undefined {
   return PANEL_MENU[role].find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),

@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
-import { PanelSideMenu } from "@/components/layout/panel-side-menu";
 import { PanelTopBar } from "@/components/layout/panel-top-bar";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -13,7 +12,6 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, status, signOut } = useAuth();
-  // Al cerrar sesión se va a la portada; sin esta marca el panel mandaría primero a /login.
   const signingOut = useRef(false);
 
   useEffect(() => {
@@ -47,13 +45,14 @@ export default function PanelLayout({ children }: { children: ReactNode }) {
       >
         Saltar al contenido
       </a>
-      <PanelTopBar onSignOut={handleSignOut} />
-      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-8">
-        <PanelSideMenu role={user.role} />
-        <main id="contenido" tabIndex={-1} className="min-w-0 flex-1 scroll-mt-24">
-          {children}
-        </main>
-      </div>
+      <PanelTopBar role={user.role} onSignOut={handleSignOut} />
+      <main
+        id="contenido"
+        tabIndex={-1}
+        className="mx-auto w-full min-w-0 max-w-6xl flex-1 scroll-mt-24 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-8 lg:pl-[calc(var(--spacing)*6+var(--spacing-section-content))] lg:print:pl-6"
+      >
+        {children}
+      </main>
     </>
   );
 }
