@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-26 · 08, 12, 13 · D-72. Se recupera la distribución anterior del encabezado, el menú y el área de gestión del portal y los paneles.
 - 2026-11-26 · 08, 12, 13 · D-72. El menú y las pantallas de gestión del portal y del panel se redistribuyen dentro del ancho de la portada.
 - 2026-11-20 · 12, 13 · D-57, D-63, D-72. VetBot oscurece la portada en móvil, integra las acciones en las burbujas y conserva la conversación al volver del portal. El carné se desplaza dentro de su ventana y la tabla de Pacientes mejora la alineación, la lectura de estados y las acciones.
 - 2026-11-19 · 12, 13 · D-45. La portada muestra un acceso directo a “Iniciar sesión” en el encabezado móvil.
