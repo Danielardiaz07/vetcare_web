@@ -1,7 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { PortalSideMenu } from "@/components/layout/portal-side-menu";
+import { SectionHeaderBrand } from "@/components/layout/section-header-brand";
 import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/features/auth/auth-provider";
 import { AlertsBell } from "@/features/alerts/components/alerts-bell";
@@ -18,18 +19,10 @@ export function PortalTopBar({ onSignOut }: PortalTopBarProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
-        <Link
-          href={ROUTES.home}
-          className="flex shrink-0 items-center gap-2 text-lg font-semibold text-brand-700"
-        >
-          <Image src="/logo.png" alt="" width={44} height={44} priority />
-          VetCare
-          <span className="hidden border-l border-line pl-3 text-sm font-medium text-muted sm:inline">
-            Portal del cliente
-          </span>
-        </Link>
+      <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
+        <SectionHeaderBrand label="Portal del cliente" />
         <div className="flex min-w-0 items-center gap-1 text-sm sm:gap-2">
+          <PortalSideMenu />
           {user && <AlertsBell key={user.id} userId={user.id} />}
           <Link
             href={ROUTES.portalProfile}
