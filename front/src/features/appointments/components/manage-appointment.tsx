@@ -236,9 +236,6 @@ export function ManageAppointment({ token }: { token: string }) {
               </div>
             </form>
           )}
-          <Button variant="secondary" disabled={busy} className="self-start" onClick={refresh}>
-            Actualizar información
-          </Button>
         </>
       )}
     </section>
