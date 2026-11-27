@@ -1,9 +1,8 @@
 "use client";
 
 import jsQR from "jsqr";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { LoadingState } from "@/components/ui/loading-state";
 import { appointmentErrorMessage } from "@/features/appointments/errors";
 import { clinicDateOf, formatClinicTime, formatLongDate } from "@/lib/clinic-time";
@@ -20,16 +19,16 @@ type Outcome = { tone: "success" | "danger"; title: string; detail: string };
 function cameraErrorMessage(error: unknown) {
   if (error instanceof DOMException) {
     if (error.name === "NotAllowedError") {
-      return "No hay permiso para usar la cámara. Permite su uso en el navegador y vuelve a activarla, o ingresa el código abajo.";
+      return "No hay permiso para usar la cámara. Permite su uso en el navegador y vuelve a activarla.";
     }
     if (error.name === "NotFoundError") {
-      return "No encontramos una cámara. Puedes registrar la llegada con el código de abajo.";
+      return "No encontramos una cámara. Abre el enlace en un dispositivo con cámara.";
     }
     if (error.name === "NotReadableError") {
       return "La cámara está ocupada o no está disponible. Cierra otras aplicaciones que la usen y vuelve a intentarlo.";
     }
   }
-  return "No pudimos activar la cámara. Vuelve a intentarlo o ingresa el código abajo.";
+  return "No pudimos activar la cámara. Vuelve a intentarlo.";
 }
 
 export function CheckInScanner({ token }: { token: string }) {
@@ -40,7 +39,6 @@ export function CheckInScanner({ token }: { token: string }) {
   const [cameraAttempt, setCameraAttempt] = useState(0);
   const [foreground, setForeground] = useState(true);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [manualCode, setManualCode] = useState("");
   const [busy, setBusy] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -95,7 +93,6 @@ export function CheckInScanner({ token }: { token: string }) {
       try {
         const result = await scanCheckIn(token, code);
         if (!mountedRef.current) return;
-        setManualCode("");
         setOutcome({
           tone: "success",
           title: `${result.patientName} ya llegó a su cita`,
@@ -126,16 +123,14 @@ export function CheckInScanner({ token }: { token: string }) {
     if (!window.isSecureContext) {
       setCamera({
         status: "error",
-        message:
-          "La cámara necesita un enlace HTTPS. Usa el enlace seguro de la clínica o ingresa el código abajo.",
+        message: "La cámara necesita un enlace HTTPS. Usa el enlace seguro de la clínica.",
       });
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
       setCamera({
         status: "error",
-        message:
-          "Este navegador no permite usar la cámara aquí. Prueba otro navegador o ingresa el código abajo.",
+        message: "Este navegador no permite usar la cámara aquí. Prueba otro navegador.",
       });
       return;
     }
@@ -199,17 +194,12 @@ export function CheckInScanner({ token }: { token: string }) {
         setOutcome({
           tone: "danger",
           title: "No pudimos leer la imagen",
-          detail: "Puedes volver a activar la cámara o ingresar el código de llegada.",
+          detail: "Vuelve a activar la cámara e intenta escanear el QR de nuevo.",
         });
       }
     }, SCAN_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [camera.status, foreground, link, submit]);
-
-  function onManualSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void submit(manualCode);
-  }
 
   if (link === "checking") return <LoadingState />;
   if (link !== "valid") {
@@ -309,29 +299,6 @@ export function CheckInScanner({ token }: { token: string }) {
               : "Activa la cámara cuando estés listo para escanear."}
         </p>
       </div>
-
-      <form
-        onSubmit={onManualSubmit}
-        className="flex min-w-0 flex-col gap-3 border-t border-line pt-5"
-      >
-        <Field
-          label="Código de llegada"
-          hint="Puedes pegarlo, escribirlo o usar un lector que funcione como teclado y envíe Enter."
-          value={manualCode}
-          onChange={(event) => setManualCode(event.target.value)}
-          readOnly={busy || Boolean(outcome)}
-          maxLength={CHECK_IN_CODE_MAX}
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          enterKeyHint="send"
-          className="w-full min-w-0 text-base"
-        />
-        <Button type="submit" loading={busy} disabled={!manualCode.trim() || Boolean(outcome)}>
-          {busy ? "Registrando llegada…" : "Registrar llegada"}
-        </Button>
-      </form>
     </section>
   );
 }

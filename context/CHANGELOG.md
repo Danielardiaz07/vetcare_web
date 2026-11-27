@@ -2,6 +2,7 @@
 
 Una línea por cambio, la más reciente arriba. Formato: `AAAA-MM-DD · archivos · qué cambió y por qué (IDs afectados)`.
 
+- 2026-11-27 · 08, 10, 12, 13 · Se actualiza la documentación del QR y de la gestión de citas desde el correo. Se registra el cierre de P-20 y P-21 tras las verificaciones en producción (D-64, D-65, D-66, D-69, D-70).
 - 2026-11-26 · 08, 12, 13 · D-72. Se recupera la distribución anterior del encabezado, el menú y el área de gestión del portal y los paneles.
 - 2026-11-26 · 08, 12, 13 · D-72. El menú y las pantallas de gestión del portal y del panel se redistribuyen dentro del ancho de la portada.
 - 2026-11-20 · 12, 13 · D-57, D-63, D-72. VetBot oscurece la portada en móvil, integra las acciones en las burbujas y conserva la conversación al volver del portal. El carné se desplaza dentro de su ventana y la tabla de Pacientes mejora la alineación, la lectura de estados y las acciones.
